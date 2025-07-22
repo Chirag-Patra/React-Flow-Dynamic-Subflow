@@ -1,87 +1,67 @@
 import { IconButton } from "@chakra-ui/react";
-import {
-  getNodesBounds,
-  getViewportForBounds,
-  useReactFlow,
-} from "@xyflow/react";
-import { toPng } from "html-to-image";
-import React from "react";
-import { Download } from "react-bootstrap-icons";
-import { useDarkMode } from "../store";
+import { useRef } from "react";
+import { BiImport } from "react-icons/bi";
 import { Tooltip } from '@chakra-ui/react';
 
-const IMAGE_WIDTH = 1024;
-const IMAGE_HEIGHT = 768;
+interface ImportFlowProps {
+    onImport: (flow: { nodes: any[]; edges: any[] }) => void;
+}
 
-const downloadImage = (dataUrl: string) => {
-  const a = document.createElement("a");
+export const ImportFlow = ({ onImport }: ImportFlowProps) => {
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-  a.setAttribute("download", "reactflow.png");
-  a.setAttribute("href", dataUrl);
+    const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const fileInput = event.target;
+        const file = fileInput.files?.[0];
 
-  a.click();
-};
+        if (!file) return;
 
-export default function DownloadBtn() {
-  const { getNodes } = useReactFlow();
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const flow = JSON.parse(e.target?.result as string);
+                if (flow.nodes && flow.edges) {
+                    onImport(flow);
+                } else {
+                    alert('Invalid workflow file format');
+                }
+            } catch (error) {
+                alert('Error parsing workflow file');
+                console.error(error);
+            }
+            // Reset the file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        };
+        reader.readAsText(file);
+    };
 
-  const { isDark } = useDarkMode();
-
-  let color = "white";
-  if (isDark) color = "black";
-
-  const onDownload = () => {
-    const nodesBounds = getNodesBounds(getNodes());
-    const { x, y, zoom } = getViewportForBounds(
-      nodesBounds,
-      IMAGE_WIDTH,
-      IMAGE_HEIGHT,
-      0.5,
-      2,
-      1
-    );
-
-    const reactFlow = document.querySelector(
-      ".react-flow__viewport"
-    ) as HTMLElement;
-    if (!reactFlow) return;
-
-    toPng(reactFlow, {
-      backgroundColor: color,
-      width: IMAGE_WIDTH,
-      height: IMAGE_HEIGHT,
-      style: {
-        width: `${IMAGE_WIDTH}px`,
-        height: `${IMAGE_HEIGHT}px`,
-        transform: `translate(${x}px, ${y}px) scale(${zoom})`,
-      },
-    }).then(downloadImage);
-  };
-
-  return (
-    <Tooltip
-      hasArrow
-      label="Download Workflow Image"
-      aria-label="Download workflow tooltip"
-      placement="bottom"
-      bg="blue.500"
-      color="white"
-      borderRadius="md"
-      py={1}
-      px={2}
-      openDelay={300}
-      transition="all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55)"
-      _hover={{
-        transform: 'translateY(-2px)',
-        boxShadow: 'lg'
-      }}
-    >
-      <IconButton
-        icon={<Download style={{ fontWeight: 'bold' }} />}
-        aria-label="Export"
-        size="xs"
-        onClick={onDownload}
-        sx={{
+    return (
+        <>
+            <Tooltip
+                hasArrow
+                label="Import Workflow"
+                aria-label="Import workflow tooltip"
+                placement="bottom"
+                bg="blue.500"
+                color="white"
+                borderRadius="md"
+                py={1}
+                px={2}
+                openDelay={300}
+                transition="all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+                _hover={{
+                    transform: 'translateY(-2px)',
+                    boxShadow: 'lg'
+                }}
+            >
+                <IconButton
+                    icon={<BiImport style={{ fontWeight: 'bold' }} />}
+                    aria-label="Export"
+                    size="xs"
+                    onClick={() => fileInputRef.current?.click()}
+                    sx={{
                         // Base gradient styling
                         height: '32px',
                         width: '32px',
@@ -133,6 +113,14 @@ export default function DownloadBtn() {
                         }
                     }}
                 />
-    </Tooltip>
-  );
-}
+            </Tooltip>
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImport}
+                accept=".json"
+                style={{ display: 'none' }}
+            />
+        </>
+    );
+};

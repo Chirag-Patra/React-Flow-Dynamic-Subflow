@@ -19,7 +19,7 @@ import {
   useStore,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Box, Flex, IconButton, Spinner, Text } from "@chakra-ui/react";
+import { Box, Center, Flex, IconButton, Spinner, Text } from "@chakra-ui/react";
 import { COMPONENTS, initialEdges, initialNodes } from "../constants";
 import { v4 as uuid } from "uuid";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -31,6 +31,9 @@ import Bulb from "../Components/Bulb";
 import Battery from "../Components/Battery";
 import ComponentDetail from "../Components/ComponentDetail";
 import Board from "../Components/Board";
+import { ExportFlow } from "../Components/ExportFlow";
+import { ImportFlow } from "../Components/ImportFlow";
+import { ClearCanvas } from "../Components/ClearCanvas";
 import { isPointInBox, zoomSelector } from "../utils";
 import useKeyBindings from "../hooks/useKeyBindings";
 import { Floppy, Moon, Sun } from "react-bootstrap-icons";
@@ -470,12 +473,12 @@ export const Workflow = () => {
     Edge
   > | null>(null);
 
-  const onSave = () => {
-    if (rfInstance) {
-      const flow = rfInstance.toObject();
-      saveFlow(flow);
-    }
-  };
+  // const onSave = () => {
+  //   if (rfInstance) {
+  //     const flow = rfInstance.toObject();
+  //     saveFlow(flow);
+  //   }
+  // };
 
   const { isDark, toggleMode } = useDarkMode();
 
@@ -560,17 +563,39 @@ export const Workflow = () => {
             height: 400
           }}
         >
-          <Flex direction={"column"} gap={10}>
+          <Flex  direction={"column"} gap={10}>
             <div>
-              <Text fontSize="x-medium" fontWeight="bold">Drag drop UI</Text>
-              <Flex mt={1} gap={2} flexWrap="wrap">
-                <IconButton
-                  icon={isPending ? <Spinner size="xs" /> : <Floppy />}
-                  aria-label="Save"
-                  size="xs"
-                  onClick={onSave}
-                />
+              <Text
+
+                fontSize="x-large"
+                fontWeight="bold"
+                fontFamily=" cursive"
+                sx={{
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
+                  background: 'linear-gradient(to right, #4f46e5, #af78cfff)',
+
+                  backgroundClip: 'text',
+                  color: 'transparent',
+                  display: 'inline-block',
+                  _hover: {
+                    transform: 'scale(1.02)',
+                    transition: 'transform 0.2s ease-in-out'
+                  }
+                }}
+              >
+                WorkFlow.io
+              </Text>
+              <Flex mt={3} gap={3.5} flexWrap="wrap">
                 <DownloadBtn />
+                <ExportFlow nodes={nodes} edges={edges} />
+                <ImportFlow onImport={(flow) => {
+                  setNodes(flow.nodes || []);
+                  setEdges(flow.edges || []);
+                }} />
+                <ClearCanvas onClear={() => {
+                  setNodes([]);
+                  setEdges([]);
+                }} />
               </Flex>
             </div>
 

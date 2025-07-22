@@ -1,86 +1,42 @@
-import { IconButton } from "@chakra-ui/react";
-import {
-  getNodesBounds,
-  getViewportForBounds,
-  useReactFlow,
-} from "@xyflow/react";
-import { toPng } from "html-to-image";
-import React from "react";
-import { Download } from "react-bootstrap-icons";
-import { useDarkMode } from "../store";
+import { useRef } from 'react';
+import { IconButton, useDisclosure, AlertDialog, AlertDialogOverlay, AlertDialogContent, AlertDialogHeader, AlertDialogBody, AlertDialogFooter, Button } from "@chakra-ui/react";
+import { FaTrash } from "react-icons/fa";
 import { Tooltip } from '@chakra-ui/react';
 
-const IMAGE_WIDTH = 1024;
-const IMAGE_HEIGHT = 768;
 
-const downloadImage = (dataUrl: string) => {
-  const a = document.createElement("a");
+interface ClearCanvasProps {
+  onClear: () => void;
+}
 
-  a.setAttribute("download", "reactflow.png");
-  a.setAttribute("href", dataUrl);
-
-  a.click();
-};
-
-export default function DownloadBtn() {
-  const { getNodes } = useReactFlow();
-
-  const { isDark } = useDarkMode();
-
-  let color = "white";
-  if (isDark) color = "black";
-
-  const onDownload = () => {
-    const nodesBounds = getNodesBounds(getNodes());
-    const { x, y, zoom } = getViewportForBounds(
-      nodesBounds,
-      IMAGE_WIDTH,
-      IMAGE_HEIGHT,
-      0.5,
-      2,
-      1
-    );
-
-    const reactFlow = document.querySelector(
-      ".react-flow__viewport"
-    ) as HTMLElement;
-    if (!reactFlow) return;
-
-    toPng(reactFlow, {
-      backgroundColor: color,
-      width: IMAGE_WIDTH,
-      height: IMAGE_HEIGHT,
-      style: {
-        width: `${IMAGE_WIDTH}px`,
-        height: `${IMAGE_HEIGHT}px`,
-        transform: `translate(${x}px, ${y}px) scale(${zoom})`,
-      },
-    }).then(downloadImage);
-  };
+export const ClearCanvas = ({ onClear }: ClearCanvasProps) => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <Tooltip
-      hasArrow
-      label="Download Workflow Image"
-      aria-label="Download workflow tooltip"
-      placement="bottom"
-      bg="blue.500"
-      color="white"
-      borderRadius="md"
-      py={1}
-      px={2}
-      openDelay={300}
-      transition="all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55)"
-      _hover={{
-        transform: 'translateY(-2px)',
-        boxShadow: 'lg'
-      }}
-    >
+    <>
+     <Tooltip
+          hasArrow
+          label="Clear Workflow"
+          aria-label="clear workflow tooltip"
+          placement="bottom"
+          bg="blue.500"
+          color="white"
+          borderRadius="md"
+          py={1}
+          px={2}
+          openDelay={300}
+          transition="all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+          _hover={{
+            transform: 'translateY(-2px)',
+            boxShadow: 'lg'
+          }}
+        >
       <IconButton
-        icon={<Download style={{ fontWeight: 'bold' }} />}
-        aria-label="Export"
+        aria-label="Clear canvas"
+        icon={<FaTrash />}
         size="xs"
-        onClick={onDownload}
+        onClick={onOpen}
+        variant="ghost"
         sx={{
                         // Base gradient styling
                         height: '32px',
@@ -133,6 +89,44 @@ export default function DownloadBtn() {
                         }
                     }}
                 />
-    </Tooltip>
+                </Tooltip>
+
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Clear Workflow Canvas
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure? This will remove all nodes and edges from your current workflow.
+              This action cannot be undone.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                colorScheme="purple"
+                onClick={() => {
+                  onClear();
+                  onClose();
+                }}
+                ml={3}
+                bg="#665e92ff"
+                _hover={{ bg: "#7a6fbb" }}
+              >
+                Clear Canvas
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
+    </>
   );
-}
+};

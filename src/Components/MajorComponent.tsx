@@ -59,7 +59,7 @@ export default function MajorComponent({
           style={{
             position: "absolute",
             top: -23,
-            right: 20,
+            right: 30,
             color,
           }}
           onClick={() => {
@@ -96,7 +96,7 @@ export default function MajorComponent({
       {type === MajorComponents.Inductor && (
         <Inductor height={24} color={color} />
       )}
-     
+
 
       <Text fontSize="xx-small" position={"absolute"} color={color}>
         {value} {unit}

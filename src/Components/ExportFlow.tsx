@@ -1,68 +1,32 @@
 import { IconButton } from "@chakra-ui/react";
-import {
-  getNodesBounds,
-  getViewportForBounds,
-  useReactFlow,
-} from "@xyflow/react";
-import { toPng } from "html-to-image";
-import React from "react";
-import { Download } from "react-bootstrap-icons";
-import { useDarkMode } from "../store";
+import { CgExport } from "react-icons/cg";
 import { Tooltip } from '@chakra-ui/react';
 
-const IMAGE_WIDTH = 1024;
-const IMAGE_HEIGHT = 768;
+interface ExportFlowProps {
+  nodes: any[];
+  edges: any[];
+}
 
-const downloadImage = (dataUrl: string) => {
-  const a = document.createElement("a");
+export const ExportFlow = ({ nodes, edges }: ExportFlowProps) => {
+  const handleExport = () => {
+    const data = { nodes, edges };
+    const dataStr = JSON.stringify(data, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
 
-  a.setAttribute("download", "reactflow.png");
-  a.setAttribute("href", dataUrl);
-
-  a.click();
-};
-
-export default function DownloadBtn() {
-  const { getNodes } = useReactFlow();
-
-  const { isDark } = useDarkMode();
-
-  let color = "white";
-  if (isDark) color = "black";
-
-  const onDownload = () => {
-    const nodesBounds = getNodesBounds(getNodes());
-    const { x, y, zoom } = getViewportForBounds(
-      nodesBounds,
-      IMAGE_WIDTH,
-      IMAGE_HEIGHT,
-      0.5,
-      2,
-      1
-    );
-
-    const reactFlow = document.querySelector(
-      ".react-flow__viewport"
-    ) as HTMLElement;
-    if (!reactFlow) return;
-
-    toPng(reactFlow, {
-      backgroundColor: color,
-      width: IMAGE_WIDTH,
-      height: IMAGE_HEIGHT,
-      style: {
-        width: `${IMAGE_WIDTH}px`,
-        height: `${IMAGE_HEIGHT}px`,
-        transform: `translate(${x}px, ${y}px) scale(${zoom})`,
-      },
-    }).then(downloadImage);
+    const exportName = 'workflow-' + new Date().toISOString().slice(0, 10);
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute('href', dataUri);
+    downloadAnchorNode.setAttribute('download', exportName + '.json');
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
   };
 
   return (
     <Tooltip
       hasArrow
-      label="Download Workflow Image"
-      aria-label="Download workflow tooltip"
+      label="Export Workflow"
+      aria-label="Export workflow tooltip"
       placement="bottom"
       bg="blue.500"
       color="white"
@@ -77,10 +41,10 @@ export default function DownloadBtn() {
       }}
     >
       <IconButton
-        icon={<Download style={{ fontWeight: 'bold' }} />}
+        icon={<CgExport style={{ fontWeight: 'bold' }} />}
         aria-label="Export"
         size="xs"
-        onClick={onDownload}
+        onClick={handleExport}
         sx={{
                         // Base gradient styling
                         height: '32px',
@@ -135,4 +99,4 @@ export default function DownloadBtn() {
                 />
     </Tooltip>
   );
-}
+};
