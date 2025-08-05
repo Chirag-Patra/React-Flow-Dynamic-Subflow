@@ -501,36 +501,13 @@ export const Workflow = () => {
       position="relative"
     >
       {selectedNode && (
-        <Flex
-          position="absolute"
-          top="50%"
-          right="0"
-          transform="translateY(-50%)"
-          width="150px"
-          alignItems="center"
-          bg="transparent"
-          marginRight="12px"
-          zIndex={1000}
-        >
-          <Box
-            bg="white"
-            border="1px solid #ccc"
-            borderRadius="12px"
-            height="200px"
-            width="230px"
-            padding="12px"
-            right={20}
-            marginBottom="50px"
-            position={"relative"}
-            zIndex={1000}
-          >
+
             <ComponentDetail
               node={selectedNode}
               key={selectedNode.id}
               onDelete={() => setSelectedNode(undefined)}
             />
-          </Box>
-        </Flex>
+         
       )}
       <ReactFlow
         onInit={setRfInstance}
