@@ -30,14 +30,14 @@ export default function customEdge({
       />
       <circle
         r="4"
-        fill="#5516caff"
+        fill="#11b3cfff"
         style={{
-          filter: "drop-shadow(0px 0px 2px #5516caff)",
+          filter: "drop-shadow(0px 0px 2px #11b3cfff)",
         }}
       >
         <animateMotion dur="6s" repeatCount={"indefinite"} path={d} />
       </circle>
-      <circle fill="transparent" stroke="#5516caff" strokeWidth={2}>
+      <circle fill="transparent" stroke="#11b3cfff" strokeWidth={2}>
         <animate
           attributeName="r"
           values="2;6"

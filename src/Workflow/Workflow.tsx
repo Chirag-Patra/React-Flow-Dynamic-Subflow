@@ -72,7 +72,7 @@ export const Workflow = () => {
           type: MarkerType.ArrowClosed,
           width: 20,
           height: 20,
-          color: "#FFC300",
+          color: "#11b3cfff",
         },
       };
       addEdge(edge);

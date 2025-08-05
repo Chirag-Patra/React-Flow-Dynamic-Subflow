@@ -19,7 +19,7 @@ import {
 } from "@chakra-ui/react";
 import { DeleteIcon } from "@chakra-ui/icons";
 import React, { useEffect, useState } from "react";
-import { Node, useReactFlow, Edge } from "@xyflow/react";
+import { Node, useReactFlow, Edge , MarkerType, } from "@xyflow/react";
 import { MajorComponentsData } from "../types";
 
 export default function ComponentDetail({
@@ -52,7 +52,12 @@ export default function ComponentDetail({
       id: `e-${node.id}-${targetId}`,
       source: node.id,
       target: targetId,
-      type: "customEdge",
+      type: "customEdge", markerEnd: {
+                type: MarkerType.ArrowClosed,
+                width: 20,
+                height: 20,
+                color: "#11b3cfff",
+              },
     }));
 
     if (newEdges.length) {
