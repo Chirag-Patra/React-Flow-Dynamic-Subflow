@@ -42,6 +42,8 @@ import DownloadBtn from "../Components/DownloadBtn";
 import { useDarkMode } from "../store";
 import useHistory from "../hooks/useHistory";
 import { m } from "framer-motion";
+import { Icon, Collapse } from '@chakra-ui/react';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 
 const nodeTypes = {
   MajorComponent: MajorComponent,
@@ -152,7 +154,7 @@ export const Workflow = () => {
         MajorComponents.Db,
         MajorComponents.Email,
         MajorComponents.Python,
-        MajorComponents
+        //MajorComponents
       ].includes(type)
     ) {
       node = {
@@ -177,8 +179,17 @@ export const Workflow = () => {
         position,
         data: { value: 12 },
         parentId: board?.id,
+      };}
+    else if (type === MajorComponents.Capacitor) {
+      node = {
+        id: uuid(),
+        type,
+        position,
+        data: { value: 12 },
+        parentId: board?.id,
       };
-    } else if (type === MajorComponents.Js) {
+    } 
+    else if (type === MajorComponents.Js) {
       node = {
         id: uuid(),
         type,
@@ -481,7 +492,7 @@ export const Workflow = () => {
   // };
 
   const { isDark, toggleMode } = useDarkMode();
-
+  const [showIcons, setShowIcons] = useState(false);
   return (
     <Box
       height={"100vh"}
@@ -563,17 +574,15 @@ export const Workflow = () => {
             height: 400
           }}
         >
-          <Flex  direction={"column"} gap={10}>
+          <Flex direction={"column"} gap={10}>
             <div>
               <Text
-
                 fontSize="x-large"
                 fontWeight="bold"
-                fontFamily=" cursive"
+                fontFamily="cursive"
                 sx={{
                   textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
                   background: 'linear-gradient(to right, #4f46e5, #af78cfff)',
-
                   backgroundClip: 'text',
                   color: 'transparent',
                   display: 'inline-block',
@@ -585,7 +594,10 @@ export const Workflow = () => {
               >
                 WorkFlow.io
               </Text>
-              <Flex mt={3} gap={3.5} flexWrap="wrap">
+
+              <Text fontSize="x-medium" fontWeight="bold">Toolbar</Text>
+
+              <Flex mt={3} gap={3.5} flexWrap="wrap" >
                 <DownloadBtn />
                 <ExportFlow nodes={nodes} edges={edges} />
                 <ImportFlow onImport={(flow) => {

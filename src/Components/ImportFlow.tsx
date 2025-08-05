@@ -62,56 +62,55 @@ export const ImportFlow = ({ onImport }: ImportFlowProps) => {
                     size="xs"
                     onClick={() => fileInputRef.current?.click()}
                     sx={{
-                        // Base gradient styling
+                        // Base: Dark slate grey → medium slate grey (subtle gradient)
                         height: '32px',
                         width: '32px',
-                        bgGradient: 'linear-gradient(to right, #4f46e5, #af78cfff)',
+                        bgGradient: 'linear-gradient(to right, #1f2937, #7187aaff)', // Gray.800 → Gray.700
                         color: 'white',
                         borderRadius: 'md',
                         border: 'none',
                         fontWeight: 'bold',
                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        boxShadow: 'md',
+                        boxShadow: 'md', // Neutral shadow (works with grey)
                         position: 'relative',
                         overflow: 'hidden',
 
-                        // Gradient animation on hover
+                        // Hover: Medium slate grey → lighter slate grey (lightens for feedback)
                         _hover: {
-                            bgGradient: 'linear(to-r, blue.500, teal.400)',
-                            transform: 'translateY(-2px)',
-                            boxShadow: 'lg',
+                            bgGradient: 'linear(to-r, #374151, #4b5563)', // Gray.700 → Gray.600
+                            transform: 'translateY(-2px)', // Lift effect
+                            boxShadow: 'lg', // Deeper shadow on hover
                             '&::before': {
                                 content: '""',
                                 position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                bgGradient: 'linear-gradient(to right, #4f46e5, #af78cfff)',
+                                inset: 0, // Shorthand for top/left/right/bottom: 0
+                                bgGradient: 'linear-gradient(to right, #1f2937, #3a4350ff)', // Matches base (layered effect)
                             }
                         },
-                        // Icon styling
+
+                        // Icon: Subtle white shadow for depth in dark mode
                         '& svg': {
                             width: '16px',
                             height: '16px',
-                            filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.2))',
+                            filter: 'drop-shadow(0 1px 1px rgba(255,255,255,0.1))',
                             transition: 'transform 0.2s ease-out',
                         },
 
-                        // Icon animation on hover
+                        // Icon Hover: Slight scale + stronger shadow
                         '&:hover svg': {
                             transform: 'scale(1.15)',
-                            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))',
+                            filter: 'drop-shadow(0 1px 2px rgba(255,255,255,0.2))',
                         },
 
-                        // Pulse animation (optional)
+                        // Pulse: Soft grey glow (matches theme, not distracting)
                         animation: 'pulse 5s infinite',
                         '@keyframes pulse': {
-                            '0%': { boxShadow: '0 0 0 0 rgba(49, 151, 149, 0.7)' },
-                            '70%': { boxShadow: '0 0 0 10px rgba(49, 151, 149, 0)' },
-                            '100%': { boxShadow: '0 0 0 0 rgba(49, 151, 149, 0)' },
+                            '0%': { boxShadow: '0 0 0 0 rgba(156, 163, 175, 0.7)' }, // Gray.400 (light grey)
+                            '70%': { boxShadow: '0 0 0 10px rgba(156, 163, 175, 0)' },
+                            '100%': { boxShadow: '0 0 0 0 rgba(156, 163, 175, 0)' },
                         }
                     }}
+
                 />
             </Tooltip>
             <input

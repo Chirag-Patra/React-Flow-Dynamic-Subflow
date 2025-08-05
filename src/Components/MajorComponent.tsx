@@ -7,7 +7,7 @@ import {
 } from "../types";
 import Board from "./Board";
 import { Box, Text } from "@chakra-ui/react";
-import { Capacitor, Inductor, Resistor, Js , Aws , Db, Python, Email, } from "../icons";
+import { Capacitor, Inductor, Resistor, Js, Aws, Db, Python, Email, } from "../icons";
 import { getUnit } from "../utils";
 import Terminal from "./Terminal";
 import Rotation from "./Rotation";
@@ -97,6 +97,7 @@ export default function MajorComponent({
         <Inductor height={24} color={color} />
       )}
 
+      
 
       <Text fontSize="xx-small" position={"absolute"} color={color}>
         {value} {unit}
