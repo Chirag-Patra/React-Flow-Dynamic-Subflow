@@ -188,7 +188,7 @@ export const Workflow = () => {
         data: { value: 12 },
         parentId: board?.id,
       };
-    } 
+    }
     else if (type === MajorComponents.Js) {
       node = {
         id: uuid(),
@@ -516,9 +516,10 @@ export const Workflow = () => {
             bg="white"
             border="1px solid #ccc"
             borderRadius="12px"
-            height="150px"
-            width="100%"
+            height="200px"
+            width="200px"
             padding="12px"
+            right={10}
             marginBottom="50px"
             position={"relative"}
             zIndex={1000}
