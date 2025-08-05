@@ -82,7 +82,7 @@ export default function ComponentDetail({
   }, [node.id, getEdges]);
 
   return (
-    <Box position="relative">
+    <Box position="relative" width={"200px"}>
       <Flex justify="space-between" align="center">
         <Heading fontSize="xs">{nodeType?.toUpperCase()}</Heading>
         <IconButton

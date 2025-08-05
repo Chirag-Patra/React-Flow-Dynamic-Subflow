@@ -517,9 +517,9 @@ export const Workflow = () => {
             border="1px solid #ccc"
             borderRadius="12px"
             height="200px"
-            width="200px"
+            width="230px"
             padding="12px"
-            right={10}
+            right={20}
             marginBottom="50px"
             position={"relative"}
             zIndex={1000}
