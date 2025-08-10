@@ -10,6 +10,10 @@ export enum MajorComponents {
   Db = "Db",
   Python = "Python",
   Email = "Email",
+  Lamda = "Lamda",
+  GlueJob = "GlueJob",
+  Eks = "Eks",
+  StepFunction = "StepFunction",
 }
 
 export enum MajorComponentsState {
@@ -25,6 +29,7 @@ export type MajorComponentsData = {
   isAttachedToGroup?: boolean;
   visible?: boolean;
   connectable?: boolean;
+  processingType?: "run_glue" | "run_lambda" | "run_eks" | "run_sfn";
 };
 
 export enum HistoryAction {

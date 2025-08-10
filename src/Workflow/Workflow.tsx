@@ -80,6 +80,50 @@ export const Workflow = () => {
     [addEdge]
   );
 
+  const handleProcessingNodeManagement = (boardId: string, processingType: string) => {
+    // Map processing types to their corresponding component types
+    const processingTypeToComponent: Record<string, MajorComponents> = {
+      'run_lambda': MajorComponents.Lamda,
+      'run_glue': MajorComponents.GlueJob,
+       'run_eks': MajorComponents.Eks,
+       'run_sfn': MajorComponents.StepFunction,
+
+    };
+
+    // Get the component type for the current processing type
+    const componentType = processingTypeToComponent[processingType];
+
+    // Find any existing processing node for this board
+    const existingProcessingNode = nodes.find(
+      n => n.parentId === boardId &&
+        Object.values(processingTypeToComponent).includes(n.data?.type as MajorComponents)
+    );
+
+    // Remove any existing processing node if it exists
+    if (existingProcessingNode) {
+      removeNode(existingProcessingNode);
+    }
+
+    // Add new node if there's a valid component type for this processing type
+    if (componentType) {
+      const node: Node = {
+        id: `${processingType}-${boardId}`,
+        type: "MajorComponent",
+        position: { x: 50, y: 50 },
+        data: {
+          type: componentType,
+          value: '',
+          visible: showContent,
+          connectable: showContent
+        },
+        parentId: boardId,
+        draggable: showContent,
+        selectable: showContent,
+      };
+
+      addNode(node);
+    }
+  };
   const isValidConnection = (connection: Edge | Connection) => {
     const { source, target } = connection;
 
@@ -154,6 +198,10 @@ export const Workflow = () => {
         MajorComponents.Db,
         MajorComponents.Email,
         MajorComponents.Python,
+        MajorComponents.Lamda,
+        MajorComponents.GlueJob,
+        MajorComponents.Eks,
+        MajorComponents.StepFunction,
         //MajorComponents
       ].includes(type)
     ) {
@@ -179,7 +227,8 @@ export const Workflow = () => {
         position,
         data: { value: 12 },
         parentId: board?.id,
-      };}
+      };
+    }
     else if (type === MajorComponents.Capacitor) {
       node = {
         id: uuid(),
@@ -234,6 +283,44 @@ export const Workflow = () => {
         parentId: board?.id,
       };
     }
+    else if (type === MajorComponents.Lamda) {
+      node = {
+        id: uuid(),
+        type,
+        position,
+        data: { value: 12 },
+        parentId: board?.id,
+      };
+    }
+    else if (type === MajorComponents.GlueJob) {
+      node = {
+        id: uuid(),
+        type,
+        position,
+        data: { value: 12 },
+        parentId: board?.id,
+      };
+    }
+ else if (type === MajorComponents.Eks) {
+      node = {
+        id: uuid(),
+        type,
+        position,
+        data: { value: 12 },
+        parentId: board?.id,
+      };
+    }
+     else if (type === MajorComponents.StepFunction) {
+      node = {
+        id: uuid(),
+        type,
+        position,
+        data: { value: 12 },
+        parentId: board?.id,
+      };
+    }
+
+
 
     else if (type === MajorComponents.Board) {
       node = {
@@ -285,6 +372,7 @@ export const Workflow = () => {
 
     setNodes((prevNodes) =>
       prevNodes.map((node) => {
+
         if (node.id === dragNode.id) {
           return {
             ...node,
@@ -301,6 +389,10 @@ export const Workflow = () => {
                     MajorComponents.Db,
                     MajorComponents.Email,
                     MajorComponents.Python,
+                    MajorComponents.Lamda,
+                    MajorComponents.GlueJob,
+                    MajorComponents.Eks,
+                    MajorComponents.StepFunction,
                   ].includes(
                     overlappingNode?.data?.type as MajorComponents
                   )
@@ -317,6 +409,9 @@ export const Workflow = () => {
   };
 
   const onNodeDragStop: OnNodeDrag = (evt, dragNode) => {
+    if (dragNode.type === 'board' && dragNode.data?.processingType === 'run_lambda') {
+      return;
+    }
     if (
       !overlappingNodeRef.current ||
       (overlappingNodeRef?.current?.type !== MajorComponents.Board &&
@@ -351,6 +446,10 @@ export const Workflow = () => {
         MajorComponents.Db,
         MajorComponents.Email,
         MajorComponents.Python,
+        MajorComponents.Lamda,
+        MajorComponents.GlueJob,
+        MajorComponents.Eks,
+        MajorComponents.StepFunction,
       ].includes(
         overlappingNodeRef?.current?.data?.type as MajorComponents
       ) &&
@@ -500,14 +599,25 @@ export const Workflow = () => {
       border="1px solid black"
       position="relative"
     >
-      {selectedNode && (
+      {/* {selectedNode && (
 
             <ComponentDetail
               node={selectedNode}
               key={selectedNode.id}
               onDelete={() => setSelectedNode(undefined)}
             />
-         
+
+      )} */}
+
+      {selectedNode && (
+        <ComponentDetail
+          node={selectedNode}
+          key={selectedNode.id}
+          onDelete={() => setSelectedNode(undefined)}
+          onProcessingTypeChange={handleProcessingNodeManagement}
+          nodes={nodes}
+          showContent={showContent}
+        />
       )}
       <ReactFlow
         onInit={setRfInstance}
@@ -549,7 +659,7 @@ export const Workflow = () => {
             borderRadius: 12,
             background: "white",
             width: 200,
-            height: 400
+            height: 450
           }}
         >
           <Flex direction={"column"} gap={10}>
@@ -592,16 +702,18 @@ export const Workflow = () => {
             <div>
               <Text fontSize="x-medium" fontWeight="bold">Components</Text>
               <Flex mt={1} gap={3} flexWrap="wrap">
-                {COMPONENTS.map((component) => (
-                  <IconButton
-                    size="lg"
-                    key={component.label}
-                    aria-label={component.label}
-                    icon={component.icon}
-                    onDragStart={(event) => onDragStart(event, component.type)}
-                    draggable
-                  />
-                ))}
+                {COMPONENTS.map((component) =>
+                  component ? (
+                    <IconButton
+                      size="lg"
+                      key={component.label}
+                      aria-label={component.label}
+                      icon={component.icon}
+                      onDragStart={(event) => onDragStart(event, component.type)}
+                      draggable
+                    />
+                  ) : null
+                )}
               </Flex>
             </div>
           </Flex>

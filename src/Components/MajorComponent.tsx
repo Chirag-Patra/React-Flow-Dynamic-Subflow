@@ -7,7 +7,7 @@ import {
 } from "../types";
 import Board from "./Board";
 import { Box, Text } from "@chakra-ui/react";
-import { Capacitor, Inductor, Resistor, Js, Aws, Db, Python, Email, } from "../icons";
+import { Capacitor, Inductor, Resistor, Js, Aws, Db, Python, Email, Lamda, GlueJob, Eks, Stepfunction } from "../icons";
 import { getUnit } from "../utils";
 import Terminal from "./Terminal";
 import Rotation from "./Rotation";
@@ -93,11 +93,23 @@ export default function MajorComponent({
       {type === MajorComponents.Email && (
         <Email height={44} color={color} />
       )}
+      {type === MajorComponents.Lamda && (
+        <Lamda height={44} color={color} />
+      )}
+      {type === MajorComponents.GlueJob && (
+        <GlueJob height={44} color={color} />
+      )}
+      {type === MajorComponents.Eks && (
+        <Eks height={44} color={color} />
+      )}
+      {type === MajorComponents.StepFunction && (
+        <Stepfunction height={44} color={color} />
+      )}
       {type === MajorComponents.Inductor && (
         <Inductor height={24} color={color} />
       )}
 
-      
+
 
       <Text fontSize="xx-small" position={"absolute"} color={color}>
         {value} {unit}

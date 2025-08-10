@@ -1,6 +1,6 @@
 import { Edge, Node } from "@xyflow/react";
 import { MajorComponents } from "../types";
-import { Battery, Bulb, Capacitor, Inductor, Resistor ,Js, Aws ,Python, Db ,Email} from "../icons";
+import { Battery, Bulb, Capacitor, Inductor, Resistor ,Js, Aws ,Python, Db ,Email, Lamda, GlueJob, Eks, Stepfunction} from "../icons";
 import Board from "../Components/Board";
 import { Box } from "@chakra-ui/react";
 
@@ -63,6 +63,29 @@ export const COMPONENTS = [
     icon: <Python height={40} />,
     type: MajorComponents.Python,
     label: "Python",
+  },
+   {
+    icon: <Lamda height={40} />,
+    type: MajorComponents.Lamda,
+    label: "Lamda",
+  },
+  ,
+   {
+    icon: <GlueJob height={40} />,
+    type: MajorComponents.GlueJob,
+    label: "GlueJob",
+  },
+  ,
+   {
+    icon: <Eks height={40} />,
+    type: MajorComponents.Eks,
+    label: "Eks",
+  },
+  ,
+   {
+    icon: <Stepfunction height={40} />,
+    type: MajorComponents.StepFunction,
+    label: "StepFunction",
   },
   // {
   //   icon: <Inductor height={40} />,
