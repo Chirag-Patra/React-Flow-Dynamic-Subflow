@@ -8,24 +8,7 @@ import { Box } from "@chakra-ui/react";
 export const initialEdges: Edge[] = [];
 
 export const initialNodes: Node[] = [
-  // {
-  //   id: "1",
-  //   position: { x: 100, y: 100 },
-  //   type: "MajorComponent",
-  //   data: { type: MajorComponents.Resistor, value: 3 },
-  // },
-  // {
-  //   id: "2",
-  //   position: { x: 200, y: 200 },
-  //   type: "MajorComponent",
-  //   data: { type: MajorComponents.Capacitor, value: 3 },
-  // },
-  // {
-  //   id: "3",
-  //   position: { x: 300, y: 300 },
-  //   type: "MajorComponent",
-  //   data: { type: MajorComponents.Inductor, value: 3 },
-  // },
+  
 ];
 
 export const COMPONENTS = [
