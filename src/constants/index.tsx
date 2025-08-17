@@ -8,7 +8,7 @@ import { Box } from "@chakra-ui/react";
 export const initialEdges: Edge[] = [];
 
 export const initialNodes: Node[] = [
-  
+
 ];
 
 export const COMPONENTS = [

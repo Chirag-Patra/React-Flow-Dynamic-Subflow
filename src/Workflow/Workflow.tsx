@@ -29,21 +29,15 @@ import ConnectionLine from "../Components/ConnectionLine";
 import { MajorComponentsState, MajorComponents } from "../types";
 import Bulb from "../Components/Bulb";
 import Battery from "../Components/Battery";
-import ComponentDetail from "../Components/ComponentDetail";
 import Board from "../Components/Board";
-import { ExportFlow } from "../Components/ExportFlow";
-import { ImportFlow } from "../Components/ImportFlow";
-import { ClearCanvas } from "../Components/ClearCanvas";
 import { isPointInBox, zoomSelector } from "../utils";
 import useKeyBindings from "../hooks/useKeyBindings";
-import { Floppy, Moon, Sun } from "react-bootstrap-icons";
 import { useData, useUpdateData } from "../api";
-import DownloadBtn from "../Components/DownloadBtn";
-import { useDarkMode } from "../store";
 import useHistory from "../hooks/useHistory";
-import { m } from "framer-motion";
-import { Icon, Collapse } from '@chakra-ui/react';
-import { ChevronDownIcon } from '@chakra-ui/icons';
+import { LeftSidebar } from "./LeftSideBar";
+import { RightSidebar } from "./RightSideBar";
+import { useDarkMode } from "../store";
+import { Sun, Moon } from "react-bootstrap-icons";
 
 const nodeTypes = {
   MajorComponent: MajorComponent,
@@ -56,9 +50,16 @@ const edgeTypes = {
   customEdge: customEdge,
 };
 
-export const Workflow = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+interface WorkflowProps {
+  nodes: Node[];
+  edges: Edge[];
+  setNodes: React.Dispatch<React.SetStateAction<Node[]>>;
+  setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
+}
+
+export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPropsNodes, setEdges: setPropsEdges }: WorkflowProps) => {
+  const [nodes, setNodes, onNodesChange] = useNodesState(propsNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(propsEdges);
 
   const { addNode, removeNode, addEdge, removeEdge, undo, redo } = useHistory();
 
@@ -124,6 +125,7 @@ export const Workflow = () => {
       addNode(node);
     }
   };
+
   const isValidConnection = (connection: Edge | Connection) => {
     const { source, target } = connection;
 
@@ -202,7 +204,6 @@ export const Workflow = () => {
         MajorComponents.GlueJob,
         MajorComponents.Eks,
         MajorComponents.StepFunction,
-        //MajorComponents
       ].includes(type)
     ) {
       node = {
@@ -319,9 +320,6 @@ export const Workflow = () => {
         parentId: board?.id,
       };
     }
-
-
-
     else if (type === MajorComponents.Board) {
       node = {
         id: uuid(),
@@ -583,152 +581,74 @@ export const Workflow = () => {
     Edge
   > | null>(null);
 
-  // const onSave = () => {
-  //   if (rfInstance) {
-  //     const flow = rfInstance.toObject();
-  //     saveFlow(flow);
-  //   }
-  // };
-
   const { isDark, toggleMode } = useDarkMode();
-  const [showIcons, setShowIcons] = useState(false);
+
   return (
-    <Box
-      height={"100vh"}
-      width="100vw"
-      border="1px solid black"
-      position="relative"
-    >
-      {/* {selectedNode && (
+    <Box height="calc(100vh - 60px)" width="100vw" position="relative">
+      {/* Left Sidebar */}
+      <LeftSidebar
+        onDragStart={onDragStart}
+      />
 
-            <ComponentDetail
-              node={selectedNode}
-              key={selectedNode.id}
-              onDelete={() => setSelectedNode(undefined)}
-            />
-
-      )} */}
-
-      {selectedNode && (
-        <ComponentDetail
-          node={selectedNode}
-          key={selectedNode.id}
-          onDelete={() => setSelectedNode(undefined)}
-          onProcessingTypeChange={handleProcessingNodeManagement}
-          nodes={nodes}
-          showContent={showContent}
-        />
-      )}
-      <ReactFlow
-        onInit={setRfInstance}
+      {/* Right Sidebar */}
+      <RightSidebar
+        selectedNode={selectedNode}
+        onDelete={() => setSelectedNode(undefined)}
+        onProcessingTypeChange={handleProcessingNodeManagement}
         nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        // connectionMode={ConnectionMode.Strict}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        connectionLineComponent={ConnectionLine}
-        isValidConnection={isValidConnection}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-        onNodeClick={onNodeClick}
-        onPaneClick={onPaneClick}
-        onReconnectStart={onReconnectStart}
-        onReconnect={onReconnect}
-        onReconnectEnd={onReconnectEnd}
-        onNodeDrag={onNodeDrag}
-        onNodeDragStop={onNodeDragStop}
-        colorMode={isDark ? "dark" : "light"}
+        showContent={showContent}
+      />
+
+      {/* Main Canvas */}
+      <Box
+        ml="280px" // Left sidebar width
+        mr={selectedNode ? "320px" : "0"} // Right sidebar width when open
+        height="100%"
+        transition="margin-right 0.3s ease"
       >
-        <Panel position="top-right">
-          <IconButton
-            icon={isDark ? <Sun /> : <Moon />}
-            aria-label="Light/Dark Mode"
-            size="xs"
-            colorScheme={isDark ? "orange" : "blackAlpha"}
-            onClick={toggleMode}
-          />
-        </Panel>
-        <Panel
-          position="top-left"
-          style={{
-            border: "1px solid #ccc",
-            padding: 12,
-            borderRadius: 12,
-            background: "white",
-            width: 200,
-            height: 450
-          }}
+        <ReactFlow
+          onInit={setRfInstance}
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          connectionLineComponent={ConnectionLine}
+          isValidConnection={isValidConnection}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+          onNodeClick={onNodeClick}
+          onPaneClick={onPaneClick}
+          onReconnectStart={onReconnectStart}
+          onReconnect={onReconnect}
+          onReconnectEnd={onReconnectEnd}
+          onNodeDrag={onNodeDrag}
+          onNodeDragStop={onNodeDragStop}
+          colorMode={isDark ? "dark" : "light"}
         >
-          <Flex direction={"column"} gap={10}>
-            <div>
-              <Text
-                fontSize="x-large"
-                fontWeight="bold"
-                fontFamily="cursive"
-                sx={{
-                  textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-                  background: 'linear-gradient(to right, #4f46e5, #af78cfff)',
-                  backgroundClip: 'text',
-                  color: 'transparent',
-                  display: 'inline-block',
-                  _hover: {
-                    transform: 'scale(1.02)',
-                    transition: 'transform 0.2s ease-in-out'
-                  }
-                }}
-              >
-                WorkFlow.io
-              </Text>
-
-              <Text fontSize="x-medium" fontWeight="bold">Toolbar</Text>
-
-              <Flex mt={3} gap={3.5} flexWrap="wrap" >
-                <DownloadBtn />
-                <ExportFlow nodes={nodes} edges={edges} />
-                <ImportFlow onImport={(flow) => {
-                  setNodes(flow.nodes || []);
-                  setEdges(flow.edges || []);
-                }} />
-                <ClearCanvas onClear={() => {
-                  setNodes([]);
-                  setEdges([]);
-                }} />
-              </Flex>
-            </div>
-
-            <div>
-              <Text fontSize="x-medium" fontWeight="bold">Components</Text>
-              <Flex mt={1} gap={3} flexWrap="wrap">
-                {COMPONENTS.map((component) =>
-                  component ? (
-                    <IconButton
-                      size="lg"
-                      key={component.label}
-                      aria-label={component.label}
-                      icon={component.icon}
-                      onDragStart={(event) => onDragStart(event, component.type)}
-                      draggable
-                    />
-                  ) : null
-                )}
-              </Flex>
-            </div>
-          </Flex>
-        </Panel>
-        <Background color="#aaa" gap={16} />
-        <Controls />
-        <svg>
-          <defs>
-            <linearGradient id="customEdge">
-              <stop offset="0%" stopColor="#665e92ff" />
-              <stop offset="100%" stopColor="#2e488fff" />
-            </linearGradient>
-          </defs>
-        </svg>
-      </ReactFlow>
+          <Panel position="top-right">
+            <IconButton
+              icon={isDark ? <Sun /> : <Moon />}
+              aria-label="Light/Dark Mode"
+              size="xs"
+              colorScheme={isDark ? "orange" : "blackAlpha"}
+              onClick={toggleMode}
+            />
+          </Panel>
+          <Background color="#aaa" gap={16} />
+          <Controls />
+          <svg>
+            <defs>
+              <linearGradient id="customEdge">
+                <stop offset="0%" stopColor="#665e92ff" />
+                <stop offset="100%" stopColor="#2e488fff" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </ReactFlow>
+      </Box>
     </Box>
   );
 };

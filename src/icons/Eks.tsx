@@ -23,7 +23,7 @@ const Eks = (props: SVGProps<SVGSVGElement>) => (
         y2={1}
         gradientUnits="userSpaceOnUse"
       >
-        <stop stopColor="#c8511b" />
+        <stop stopColor="#1bc871ff" />
         <stop offset={1} stopColor="#f90" />
       </linearGradient>
     </defs>
