@@ -6,14 +6,13 @@ import {
   MajorComponents,
 } from "../types";
 import Board from "./Board";
-import { Box, Text } from "@chakra-ui/react";
+import { Box, Text, HStack } from "@chakra-ui/react";
 import { Capacitor, Inductor, Resistor, Js, Aws, Db, Python, Email, Lamda, GlueJob, Eks, Stepfunction } from "../icons";
 import { getUnit } from "../utils";
 import Terminal from "./Terminal";
 import Rotation from "./Rotation";
 import { Lock, Plus, Unlock, X } from "react-bootstrap-icons";
 import { useDarkMode } from "../store";
-
 
 type MajorComponentNode = Node<MajorComponentsData, "string">;
 
@@ -37,31 +36,82 @@ export default function MajorComponent({
   const isAdditionInvalid = state === MajorComponentsState.NotAdd;
 
   const { updateNode } = useReactFlow();
-
   const { isDark } = useDarkMode();
 
   let color = "black";
   if (isDark) color = "white";
 
+  // Map component types to their labels
+  const getComponentLabel = (type: MajorComponents) => {
+    const labelMap = {
+      [MajorComponents.Js]: 'JavaScript',
+      [MajorComponents.Aws]: 'AWS',
+      [MajorComponents.Python]: 'Python',
+      [MajorComponents.Db]: 'Database',
+      [MajorComponents.Email]: 'Email',
+      [MajorComponents.Lamda]: 'Lambda',
+      [MajorComponents.GlueJob]: 'Glue Job',
+      [MajorComponents.Eks]: 'EKS',
+      [MajorComponents.StepFunction]: 'Step Function',
+      [MajorComponents.Resistor]: 'Resistor',
+      [MajorComponents.Capacitor]: 'Capacitor',
+      [MajorComponents.Inductor]: 'Inductor',
+    };
+    return labelMap[type] || 'Component';
+  };
+
+  // Function to render the icon based on type
+  const renderIcon = () => {
+    const iconProps = { height: 30, color };
+
+    switch(type) {
+      case MajorComponents.Resistor:
+        return <Resistor {...iconProps} height={24} />;
+      case MajorComponents.Capacitor:
+        return <Capacitor {...iconProps} height={34} />;
+      case MajorComponents.Js:
+        return <Js {...iconProps} />;
+      case MajorComponents.Aws:
+        return <Aws {...iconProps} />;
+      case MajorComponents.Db:
+        return <Db {...iconProps} />;
+      case MajorComponents.Python:
+        return <Python {...iconProps} />;
+      case MajorComponents.Email:
+        return <Email {...iconProps} />;
+      case MajorComponents.Lamda:
+        return <Lamda {...iconProps} />;
+      case MajorComponents.GlueJob:
+        return <GlueJob {...iconProps} />;
+      case MajorComponents.Eks:
+        return <Eks {...iconProps} />;
+      case MajorComponents.StepFunction:
+        return <Stepfunction {...iconProps} />;
+      case MajorComponents.Inductor:
+        return <Inductor {...iconProps} height={24} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <Box
-      pos={"relative"}
+      pos="relative"
       style={{
         transform: `rotate(${rotation}deg)`,
-        ...(isAdditionValid && { background: "#58ed58" }),
-        ...(isAdditionInvalid && { background: "#ff0505" }),
         visibility: visible ? "visible" : "hidden",
       }}
     >
       <Rotation selected={selected} id={id} />
+
+      {/* Lock/Unlock button */}
       {parentId && selected && (
-        <div
-          style={{
-            position: "absolute",
-            top: -23,
-            right: 30,
-            color,
-          }}
+        <Box
+          position="absolute"
+          top="-23px"
+          right="30px"
+          color={color}
+          cursor="pointer"
           onClick={() => {
             updateNode(id, (prevNode) => ({
               extent: prevNode.extent === "parent" ? undefined : "parent",
@@ -70,59 +120,80 @@ export default function MajorComponent({
           }}
         >
           {isAttachedToGroup ? <Lock /> : <Unlock />}
-        </div>
-      )}
-      {type === MajorComponents.Resistor && (
-        <Resistor height={24} color={color} />
-      )}
-      {type === MajorComponents.Capacitor && (
-        <Capacitor height={34} color={color} />
-      )}
-      {type === MajorComponents.Js && (
-        <Js height={44} color={color} />
-      )}
-      {type === MajorComponents.Aws && (
-        <Aws height={44} color={color} />
-      )}
-      {type === MajorComponents.Db && (
-        <Db height={44} color={color} />
-      )}
-      {type === MajorComponents.Python && (
-        <Python height={44} color={color} />
-      )}
-      {type === MajorComponents.Email && (
-        <Email height={44} color={color} />
-      )}
-      {type === MajorComponents.Lamda && (
-        <Lamda height={44} color={color} />
-      )}
-      {type === MajorComponents.GlueJob && (
-        <GlueJob height={44} color={color} />
-      )}
-      {type === MajorComponents.Eks && (
-        <Eks height={44} color={color} />
-      )}
-      {type === MajorComponents.StepFunction && (
-        <Stepfunction height={44} color={color} />
-      )}
-      {type === MajorComponents.Inductor && (
-        <Inductor height={24} color={color} />
+        </Box>
       )}
 
-
-
-      <Text fontSize="xx-small" position={"absolute"} color={color}>
-        {value} {unit}
-      </Text>
+      {/* Addition state indicators */}
       {isAdditionValid && (
         <Plus
-          style={{ position: "absolute", top: -17, right: 2 }}
+          style={{ position: "absolute", top: -17, right: 2, zIndex: 10 }}
           color={color}
         />
       )}
       {isAdditionInvalid && (
-        <X style={{ position: "absolute", top: -17, right: 2 }} color={color} />
+        <X style={{ position: "absolute", top: -17, right: 2, zIndex: 10 }} color={color} />
       )}
+
+      {/* Main component container */}
+      <HStack
+        spacing={2}
+        p={2}
+        bg={
+          isAdditionValid ? "#58ed58" :
+          isAdditionInvalid ? "#ff0505" :
+          selected ? (isDark ? "gray.700" : "gray.200") :
+          (isDark ? "gray.800" : "gray.100")
+        }
+        borderRadius="md"
+        border={selected ? "2px solid" : "1px solid"}
+        borderColor={
+          selected ? "blue.500" :
+          isDark ? "gray.600" : "gray.300"
+        }
+        minW="140px"
+        align="center"
+        transition="all 0.2s"
+        _hover={{
+          boxShadow: 'md',
+          bg: isDark ? "gray.700" : "gray.200"
+        }}
+      >
+        {/* Icon container */}
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          w="40px"
+          h="40px"
+          bg={isDark ? "gray.900" : "white"}
+          borderRadius="md"
+          boxShadow="sm"
+          flexShrink={0}
+        >
+          {renderIcon()}
+        </Box>
+
+        {/* Label and value */}
+        <Box pr={2}>
+          <Text
+            fontSize="sm"
+            fontWeight="medium"
+            color={isDark ? "gray.200" : "gray.700"}
+          >
+            {getComponentLabel(type)}
+          </Text>
+          {value && (
+            <Text
+              fontSize="xs"
+              color={isDark ? "gray.400" : "gray.500"}
+            >
+              {value} {unit}
+            </Text>
+          )}
+        </Box>
+      </HStack>
+
+      {/* Connection terminals */}
       <Terminal
         type="target"
         position={Position.Left}

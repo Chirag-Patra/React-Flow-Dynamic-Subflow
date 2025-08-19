@@ -42,9 +42,7 @@ export default function Board({ type,
           top="5px"
           right="5px"
           colorScheme={
-            processingType === "run_lambda" ? "orange" :
-              processingType === "run_glue" ? "blue" :
-                processingType === "run_eks" ? "green" : "purple"
+            "purple"
           }
           fontSize="xx-small"
         >
@@ -61,7 +59,7 @@ export default function Board({ type,
         // color="white"
         color={isDark ? "white" : "black"}
       >
-        {value} {unit}
+        {value} 
       </Text>
       <Terminal
         // style={{ left: 39, top: 2 }}

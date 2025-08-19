@@ -43,7 +43,7 @@ const nodeTypes = {
   MajorComponent: MajorComponent,
   bulb: Bulb,
   battery: Battery,
-  board: Board,
+  Job: Board,
 };
 
 const edgeTypes = {
@@ -94,7 +94,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
     // // Get the component type for the current processing type
     // const componentType = processingTypeToComponent[processingType];
 
-    // // Find any existing processing node for this board
+    // // Find any existing processing node for this Job
     // const existingProcessingNode = nodes.find(
     //   n => n.parentId === boardId &&
     //     Object.values(processingTypeToComponent).includes(n.data?.type as MajorComponents)
@@ -165,20 +165,20 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
     const boards = nodes?.filter(
       (node) => node.type === MajorComponents.Board
     );
-    const board = boards.find((board) => {
+    const Job = boards.find((Job) => {
       return isPointInBox(
         { x: position.x, y: position.y },
         {
-          x: board.position?.x || 0,
-          y: board?.position?.y || 0,
-          height: board?.measured?.height || 0,
-          width: board?.measured?.width || 0,
+          x: Job.position?.x || 0,
+          y: Job?.position?.y || 0,
+          height: Job?.measured?.height || 0,
+          width: Job?.measured?.width || 0,
         }
       );
     });
 
-    if (board) {
-      const { x, y } = board?.position || {
+    if (Job) {
+      const { x, y } = Job?.position || {
         x: 0,
         y: 0,
       };
@@ -211,7 +211,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type: "MajorComponent",
         position,
         data: { type, value: '' },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     } else if (type === MajorComponents.Bulb) {
       node = {
@@ -219,7 +219,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type,
         position,
         data: { value: 12 },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     } else if (type === MajorComponents.Battery) {
       node = {
@@ -227,7 +227,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type,
         position,
         data: { value: 12 },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     }
     else if (type === MajorComponents.Capacitor) {
@@ -236,7 +236,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type,
         position,
         data: { value: 12 },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     }
     else if (type === MajorComponents.Js) {
@@ -245,7 +245,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type,
         position,
         data: { value: 12 },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     }
     else if (type === MajorComponents.Aws) {
@@ -254,7 +254,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type,
         position,
         data: { value: 12 },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     }
     else if (type === MajorComponents.Db) {
@@ -263,7 +263,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type,
         position,
         data: { value: 12 },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     }
     else if (type === MajorComponents.Email) {
@@ -272,7 +272,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type,
         position,
         data: { value: 12 },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     }
     else if (type === MajorComponents.Python) {
@@ -281,7 +281,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type,
         position,
         data: { value: 12 },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     }
     else if (type === MajorComponents.Lamda) {
@@ -290,7 +290,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type,
         position,
         data: { value: 12 },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     }
     else if (type === MajorComponents.GlueJob) {
@@ -299,7 +299,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type,
         position,
         data: { value: 12 },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     }
  else if (type === MajorComponents.Eks) {
@@ -308,7 +308,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type,
         position,
         data: { value: 12 },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     }
      else if (type === MajorComponents.StepFunction) {
@@ -317,7 +317,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type,
         position,
         data: { value: 12 },
-        parentId: board?.id,
+        parentId: Job?.id,
       };
     }
     else if (type === MajorComponents.Board) {
@@ -407,7 +407,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
   };
 
   const onNodeDragStop: OnNodeDrag = (evt, dragNode) => {
-    if (dragNode.type === 'board' && dragNode.data?.processingType === 'run_lambda') {
+    if (dragNode.type === 'Job' ) {
       return;
     }
     if (
@@ -416,13 +416,13 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         dragNode?.parentId)
     ) {
       setNodes((prevNodes) => {
-        const board = prevNodes?.find(
+        const Job = prevNodes?.find(
           (prevNode) => prevNode.id === dragNode?.parentId
         );
 
         return prevNodes.map((node) => {
           if (node.id === dragNode.id) {
-            const { x, y } = board?.position || { x: 0, y: 0 };
+            const { x, y } = Job?.position || { x: 0, y: 0 };
             const { x: dragX, y: dragY } = dragNode?.position || { x: 0, y: 0 };
 
             const position = { x: dragX + x, y: dragY + y };

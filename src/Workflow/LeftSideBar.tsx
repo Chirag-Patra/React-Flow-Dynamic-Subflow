@@ -1,10 +1,76 @@
-import { Box, Flex, Text, IconButton, Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react";
+import {
+  Box,
+  Flex,
+  Text,
+  IconButton,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  VStack,
+  HStack
+} from "@chakra-ui/react";
 import { COMPONENTS } from "../constants";
 import { MajorComponents } from "../types";
 
 interface LeftSidebarProps {
-  onDragStart: (event: React.DragEvent<HTMLButtonElement>, type: MajorComponents) => void;
+  onDragStart: (event: React.DragEvent<HTMLDivElement>, type: MajorComponents) => void;
 }
+
+// Component item with icon and label
+const ComponentItem = ({
+  component,
+  onDragStart
+}: {
+  component: any;
+  onDragStart: (event: React.DragEvent<HTMLDivElement>, type: MajorComponents) => void;
+}) => {
+  return (
+    <HStack
+      spacing={3}
+      p={2}
+      bg="gray.100"
+      borderRadius="md"
+      w="full"
+      align="center"
+      cursor="grab"
+      transition="all 0.2s"
+      _hover={{
+        transform: 'translateX(4px)',
+        boxShadow: 'md',
+        bg: "gray.200"
+      }}
+      _active={{
+        cursor: "grabbing",
+        transform: 'translateX(2px)',
+      }}
+      draggable
+      onDragStart={(event) => onDragStart(event, component.type)}
+    >
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        w="40px"
+        h="40px"
+        bg="white"
+        borderRadius="md"
+        boxShadow="sm"
+        p={1}
+      >
+        {component.icon}
+      </Box>
+      <Text
+        fontSize="sm"
+        fontWeight="medium"
+        color="gray.700"
+      >
+        {component.label}
+      </Text>
+    </HStack>
+  );
+};
 
 export const LeftSidebar = ({ onDragStart }: LeftSidebarProps) => {
   return (
@@ -15,7 +81,6 @@ export const LeftSidebar = ({ onDragStart }: LeftSidebarProps) => {
       bg="white"
       borderRight="1px solid"
       borderColor="gray.200"
-      p={4}
       overflowY="auto"
       position="fixed"
       left={0}
@@ -23,13 +88,13 @@ export const LeftSidebar = ({ onDragStart }: LeftSidebarProps) => {
       zIndex={100}
     >
       <Tabs variant="enclosed" colorScheme="blue">
-        <TabList>
+        <TabList px={4} pt={4}>
           <Tab>Actions</Tab>
           <Tab>Flow</Tab>
         </TabList>
 
         <TabPanels>
-          <TabPanel px={0} py={4}>
+          <TabPanel px={4} py={4}>
             {/* Actions Tab - Components */}
             <Box>
               <Text
@@ -40,32 +105,23 @@ export const LeftSidebar = ({ onDragStart }: LeftSidebarProps) => {
               >
                 Components
               </Text>
-              <Flex gap={3} flexWrap="wrap">
+
+              {/* List view of components with labels */}
+              <VStack spacing={2} align="stretch">
                 {COMPONENTS.map((component) =>
                   component ? (
-                    <IconButton
-                      size="lg"
+                    <ComponentItem
                       key={component.label}
-                      aria-label={component.label}
-                      icon={component.icon}
-                      onDragStart={(event) => onDragStart(event, component.type)}
-                      draggable
-                      cursor="grab"
-                      _active={{ cursor: "grabbing" }}
-                      colorScheme="gray"
-                      variant="outline"
-                      _hover={{
-                        bg: "gray.50",
-                        borderColor: "blue.300"
-                      }}
+                      component={component}
+                      onDragStart={onDragStart}
                     />
                   ) : null
                 )}
-              </Flex>
+              </VStack>
             </Box>
           </TabPanel>
 
-          <TabPanel px={0} py={4}>
+          <TabPanel px={4} py={4}>
             {/* Flow Tab - Future flow management features */}
             <Box>
               <Text

@@ -54,11 +54,11 @@ export default function ComponentDetail({
   } = useReactFlow();
 
   const handleProcessingTypeChange = (processingType: ProcessingType) => {
-    // Update the board's processing type
+    // Update the Job's processing type
     updateNodeData(node.id, { processingType });
 
     // Call the workflow's Lambda management function
-    if (onProcessingTypeChange && nodeType === "board") {
+    if (onProcessingTypeChange && nodeType === "Job") {
       onProcessingTypeChange(node.id, processingType);
     }
   };
@@ -225,8 +225,8 @@ export default function ComponentDetail({
         </PopoverContent>
       </Popover>
 
-      {/* Processing Type Select for board nodes */}
-      {nodeType === "board" && (
+      {/* Processing Type Select for Job nodes */}
+      {nodeType === "Job" && (
         <ProcessingTypeSelect
           value={node.data?.processingType || ""}
           onChange={handleProcessingTypeChange}

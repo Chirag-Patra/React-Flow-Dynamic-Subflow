@@ -95,6 +95,6 @@ export const COMPONENTS = [
       ></Box>
     ),
     type: MajorComponents.Board,
-    label: "Board",
+    label: "Job",
   },
 ];

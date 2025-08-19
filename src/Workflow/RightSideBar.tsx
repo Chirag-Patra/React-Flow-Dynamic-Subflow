@@ -97,7 +97,7 @@ export const RightSidebar = ({
 
   const handleProcessingTypeChange = (processingType: ProcessingType) => {
     updateNodeData(selectedNode.id, { processingType });
-    if (onProcessingTypeChange && nodeType === "board") {
+    if (onProcessingTypeChange && nodeType === "Job") {
       onProcessingTypeChange(selectedNode.id, processingType);
     }
   };
@@ -231,7 +231,7 @@ export const RightSidebar = ({
         </PopoverContent>
       </Popover>
 
-      {nodeType === "board" && (
+      {nodeType === "Job" && (
         <ProcessingTypeSelect
           value={selectedNode.data?.processingType || ""}
            onChange={handleProcessingTypeChange}
