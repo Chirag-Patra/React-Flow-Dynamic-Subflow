@@ -1,7 +1,7 @@
 import { Select, FormControl, FormLabel } from "@chakra-ui/react";
 import React from "react";
 
-export type ProcessingType = "run_glue" | "run_lambda" | "run_eks" | "run_sfn";
+export type ProcessingType = "ingest" | "etl" | "ingest_etl" | "stream" | "stream_etl";
 
 interface ProcessingTypeSelectProps {
   value: ProcessingType | "";
@@ -23,10 +23,11 @@ export default function ProcessingTypeSelect({ value, onChange }: ProcessingType
         onChange={handleChange}
         placeholder="Select processing type"
       >
-        <option value="run_glue">Run Glue Job</option>
-        <option value="run_lambda">Run Lambda</option>
-        <option value="run_eks">Run EKS Job</option>
-        <option value="run_sfn">Run Step Function</option>
+        <option value="ingest">Ingest</option>
+        <option value="etl">ETL</option>
+        <option value="ingest_etl">Ingest-ETL</option>
+        <option value="stream">Stream</option>
+        <option value="stream_etl">Stream-ETL</option>
       </Select>
     </FormControl>
   );

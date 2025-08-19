@@ -29,7 +29,7 @@ export type MajorComponentsData = {
   isAttachedToGroup?: boolean;
   visible?: boolean;
   connectable?: boolean;
-  processingType?: "run_glue" | "run_lambda" | "run_eks" | "run_sfn";
+  processingType?: "ingest" | "etl" | "ingest_etl" | "stream" | "stream_etl";
 };
 
 export enum HistoryAction {

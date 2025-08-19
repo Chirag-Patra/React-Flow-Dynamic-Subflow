@@ -83,47 +83,47 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
 
   const handleProcessingNodeManagement = (boardId: string, processingType: string) => {
     // Map processing types to their corresponding component types
-    const processingTypeToComponent: Record<string, MajorComponents> = {
-      'run_lambda': MajorComponents.Lamda,
-      'run_glue': MajorComponents.GlueJob,
-       'run_eks': MajorComponents.Eks,
-       'run_sfn': MajorComponents.StepFunction,
+    // const processingTypeToComponent: Record<string, MajorComponents> = {
+    //   'run_lambda': MajorComponents.Lamda,
+    //   'run_glue': MajorComponents.GlueJob,
+    //    'run_eks': MajorComponents.Eks,
+    //    'run_sfn': MajorComponents.StepFunction,
 
-    };
+    // };
 
-    // Get the component type for the current processing type
-    const componentType = processingTypeToComponent[processingType];
+    // // Get the component type for the current processing type
+    // const componentType = processingTypeToComponent[processingType];
 
-    // Find any existing processing node for this board
-    const existingProcessingNode = nodes.find(
-      n => n.parentId === boardId &&
-        Object.values(processingTypeToComponent).includes(n.data?.type as MajorComponents)
-    );
+    // // Find any existing processing node for this board
+    // const existingProcessingNode = nodes.find(
+    //   n => n.parentId === boardId &&
+    //     Object.values(processingTypeToComponent).includes(n.data?.type as MajorComponents)
+    // );
 
-    // Remove any existing processing node if it exists
-    if (existingProcessingNode) {
-      removeNode(existingProcessingNode);
-    }
+    // // Remove any existing processing node if it exists
+    // if (existingProcessingNode) {
+    //   removeNode(existingProcessingNode);
+    // }
 
-    // Add new node if there's a valid component type for this processing type
-    if (componentType) {
-      const node: Node = {
-        id: `${processingType}-${boardId}`,
-        type: "MajorComponent",
-        position: { x: 50, y: 50 },
-        data: {
-          type: componentType,
-          value: '',
-          visible: showContent,
-          connectable: showContent
-        },
-        parentId: boardId,
-        draggable: showContent,
-        selectable: showContent,
-      };
+    // // Add new node if there's a valid component type for this processing type
+    // if (componentType) {
+    //   const node: Node = {
+    //     id: `${processingType}-${boardId}`,
+    //     type: "MajorComponent",
+    //     position: { x: 50, y: 50 },
+    //     data: {
+    //       type: componentType,
+    //       value: '',
+    //       visible: showContent,
+    //       connectable: showContent
+    //     },
+    //     parentId: boardId,
+    //     draggable: showContent,
+    //     selectable: showContent,
+    //   };
 
-      addNode(node);
-    }
+    //   addNode(node);
+    // }
   };
 
   const isValidConnection = (connection: Edge | Connection) => {
