@@ -60,6 +60,13 @@ export const RightSidebar = ({
   const nodeType = selectedNode?.data?.type || selectedNode?.type;
   const allNodes = selectedNode ? getNodes().filter((n) => n.id !== selectedNode.id) : [];
 
+  // Add this useEffect to update value when selectedNode changes
+  useEffect(() => {
+    if (selectedNode) {
+      setValue(`${selectedNode.data?.value || ""}`);
+    }
+  }, [selectedNode?.id, selectedNode?.data?.value]);
+
   // useEffect must stay unconditional
   useEffect(() => {
     if (!selectedNode) return;
@@ -91,9 +98,6 @@ export const RightSidebar = ({
 
   // Now it's safe to return early
   if (!selectedNode) return null;
-
-  // ...rest of your JSX
-
 
   const handleProcessingTypeChange = (processingType: ProcessingType) => {
     updateNodeData(selectedNode.id, { processingType });

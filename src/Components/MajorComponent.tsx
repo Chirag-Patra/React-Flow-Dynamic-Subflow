@@ -144,7 +144,7 @@ export default function MajorComponent({
           selected ? (isDark ? "gray.700" : "gray.200") :
           (isDark ? "gray.800" : "gray.100")
         }
-        borderRadius="md"
+        borderRadius="sm"
         border={selected ? "2px solid" : "1px solid"}
         borderColor={
           selected ? "blue.500" :

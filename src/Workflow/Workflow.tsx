@@ -61,6 +61,64 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
   const [nodes, setNodes, onNodesChange] = useNodesState(propsNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(propsEdges);
 
+  // Keep track of the last props to detect external changes
+  const lastPropsNodes = useRef(propsNodes);
+  const lastPropsEdges = useRef(propsEdges);
+
+  // Only sync when props actually change from external source (import/clear)
+  useEffect(() => {
+    if (propsNodes !== lastPropsNodes.current) {
+      setNodes(propsNodes);
+      lastPropsNodes.current = propsNodes;
+    }
+  }, [propsNodes, setNodes]);
+
+  useEffect(() => {
+    if (propsEdges !== lastPropsEdges.current) {
+      setEdges(propsEdges);
+      lastPropsEdges.current = propsEdges;
+    }
+  }, [propsEdges, setEdges]);
+
+  // Debounced update to parent - only sync back to parent occasionally
+  const updateParentTimeout = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    // Clear existing timeout
+    if (updateParentTimeout.current) {
+      clearTimeout(updateParentTimeout.current);
+    }
+
+    // Set new timeout to update parent after changes settle
+    updateParentTimeout.current = setTimeout(() => {
+      setPropsNodes(nodes);
+    }, 100);
+
+    return () => {
+      if (updateParentTimeout.current) {
+        clearTimeout(updateParentTimeout.current);
+      }
+    };
+  }, [nodes, setPropsNodes]);
+
+  useEffect(() => {
+    // Clear existing timeout
+    if (updateParentTimeout.current) {
+      clearTimeout(updateParentTimeout.current);
+    }
+
+    // Set new timeout to update parent after changes settle
+    updateParentTimeout.current = setTimeout(() => {
+      setPropsEdges(edges);
+    }, 100);
+
+    return () => {
+      if (updateParentTimeout.current) {
+        clearTimeout(updateParentTimeout.current);
+      }
+    };
+  }, [edges, setPropsEdges]);
+
   const { addNode, removeNode, addEdge, removeEdge, undo, redo } = useHistory();
 
   const onConnect = useCallback(
