@@ -22,7 +22,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { Node, useReactFlow, Edge, MarkerType } from "@xyflow/react";
 import { useDarkMode } from "../store";
 import ProcessingTypeSelect, { ProcessingType } from "../Components/ProcessingTypeSelect";
-import { MajorComponentsData } from "../types";
+import ETLConfiguration, { ETLConfig } from "../Components/ETLConfiguration";
+import { MajorComponentsData, MajorComponents } from "../types";
 
 interface RightSidebarProps {
   selectedNode: Node<MajorComponentsData> | undefined;
@@ -35,7 +36,7 @@ interface RightSidebarProps {
 export const RightSidebar = ({
   selectedNode,
   onDelete,
-   onProcessingTypeChange,
+  onProcessingTypeChange,
   nodes,
   showContent,
 }: RightSidebarProps) => {
@@ -59,6 +60,14 @@ export const RightSidebar = ({
   // You can still compute these conditionally later
   const nodeType = selectedNode?.data?.type || selectedNode?.type;
   const allNodes = selectedNode ? getNodes().filter((n) => n.id !== selectedNode.id) : [];
+
+  // Check if the node type is an ETL processing type
+  const isETLProcessingType = nodeType && [
+    MajorComponents.Run_Lamda,
+    MajorComponents.Run_Eks,
+    MajorComponents.Run_GlueJob,
+    MajorComponents.Run_StepFunction
+  ].includes(nodeType as MajorComponents);
 
   // Add this useEffect to update value when selectedNode changes
   useEffect(() => {
@@ -104,6 +113,10 @@ export const RightSidebar = ({
     if (onProcessingTypeChange && nodeType === "Job") {
       onProcessingTypeChange(selectedNode.id, processingType);
     }
+  };
+
+  const handleETLConfigChange = (etlConfig: ETLConfig) => {
+    updateNodeData(selectedNode.id, { etlConfig });
   };
 
   const handleDelete = async () => {
@@ -156,7 +169,7 @@ export const RightSidebar = ({
       p={4}
       boxShadow="lg"
       zIndex={1000}
-      overflow="hidden"
+      overflow="auto" // Changed from hidden to auto to allow scrolling
       borderLeft="1px solid #e2e8f0"
     >
       {/* Resizable Handle */}
@@ -238,7 +251,14 @@ export const RightSidebar = ({
       {nodeType === "Job" && (
         <ProcessingTypeSelect
           value={selectedNode.data?.processingType || ""}
-           onChange={handleProcessingTypeChange}
+          onChange={handleProcessingTypeChange}
+        />
+      )}
+
+      {isETLProcessingType && (
+        <ETLConfiguration
+          value={selectedNode.data?.etlConfig || {}}
+          onChange={handleETLConfigChange}
         />
       )}
     </Box>

@@ -46,16 +46,14 @@ export default function MajorComponent({
     const labelMap = {
       [MajorComponents.Js]: 'JavaScript',
       [MajorComponents.Aws]: 'AWS',
-      [MajorComponents.Python]: 'Python',
+      [MajorComponents.Execute_Py]: 'Execute Py',
       [MajorComponents.Db]: 'Database',
-      [MajorComponents.Email]: 'Email',
-      [MajorComponents.Lamda]: 'Lambda',
-      [MajorComponents.GlueJob]: 'Glue Job',
-      [MajorComponents.Eks]: 'EKS',
-      [MajorComponents.StepFunction]: 'Step Function',
-      [MajorComponents.Resistor]: 'Resistor',
-      [MajorComponents.Capacitor]: 'Capacitor',
-      [MajorComponents.Inductor]: 'Inductor',
+      [MajorComponents.Email_notification]: 'Email Notification',
+      [MajorComponents.Run_Lamda]: 'Run Lambda',
+      [MajorComponents.Run_GlueJob]: 'Run Glue Job',
+      [MajorComponents.Run_Eks]: 'Run EKS',
+      [MajorComponents.Run_StepFunction]: 'Run Step Function',
+
     };
     return labelMap[type] || 'Component';
   };
@@ -65,30 +63,20 @@ export default function MajorComponent({
     const iconProps = { height: 30, color };
 
     switch(type) {
-      case MajorComponents.Resistor:
-        return <Resistor {...iconProps} height={24} />;
-      case MajorComponents.Capacitor:
-        return <Capacitor {...iconProps} height={34} />;
-      case MajorComponents.Js:
-        return <Js {...iconProps} />;
-      case MajorComponents.Aws:
-        return <Aws {...iconProps} />;
-      case MajorComponents.Db:
-        return <Db {...iconProps} />;
-      case MajorComponents.Python:
+
+      case MajorComponents.Execute_Py:
         return <Python {...iconProps} />;
-      case MajorComponents.Email:
+      case MajorComponents.Email_notification:
         return <Email {...iconProps} />;
-      case MajorComponents.Lamda:
+      case MajorComponents.Run_Lamda:
         return <Lamda {...iconProps} />;
-      case MajorComponents.GlueJob:
+      case MajorComponents.Run_GlueJob:
         return <GlueJob {...iconProps} />;
-      case MajorComponents.Eks:
+      case MajorComponents.Run_Eks:
         return <Eks {...iconProps} />;
-      case MajorComponents.StepFunction:
+      case MajorComponents.Run_StepFunction:
         return <Stepfunction {...iconProps} />;
-      case MajorComponents.Inductor:
-        return <Inductor {...iconProps} height={24} />;
+
       default:
         return null;
     }

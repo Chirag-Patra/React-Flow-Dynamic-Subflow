@@ -8,12 +8,12 @@ export enum MajorComponents {
   Js = "Js",
   Aws = "Aws",
   Db = "Db",
-  Python = "Python",
-  Email = "Email",
-  Lamda = "Lamda",
-  GlueJob = "GlueJob",
-  Eks = "Eks",
-  StepFunction = "StepFunction",
+  Execute_Py = "Execute Py",
+  Email_notification = "Email Notifiacation",
+  Run_Lamda = "Run Lamda",
+  Run_GlueJob = "Run GlueJob",
+  Run_Eks = "Run Eks",
+  Run_StepFunction = "Run StepFunction",
 }
 
 export enum MajorComponentsState {
@@ -30,6 +30,7 @@ export type MajorComponentsData = {
   visible?: boolean;
   connectable?: boolean;
   processingType?: "ingest" | "etl" | "ingest_etl" | "stream" | "stream_etl";
+  etlConfig?: ""
 };
 
 export enum HistoryAction {

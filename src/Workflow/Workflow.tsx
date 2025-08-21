@@ -256,12 +256,12 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         MajorComponents.Js,
         MajorComponents.Aws,
         MajorComponents.Db,
-        MajorComponents.Email,
-        MajorComponents.Python,
-        MajorComponents.Lamda,
-        MajorComponents.GlueJob,
-        MajorComponents.Eks,
-        MajorComponents.StepFunction,
+        MajorComponents.Email_notification,
+        MajorComponents.Execute_Py,
+        MajorComponents.Run_Lamda,
+        MajorComponents.Run_GlueJob,
+        MajorComponents.Run_Eks,
+        MajorComponents.Run_StepFunction,
       ].includes(type)
     ) {
       node = {
@@ -269,31 +269,6 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         type: "MajorComponent",
         position,
         data: { type, value: '' },
-        parentId: Job?.id,
-      };
-    } else if (type === MajorComponents.Bulb) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
-        parentId: Job?.id,
-      };
-    } else if (type === MajorComponents.Battery) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
-        parentId: Job?.id,
-      };
-    }
-    else if (type === MajorComponents.Capacitor) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
         parentId: Job?.id,
       };
     }
@@ -324,7 +299,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         parentId: Job?.id,
       };
     }
-    else if (type === MajorComponents.Email) {
+    else if (type === MajorComponents.Email_notification) {
       node = {
         id: uuid(),
         type,
@@ -333,7 +308,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         parentId: Job?.id,
       };
     }
-    else if (type === MajorComponents.Python) {
+    else if (type === MajorComponents.Execute_Py) {
       node = {
         id: uuid(),
         type,
@@ -342,7 +317,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         parentId: Job?.id,
       };
     }
-    else if (type === MajorComponents.Lamda) {
+    else if (type === MajorComponents.Run_Lamda) {
       node = {
         id: uuid(),
         type,
@@ -351,7 +326,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         parentId: Job?.id,
       };
     }
-    else if (type === MajorComponents.GlueJob) {
+    else if (type === MajorComponents.Run_GlueJob) {
       node = {
         id: uuid(),
         type,
@@ -360,7 +335,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         parentId: Job?.id,
       };
     }
- else if (type === MajorComponents.Eks) {
+    else if (type === MajorComponents.Run_Eks) {
       node = {
         id: uuid(),
         type,
@@ -369,7 +344,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         parentId: Job?.id,
       };
     }
-     else if (type === MajorComponents.StepFunction) {
+    else if (type === MajorComponents.Run_StepFunction) {
       node = {
         id: uuid(),
         type,
@@ -443,12 +418,12 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
                     MajorComponents.Js,
                     MajorComponents.Aws,
                     MajorComponents.Db,
-                    MajorComponents.Email,
-                    MajorComponents.Python,
-                    MajorComponents.Lamda,
-                    MajorComponents.GlueJob,
-                    MajorComponents.Eks,
-                    MajorComponents.StepFunction,
+                    MajorComponents.Email_notification,
+                    MajorComponents.Execute_Py,
+                    MajorComponents.Run_Lamda,
+                    MajorComponents.Run_GlueJob,
+                    MajorComponents.Run_Eks,
+                    MajorComponents.Run_StepFunction,
                   ].includes(
                     overlappingNode?.data?.type as MajorComponents
                   )
@@ -465,7 +440,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
   };
 
   const onNodeDragStop: OnNodeDrag = (evt, dragNode) => {
-    if (dragNode.type === 'Job' ) {
+    if (dragNode.type === 'Job') {
       return;
     }
     if (
@@ -500,12 +475,12 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         MajorComponents.Js,
         MajorComponents.Aws,
         MajorComponents.Db,
-        MajorComponents.Email,
-        MajorComponents.Python,
-        MajorComponents.Lamda,
-        MajorComponents.GlueJob,
-        MajorComponents.Eks,
-        MajorComponents.StepFunction,
+        MajorComponents.Email_notification,
+        MajorComponents.Execute_Py,
+        MajorComponents.Run_Lamda,
+        MajorComponents.Run_GlueJob,
+        MajorComponents.Run_Eks,
+        MajorComponents.Run_StepFunction,
       ].includes(
         overlappingNodeRef?.current?.data?.type as MajorComponents
       ) &&
