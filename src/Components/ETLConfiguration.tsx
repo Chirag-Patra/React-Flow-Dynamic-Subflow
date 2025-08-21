@@ -83,9 +83,7 @@ const ETLConfiguration: React.FC<ETLConfigurationProps> = ({ value, onChange }) 
 
   return (
     <Box mt={4}>
-      <Accordion allowMultiple
-      defaultIndex={[0]}\
-      >
+      <Accordion allowMultiple >
         <AccordionItem>
           <h2>
             <AccordionButton>
