@@ -59,7 +59,7 @@ export default function Board({ type,
         // color="white"
         color={isDark ? "white" : "black"}
       >
-        {value} 
+        {value}
       </Text>
       <Terminal
         // style={{ left: 39, top: 2 }}

@@ -11,7 +11,7 @@ import {
   VStack,
   HStack
 } from "@chakra-ui/react";
-import { COMPONENTS } from "../constants";
+import { COMPONENTS, PARENT, Parent } from "../constants";
 import { MajorComponents } from "../types";
 
 interface LeftSidebarProps {
@@ -89,22 +89,22 @@ export const LeftSidebar = ({ onDragStart }: LeftSidebarProps) => {
     >
       <Tabs variant="enclosed" colorScheme="blue">
         <TabList px={4} pt={4}>
-          <Tab>Actions</Tab>
-          <Tab>Flow</Tab>
+          <Tab>Framework</Tab>
+          <Tab>Components</Tab>
         </TabList>
 
         <TabPanels>
           <TabPanel px={4} py={4}>
             {/* Actions Tab - Components */}
             <Box>
-              <Text
+              {/* <Text
                 fontSize="md"
                 fontWeight="semibold"
                 mb={3}
                 color="gray.700"
               >
                 Components
-              </Text>
+              </Text> */}
 
               {/* List view of components with labels */}
               <VStack spacing={2} align="stretch">
@@ -123,18 +123,28 @@ export const LeftSidebar = ({ onDragStart }: LeftSidebarProps) => {
 
           <TabPanel px={4} py={4}>
             {/* Flow Tab - Future flow management features */}
-            <Box>
-              <Text
+             <Box>
+              {/* <Text
                 fontSize="md"
                 fontWeight="semibold"
                 mb={3}
                 color="gray.700"
               >
-                Flow Controls
-              </Text>
-              <Text fontSize="sm" color="gray.500">
-                Flow management features coming soon...
-              </Text>
+                Components
+              </Text> */}
+
+              {/* List view of components with labels */}
+              <VStack spacing={2} align="stretch">
+                {PARENT.map((component) =>
+                  component ? (
+                    <ComponentItem
+                      key={component.label}
+                      component={component}
+                      onDragStart={onDragStart}
+                    />
+                  ) : null
+                )}
+              </VStack>
             </Box>
           </TabPanel>
         </TabPanels>

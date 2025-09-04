@@ -14,6 +14,7 @@ export enum MajorComponents {
   Run_GlueJob = "Run GlueJob",
   Run_Eks = "Run Eks",
   Run_StepFunction = "Run StepFunction",
+  Ingestion = "Ingestion",
 }
 
 export enum MajorComponentsState {
@@ -29,8 +30,9 @@ export type MajorComponentsData = {
   isAttachedToGroup?: boolean;
   visible?: boolean;
   connectable?: boolean;
-  processingType?: "ingest" | "etl" | "ingest_etl" | "stream" | "stream_etl";
+  processingType?: ""
   etlConfig?: ""
+  ingestionConfig?: ""
 };
 
 export enum HistoryAction {

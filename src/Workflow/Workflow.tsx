@@ -81,7 +81,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
   }, [propsEdges, setEdges]);
 
   // Debounced update to parent - only sync back to parent occasionally
-  const updateParentTimeout = useRef<NodeJS.Timeout>();
+  const updateParentTimeout = useRef<number | undefined>();
 
   useEffect(() => {
     // Clear existing timeout
@@ -197,7 +197,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
     useReactFlow();
 
   const onDragStart = (
-    event: React.DragEvent<HTMLButtonElement>,
+    event: React.DragEvent<HTMLDivElement>,
     type: MajorComponents
   ) => {
     dragOutsideRef.current = type;
@@ -262,6 +262,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         MajorComponents.Run_GlueJob,
         MajorComponents.Run_Eks,
         MajorComponents.Run_StepFunction,
+        MajorComponents.Ingestion,
       ].includes(type)
     ) {
       node = {
@@ -353,6 +354,15 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         parentId: Job?.id,
       };
     }
+     else if (type === MajorComponents.Ingestion) {
+      node = {
+        id: uuid(),
+        type,
+        position,
+        data: { value: 12 },
+        parentId: Job?.id,
+      };
+    }
     else if (type === MajorComponents.Board) {
       node = {
         id: uuid(),
@@ -424,6 +434,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
                     MajorComponents.Run_GlueJob,
                     MajorComponents.Run_Eks,
                     MajorComponents.Run_StepFunction,
+                    MajorComponents.Ingestion,
                   ].includes(
                     overlappingNode?.data?.type as MajorComponents
                   )
@@ -481,6 +492,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
         MajorComponents.Run_GlueJob,
         MajorComponents.Run_Eks,
         MajorComponents.Run_StepFunction,
+        MajorComponents.Ingestion,
       ].includes(
         overlappingNodeRef?.current?.data?.type as MajorComponents
       ) &&

@@ -12,4 +12,5 @@ export { default as Lamda } from "./Lamda";
 export { default as GlueJob } from "./GlueJob";
 // export { default as Eks } from "./Eks";
 export { default as Stepfunction } from "./StepFunction";
+export { default as Ingestion } from "./Ingestion";
 export { Aws, Eks} from './icons';

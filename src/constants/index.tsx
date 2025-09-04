@@ -1,6 +1,6 @@
 import { Edge, Node } from "@xyflow/react";
 import { MajorComponents } from "../types";
-import { Battery, Bulb, Capacitor, Inductor, Resistor ,Js, Aws ,Python, Db ,Email, Lamda, GlueJob, Eks, Stepfunction} from "../icons";
+import { Battery, Bulb, Capacitor, Inductor, Resistor ,Js, Aws ,Python, Db ,Email, Lamda, GlueJob, Eks, Stepfunction, Ingestion} from "../icons";
 import Board from "../Components/Board";
 import { Box } from "@chakra-ui/react";
 
@@ -12,31 +12,7 @@ export const initialNodes: Node[] = [
 ];
 
 export const COMPONENTS = [
-  // {
-  //   icon: <Resistor />,
-  //   type: MajorComponents.Resistor,
-  //   label: "Resistor",
-  // },
-  // {
-  //   icon: <Capacitor height={40} />,
-  //   type: MajorComponents.Capacitor,
-  //   label: "Capacitor",
-  // },
-  // {
-  //   icon: <Js height={40} />,
-  //   type: MajorComponents.Js,
-  //   label: "JS",
-  // },
-  //  {
-  //   icon: <Aws height={40} />,
-  //   type: MajorComponents.Aws,
-  //   label: "Aws",
-  // },
-  // {
-  //   icon: <Db height={40} />,
-  //   type: MajorComponents.Db,
-  //   label: "Db",
-  // },
+
   {
     icon: <Email height={40} />,
     type: MajorComponents.Email_notification,
@@ -70,21 +46,16 @@ export const COMPONENTS = [
     type: MajorComponents.Run_StepFunction,
     label: "Run StepFunction",
   },
-  // {
-  //   icon: <Inductor height={40} />,
-  //   type: MajorComponents.Inductor,
-  //   label: "Inductor",
-  // },
-  // {
-  //   icon: <Battery height={40} />,
-  //   type: MajorComponents.Battery,
-  //   label: "Battery",
-  // },
-  // {
-  //   icon: <Bulb color="black" height={40} isOn />,
-  //   type: MajorComponents.Bulb,
-  //   label: "Bulb",
-  // },
+   {
+    icon: <Ingestion height={40} />,
+    type: MajorComponents.Ingestion,
+    label: "Ingestion",
+  },
+
+];
+
+
+export const PARENT = [
   {
     icon: (
       <Box

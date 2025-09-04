@@ -7,7 +7,7 @@ import {
 } from "../types";
 import Board from "./Board";
 import { Box, Text, HStack } from "@chakra-ui/react";
-import { Capacitor, Inductor, Resistor, Js, Aws, Db, Python, Email, Lamda, GlueJob, Eks, Stepfunction } from "../icons";
+import { Capacitor, Inductor, Resistor, Js, Aws, Db, Python, Email, Lamda, GlueJob, Eks, Stepfunction,Ingestion } from "../icons";
 import { getUnit } from "../utils";
 import Terminal from "./Terminal";
 import Rotation from "./Rotation";
@@ -53,6 +53,7 @@ export default function MajorComponent({
       [MajorComponents.Run_GlueJob]: 'Run Glue Job',
       [MajorComponents.Run_Eks]: 'Run EKS',
       [MajorComponents.Run_StepFunction]: 'Run Step Function',
+      [MajorComponents.Ingestion]: 'Ingestion',
 
     };
     return labelMap[type] || 'Component';
@@ -76,6 +77,8 @@ export default function MajorComponent({
         return <Eks {...iconProps} />;
       case MajorComponents.Run_StepFunction:
         return <Stepfunction {...iconProps} />;
+      case MajorComponents.Ingestion:
+        return <Ingestion {...iconProps} />;
 
       default:
         return null;
