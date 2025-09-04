@@ -11,7 +11,7 @@ import {
   VStack,
   HStack
 } from "@chakra-ui/react";
-import { COMPONENTS, PARENT, Parent } from "../constants";
+import { COMPONENTS, PARENT} from "../constants";
 import { MajorComponents } from "../types";
 
 interface LeftSidebarProps {

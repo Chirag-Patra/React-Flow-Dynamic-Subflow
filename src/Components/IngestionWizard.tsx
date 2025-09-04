@@ -303,11 +303,11 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
         return (
           <FormControl key={field}>
             <FormLabel>Load Format Parameters</FormLabel>
-            <FormHelperText>Optional</FormHelperText>
+            <FormHelperText>Optional - JSON format</FormHelperText>
             <Textarea
-              value={fieldValue as string || ''}
+              value={fieldValue as string || '{}'}
               onChange={(e) => handleFieldChange('load_frmt_parms', e.target.value)}
-              placeholder="Enter load format parameters"
+              placeholder="{}"
               rows={3}
             />
           </FormControl>
@@ -447,10 +447,11 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
         return (
           <FormControl key={field}>
             <FormLabel>Unload Format Parameters</FormLabel>
+            <FormHelperText>JSON format</FormHelperText>
             <Textarea
-              value={fieldValue as string || ''}
+              value={fieldValue as string || '{}'}
               onChange={(e) => handleFieldChange('unld_frmt_parms', e.target.value)}
-              placeholder="Enter unload format parameters"
+              placeholder="{}"
               rows={2}
             />
           </FormControl>
@@ -539,11 +540,11 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
         return (
           <FormControl key={field}>
             <FormLabel>ETL Job Parameters</FormLabel>
-            <FormHelperText>Required when target platform is S3</FormHelperText>
+            <FormHelperText>Required when target platform is S3 - JSON format</FormHelperText>
             <Textarea
-              value={fieldValue as string || ''}
+              value={fieldValue as string || '{}'}
               onChange={(e) => handleFieldChange('etl_job_parms', e.target.value)}
-              placeholder="Enter ETL job parameters"
+              placeholder="{}"
               rows={3}
             />
           </FormControl>

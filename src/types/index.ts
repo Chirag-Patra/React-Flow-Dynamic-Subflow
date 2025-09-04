@@ -1,9 +1,5 @@
 export enum MajorComponents {
-  Resistor = "resistor",
-  Capacitor = "capacitor",
-  Bulb = "bulb",
-  Inductor = "inductor",
-  Battery = "battery",
+ 
   Board = "Job",
   Js = "Js",
   Aws = "Aws",

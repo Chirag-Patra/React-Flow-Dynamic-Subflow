@@ -27,8 +27,6 @@ import MajorComponent from "../Components/MajorComponent";
 import customEdge from "../Components/customEdge";
 import ConnectionLine from "../Components/ConnectionLine";
 import { MajorComponentsState, MajorComponents } from "../types";
-import Bulb from "../Components/Bulb";
-import Battery from "../Components/Battery";
 import Board from "../Components/Board";
 import { isPointInBox, zoomSelector } from "../utils";
 import useKeyBindings from "../hooks/useKeyBindings";
@@ -41,8 +39,6 @@ import { Sun, Moon } from "react-bootstrap-icons";
 
 const nodeTypes = {
   MajorComponent: MajorComponent,
-  bulb: Bulb,
-  battery: Battery,
   Job: Board,
 };
 
@@ -250,9 +246,6 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
     let node: Node | undefined;
     if (
       [
-        MajorComponents.Capacitor,
-        MajorComponents.Inductor,
-        MajorComponents.Resistor,
         MajorComponents.Js,
         MajorComponents.Aws,
         MajorComponents.Db,
@@ -422,9 +415,6 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
               state:
                 overlappingNode &&
                   [
-                    MajorComponents.Capacitor,
-                    MajorComponents.Resistor,
-                    MajorComponents.Inductor,
                     MajorComponents.Js,
                     MajorComponents.Aws,
                     MajorComponents.Db,
@@ -480,9 +470,6 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
 
     if (
       [
-        MajorComponents.Capacitor,
-        MajorComponents.Resistor,
-        MajorComponents.Inductor,
         MajorComponents.Js,
         MajorComponents.Aws,
         MajorComponents.Db,

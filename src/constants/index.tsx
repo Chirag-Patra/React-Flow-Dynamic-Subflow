@@ -1,6 +1,6 @@
 import { Edge, Node } from "@xyflow/react";
 import { MajorComponents } from "../types";
-import { Battery, Bulb, Capacitor, Inductor, Resistor ,Js, Aws ,Python, Db ,Email, Lamda, GlueJob, Eks, Stepfunction, Ingestion} from "../icons";
+import { Js, Aws ,Python, Db ,Email, Lamda, GlueJob, Eks, Stepfunction, Ingestion} from "../icons";
 import Board from "../Components/Board";
 import { Box } from "@chakra-ui/react";
 
