@@ -72,7 +72,7 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
       id: 4,
       title: "Table & Load Configuration",
       fields: ['trgt_tbl_nm', 'trgt_tbl_nm_desc', 'load_type', 'load_frmt_parms', 'pre_load_mthd'],
-      isComplete: (cfg) => !!cfg.trgt_tbl_nm?.trim() && !!cfg.load_type?.trim() && !!cfg.pre_load_mthd?.trim()
+      isComplete: (cfg) => !!cfg.trgt_tbl_nm?.trim() && !!cfg.load_type?.trim()
     },
     {
       id: 5,
@@ -184,12 +184,21 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
         return (
           <FormControl key={field} isRequired>
             <FormLabel>Processing Type</FormLabel>
-            <Input
+             <Select
               value={fieldValue as string || ''}
-              onChange={(e) => handleFieldChange('prcsng_type', e.target.value)}
-              placeholder="Enter processing type"
-            />
+               onChange={(e) => handleFieldChange('prcsng_type', e.target.value)}
+              placeholder="Select processing type"
+            >
+              <option value="ingest">Ingest</option>
+              <option value="stream">Stream</option>
+              <option value="etl">ETL</option>
+              <option value="unload">Unload</option>
+              <option value="unload_etl">Unload ETL</option>
+              <option value="ingest_etl">Ingest ETL</option>
+              <option value="stream_etl">Stream ETL</option>
+            </Select>
           </FormControl>
+
         );
 
       case 'clnt_id':
@@ -241,6 +250,7 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
               <option value="stream">Stream</option>
               <option value="redshift">Redshift</option>
               <option value="snowflake">Snowflake</option>
+              <option value="rds">RDS</option>
             </Select>
           </FormControl>
         );
@@ -278,11 +288,13 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
               onChange={(e) => handleFieldChange('load_type', e.target.value)}
               placeholder="Select load type"
             >
+              <option value="full">Full</option>
               <option value="merge">Merge</option>
+              <option value="append">Append</option>
               <option value="distinct_merge">Distinct Merge</option>
               <option value="delete_append">Delete Append</option>
-              <option value="append">Append</option>
-              <option value="overwrite">Overwrite</option>
+              <option value="distinct_append">Distinct Append</option>
+              <option value="na">Na</option>
             </Select>
           </FormControl>
         );
@@ -303,7 +315,7 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
 
       case 'pre_load_mthd':
         return (
-          <FormControl key={field} isRequired>
+          <FormControl key={field} >
             <FormLabel>Pre-Load Method</FormLabel>
             <Input
               value={fieldValue as string || ''}
@@ -348,11 +360,12 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
               onChange={(e) => handleFieldChange('src_file_type', e.target.value)}
               placeholder="Select source file type"
             >
-              <option value="csv">CSV</option>
+              <option value="gzip">G-Zip</option>
               <option value="json">JSON</option>
               <option value="parquet">Parquet</option>
               <option value="avro">Avro</option>
-              <option value="orc">ORC</option>
+              <option value="xml">XML</option>
+              <option value="txt">TXT</option>
             </Select>
           </FormControl>
         );
@@ -380,7 +393,10 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
               <option value="csv">CSV</option>
               <option value="json">JSON</option>
               <option value="parquet">Parquet</option>
-              <option value="avro">Avro</option>
+              <option value="hudi">Hudi</option>
+              <option value="gzip">G-Zip</option>
+              <option value="csv_zip">CSV-Zip</option>
+              <option value="na">NA</option>
             </Select>
           </FormControl>
         );
@@ -406,10 +422,11 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
               onChange={(e) => handleFieldChange('unld_frqncy', e.target.value)}
               placeholder="Select frequency"
             >
+              <option value="na">NA</option>
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
-              <option value="on-demand">On Demand</option>
+              <option value="yearly">Yearly</option>
             </Select>
           </FormControl>
         );
@@ -512,6 +529,8 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
               <option value="glue">Glue</option>
               <option value="emr">EMR</option>
               <option value="lambda">Lambda</option>
+              <option value="s3">S3</option>
+              <option value="sfn">SFN</option>
             </Select>
           </FormControl>
         );
@@ -520,6 +539,7 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
         return (
           <FormControl key={field}>
             <FormLabel>ETL Job Parameters</FormLabel>
+            <FormHelperText>Required when target platform is S3</FormHelperText>
             <Textarea
               value={fieldValue as string || ''}
               onChange={(e) => handleFieldChange('etl_job_parms', e.target.value)}
@@ -539,9 +559,12 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
               onChange={(e) => handleFieldChange('load_frqncy', e.target.value)}
               placeholder="Select load frequency"
             >
-              <option value="real-time">Real-time</option>
-              <option value="micro-batch">Micro-batch</option>
-              <option value="batch">Batch</option>
+              <option value="na">NA</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="quaterly">Quaterly</option>
+              <option value="yearly">Yearly</option>
+              <option value="montly">Monthly</option>
             </Select>
           </FormControl>
         );
