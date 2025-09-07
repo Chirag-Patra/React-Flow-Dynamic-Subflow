@@ -135,50 +135,63 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
     [addEdge]
   );
 
-  const handleProcessingNodeManagement = (boardId: string, processingType: string) => {
-    // Map processing types to their corresponding component types
-    // const processingTypeToComponent: Record<string, MajorComponents> = {
-    //   'run_lambda': MajorComponents.Lamda,
-    //   'run_glue': MajorComponents.GlueJob,
-    //    'run_eks': MajorComponents.Eks,
-    //    'run_sfn': MajorComponents.StepFunction,
+ // Extract of the updated handleProcessingNodeManagement function
+// This would replace the existing function in Workflow.tsx
 
-    // };
-
-    // // Get the component type for the current processing type
-    // const componentType = processingTypeToComponent[processingType];
-
-    // // Find any existing processing node for this Job
-    // const existingProcessingNode = nodes.find(
-    //   n => n.parentId === boardId &&
-    //     Object.values(processingTypeToComponent).includes(n.data?.type as MajorComponents)
-    // );
-
-    // // Remove any existing processing node if it exists
-    // if (existingProcessingNode) {
-    //   removeNode(existingProcessingNode);
-    // }
-
-    // // Add new node if there's a valid component type for this processing type
-    // if (componentType) {
-    //   const node: Node = {
-    //     id: `${processingType}-${boardId}`,
-    //     type: "MajorComponent",
-    //     position: { x: 50, y: 50 },
-    //     data: {
-    //       type: componentType,
-    //       value: '',
-    //       visible: showContent,
-    //       connectable: showContent
-    //     },
-    //     parentId: boardId,
-    //     draggable: showContent,
-    //     selectable: showContent,
-    //   };
-
-    //   addNode(node);
-    // }
+const handleProcessingNodeManagement = (boardId: string, processingType: string) => {
+  // Map processing types to their corresponding component types
+  const processingTypeToComponent: Record<string, MajorComponents | null> = {
+    'ingest': MajorComponents.Ingestion,
+    'ingest_etl': MajorComponents.Ingestion, // Also add Ingestion for ingest_etl
+    'etl': null, // No component for ETL only
+    'stream': null, // No component for stream only
+    'stream_etl': null, // No component for stream_etl
   };
+
+  // Get the component type for the current processing type
+  const componentType = processingTypeToComponent[processingType];
+
+  // Find the Job node
+  const jobNode = nodes.find(n => n.id === boardId && n.type === 'Job');
+  if (!jobNode) return;
+
+  // Find any existing processing node for this Job
+  const existingProcessingNode = nodes.find(
+    n => n.parentId === boardId &&
+      (n.data?.type === MajorComponents.Ingestion ||
+       n.data?.type === MajorComponents.Run_Lamda ||
+       n.data?.type === MajorComponents.Run_GlueJob ||
+       n.data?.type === MajorComponents.Run_Eks ||
+       n.data?.type === MajorComponents.Run_StepFunction)
+  );
+
+  // Remove any existing processing node if it exists
+  if (existingProcessingNode) {
+    removeNode(existingProcessingNode);
+  }
+
+  // Add new node if there's a valid component type for this processing type
+  if (componentType) {
+    const node: Node = {
+      id: `${processingType}-${boardId}-${uuid()}`,
+      type: "MajorComponent",
+      position: { x: 50, y: 50 }, // Position inside the Job box
+      data: {
+        type: componentType,
+        value: '',
+        visible: showContent,
+        connectable: showContent,
+        // Copy the job configuration to the ingestion node if it's an ingestion type
+        ingestionConfig: jobNode.data?.jobConfig || {}
+      },
+      parentId: boardId,
+      draggable: showContent,
+      selectable: showContent,
+    };
+
+    addNode(node);
+  }
+};
 
   const isValidConnection = (connection: Edge | Connection) => {
     const { source, target } = connection;

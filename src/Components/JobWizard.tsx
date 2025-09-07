@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -24,10 +24,9 @@ import {
   AlertIcon,
 } from '@chakra-ui/react';
 
-// Extended IngestionConfig to include processingType
-export interface IngestionConfig {
-  processingType?: string; // Added for Job node compatibility
-  prcsng_type?: string;
+// Job configuration interface
+export interface JobConfig {
+  processingType?: string;
   clnt_id?: string;
   domain_cd?: string;
   sor_cd?: string;
@@ -57,69 +56,87 @@ export interface IngestionConfig {
   warehouse_size_suffix?: string;
   actv_flag?: string;
   ownrshp_team?: string;
-  [key: string]: any; // Allow for additional properties
+  [key: string]: any;
 }
 
-interface IngestionWizardProps {
+interface JobWizardProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (config: IngestionConfig) => void;
-  initialConfig?: IngestionConfig;
-  nodeType?: string; // Added to distinguish between Job and Ingestion nodes
+  onSave: (config: JobConfig) => void;
+  initialConfig?: JobConfig;
 }
 
 interface StepConfig {
   id: number;
   title: string;
   fields: string[];
-  isComplete: (config: IngestionConfig) => boolean;
-  showForNodeType?: (nodeType?: string) => boolean; // Added to conditionally show steps
+  isComplete: (config: JobConfig) => boolean;
+  showForProcessingType?: (processingType?: string) => boolean;
 }
 
-const IngestionWizard: React.FC<IngestionWizardProps> = ({
+// Define which processing types should show the full ingestion configuration
+const PROCESSING_TYPES_WITH_FULL_CONFIG = ['ingest', 'ingest_etl'];
+
+// Define processing type specific configurations (can be extended in the future)
+const PROCESSING_TYPE_CONFIGS: Record<string, {
+  requiredSteps?: string[];
+  customFields?: Record<string, string[]>;
+}> = {
+  ingest: {
+    requiredSteps: ['all'] // Show all steps
+  },
+  ingest_etl: {
+    requiredSteps: ['all'] // Show all steps
+  },
+  etl: {
+    requiredSteps: ['processing_type_only'] // Only show processing type selection
+  },
+  stream: {
+    requiredSteps: ['processing_type_only'] // Only show processing type selection
+  },
+  stream_etl: {
+    requiredSteps: ['processing_type_only'] // Only show processing type selection
+  }
+};
+
+const JobWizard: React.FC<JobWizardProps> = ({
   isOpen,
   onClose,
   onSave,
-  initialConfig = {},
-  nodeType
+  initialConfig = {}
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [config, setConfig] = useState<IngestionConfig>(initialConfig);
+  const [config, setConfig] = useState<JobConfig>(initialConfig);
 
-  // Define step configuration with conditional steps based on node type
+  // Define all possible steps
   const allSteps: StepConfig[] = [
     {
       id: 1,
-      title: nodeType === "Job" ? "Processing Type Selection" : "Processing Type",
-      fields: nodeType === "Job" ? ['processingType'] : ['prcsng_type'],
-      isComplete: (cfg) => {
-        if (nodeType === "Job") {
-          return !!cfg.processingType?.trim();
-        }
-        return !!cfg.prcsng_type?.trim();
-      },
-      showForNodeType: () => true // Always show this step
+      title: "Processing Type Selection",
+      fields: ['processingType'],
+      isComplete: (cfg) => !!cfg.processingType?.trim(),
+      showForProcessingType: () => true // Always show this step
     },
     {
       id: 2,
       title: "Client & Domain Information",
       fields: ['clnt_id', 'domain_cd', 'sor_cd'],
       isComplete: (cfg) => !!cfg.clnt_id?.trim() && !!cfg.domain_cd?.trim() && !!cfg.sor_cd?.trim(),
-      showForNodeType: (type) => type !== "Job" // Only show for Ingestion nodes
+      showForProcessingType: (type) => PROCESSING_TYPES_WITH_FULL_CONFIG.includes(type || '')
     },
     {
       id: 3,
       title: "Target Platform",
       fields: ['trgt_pltfrm'],
       isComplete: (cfg) => !!cfg.trgt_pltfrm?.trim(),
-      showForNodeType: (type) => type !== "Job"
+      showForProcessingType: (type) => PROCESSING_TYPES_WITH_FULL_CONFIG.includes(type || '')
     },
     {
       id: 4,
       title: "Table & Load Configuration",
       fields: ['trgt_tbl_nm', 'trgt_tbl_nm_desc', 'load_type', 'load_frmt_parms', 'pre_load_mthd'],
       isComplete: (cfg) => !!cfg.trgt_tbl_nm?.trim() && !!cfg.load_type?.trim(),
-      showForNodeType: (type) => type !== "Job"
+      showForProcessingType: (type) => PROCESSING_TYPES_WITH_FULL_CONFIG.includes(type || '')
     },
     {
       id: 5,
@@ -133,7 +150,7 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
           ? !!cfg.del_key_list?.trim() : true;
         return srcFileValid && keyListValid && delKeyValid;
       },
-      showForNodeType: (type) => type !== "Job"
+      showForProcessingType: (type) => PROCESSING_TYPES_WITH_FULL_CONFIG.includes(type || '')
     },
     {
       id: 6,
@@ -143,7 +160,7 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
         if (!cfg.need_unload_question) return true;
         return !!cfg.unld_file_type?.trim() && !!cfg.unld_frqncy?.trim() && !!cfg.unld_type?.trim();
       },
-      showForNodeType: (type) => type !== "Job"
+      showForProcessingType: (type) => PROCESSING_TYPES_WITH_FULL_CONFIG.includes(type || '')
     },
     {
       id: 7,
@@ -155,19 +172,22 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
         const streamValid = cfg.trgt_pltfrm === 'stream' ? !!cfg.load_frqncy?.trim() : true;
         return basicValid && s3Valid && streamValid;
       },
-      showForNodeType: (type) => type !== "Job"
+      showForProcessingType: (type) => PROCESSING_TYPES_WITH_FULL_CONFIG.includes(type || '')
     },
     {
       id: 8,
       title: "Final Configuration",
       fields: ['warehouse_size_suffix', 'actv_flag', 'ownrshp_team'],
       isComplete: (cfg) => !!cfg.actv_flag?.trim() && !!cfg.ownrshp_team?.trim(),
-      showForNodeType: (type) => type !== "Job"
+      showForProcessingType: (type) => PROCESSING_TYPES_WITH_FULL_CONFIG.includes(type || '')
     }
   ];
 
-  // Filter steps based on node type
-  const steps = allSteps.filter(step => step.showForNodeType?.(nodeType) ?? true);
+  // Filter steps based on selected processing type
+  const steps = useMemo(() => {
+    const processingType = config.processingType;
+    return allSteps.filter(step => step.showForProcessingType?.(processingType) ?? true);
+  }, [config.processingType]);
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -177,7 +197,16 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
     }
   }, [isOpen, initialConfig]);
 
-  const handleFieldChange = (field: keyof IngestionConfig, value: any) => {
+  // Reset to step 1 when processing type changes (but only if we're past step 1)
+  useEffect(() => {
+    if (currentStep > 1 && steps.length === 1) {
+      setCurrentStep(1);
+    } else if (currentStep > steps.length) {
+      setCurrentStep(steps.length);
+    }
+  }, [steps.length, currentStep]);
+
+  const handleFieldChange = (field: keyof JobConfig, value: any) => {
     setConfig(prev => ({ ...prev, [field]: value }));
   };
 
@@ -199,23 +228,12 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
   };
 
   const handleSave = () => {
-    // For Job nodes, ensure processingType is included in the saved config
-    const configToSave = { ...config };
-
-    // If this is a Job node and only processingType was set, that's all we need
-    if (nodeType === "Job" && configToSave.processingType) {
-      onSave(configToSave);
-    } else {
-      onSave(configToSave);
-    }
-
+    onSave(config);
     onClose();
   };
 
   const shouldShowField = (field: string): boolean => {
     switch (field) {
-      case 'processingType':
-        return nodeType === "Job"; // Only show for Job nodes
       case 'key_list':
         return config.load_type === 'merge' || config.load_type === 'distinct_merge';
       case 'del_key_list':
@@ -242,11 +260,10 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
   const renderField = (field: string) => {
     if (!shouldShowField(field)) return null;
 
-    const fieldValue = config[field as keyof IngestionConfig];
+    const fieldValue = config[field as keyof JobConfig];
 
     switch (field) {
       case 'processingType':
-        // Special field for Job nodes - uses the same options as original ProcessingTypeSelect
         return (
           <FormControl key={field} isRequired>
             <FormLabel>Processing Type</FormLabel>
@@ -262,28 +279,12 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
               <option value="stream_etl">Stream-ETL</option>
             </Select>
             <FormHelperText>
-              Select the processing type for this job
+              {PROCESSING_TYPES_WITH_FULL_CONFIG.includes(fieldValue as string)
+                ? "Full configuration will be available for this processing type"
+                : fieldValue
+                  ? "Only processing type will be configured for this selection"
+                  : "Select the processing type for this job"}
             </FormHelperText>
-          </FormControl>
-        );
-
-      case 'prcsng_type':
-        return (
-          <FormControl key={field} isRequired>
-            <FormLabel>Processing Type</FormLabel>
-            <Select
-              value={fieldValue as string || ''}
-              onChange={(e) => handleFieldChange('prcsng_type', e.target.value)}
-              placeholder="Select processing type"
-            >
-              <option value="ingest">Ingest</option>
-              <option value="stream">Stream</option>
-              <option value="etl">ETL</option>
-              <option value="unload">Unload</option>
-              <option value="unload_etl">Unload ETL</option>
-              <option value="ingest_etl">Ingest ETL</option>
-              <option value="stream_etl">Stream ETL</option>
-            </Select>
           </FormControl>
         );
 
@@ -380,7 +381,7 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
               <option value="distinct_merge">Distinct Merge</option>
               <option value="delete_append">Delete Append</option>
               <option value="distinct_append">Distinct Append</option>
-              <option value="na">Na</option>
+              <option value="na">NA</option>
             </Select>
           </FormControl>
         );
@@ -649,9 +650,9 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
               <option value="na">NA</option>
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
-              <option value="quaterly">Quaterly</option>
+              <option value="quarterly">Quarterly</option>
               <option value="yearly">Yearly</option>
-              <option value="montly">Monthly</option>
+              <option value="monthly">Monthly</option>
             </Select>
           </FormControl>
         );
@@ -703,12 +704,15 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
   const currentStepConfig = steps.find(s => s.id === currentStep);
   const progress = (currentStep / steps.length) * 100;
 
-  // Get appropriate modal title
-  const getModalTitle = () => {
-    if (nodeType === "Job") {
-      return "Job Processing Type Configuration";
+  // Check if we can save (depends on processing type)
+  const canSave = () => {
+    if (steps.length === 1) {
+      // Only processing type selection, check if it's selected
+      return !!config.processingType?.trim();
+    } else {
+      // Full configuration, check if all steps are complete
+      return canProceedToNext();
     }
-    return "Ingestion Configuration Wizard";
   };
 
   return (
@@ -717,7 +721,7 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
       <ModalContent maxWidth="600px">
         <ModalHeader>
           <VStack align="stretch" spacing={2}>
-            <Text>{getModalTitle()}</Text>
+            <Text>Job Configuration Wizard</Text>
             <Box>
               <Text fontSize="sm" color="gray.600" mb={2}>
                 Step {currentStep} of {steps.length}: {currentStepConfig?.title}
@@ -739,10 +743,15 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
 
             {currentStepConfig?.fields.map(field => renderField(field))}
 
-            {nodeType === "Job" && currentStep === 1 && (
-              <Alert status="info" size="sm">
+            {currentStep === 1 && config.processingType && (
+              <Alert
+                status={PROCESSING_TYPES_WITH_FULL_CONFIG.includes(config.processingType) ? "info" : "success"}
+                size="sm"
+              >
                 <AlertIcon />
-                This configuration replaces the previous processing type selector
+                {PROCESSING_TYPES_WITH_FULL_CONFIG.includes(config.processingType)
+                  ? `You selected "${config.processingType}". Additional configuration steps will be available.`
+                  : `You selected "${config.processingType}". Click Save to complete the configuration.`}
               </Alert>
             )}
           </VStack>
@@ -772,9 +781,9 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
               <Button
                 colorScheme="green"
                 onClick={handleSave}
-                isDisabled={!canProceedToNext()}
+                isDisabled={!canSave()}
               >
-                {nodeType === "Job" ? "Save Processing Type" : "Save Configuration"}
+                Save Configuration
               </Button>
             )}
           </HStack>
@@ -784,4 +793,4 @@ const IngestionWizard: React.FC<IngestionWizardProps> = ({
   );
 };
 
-export default IngestionWizard;
+export default JobWizard;

@@ -46,11 +46,11 @@ export const COMPONENTS = [
     type: MajorComponents.Run_StepFunction,
     label: "Run StepFunction",
   },
-   {
-    icon: <Ingestion height={40} />,
-    type: MajorComponents.Ingestion,
-    label: "Ingestion",
-  },
+  //  {
+  //   icon: <Ingestion height={40} />,
+  //   type: MajorComponents.Ingestion,
+  //   label: "Ingestion",
+  // },
 
 ];
 

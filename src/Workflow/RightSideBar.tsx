@@ -23,9 +23,9 @@ import { DeleteIcon } from "@chakra-ui/icons";
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { Node, useReactFlow, Edge, MarkerType } from "@xyflow/react";
 import { useDarkMode } from "../store";
-import ProcessingTypeSelect, { ProcessingType } from "../Components/ProcessingTypeSelect";
 import ETLConfiguration, { ETLConfig } from "../Components/ETLConfiguration";
 import IngestionWizard from "../Components/IngestionWizard";
+import JobWizard from "../Components/JobWizard"; // Import the new JobWizard component
 import { IngestionConfig } from "../Components/IngestionConfiguration";
 import { MajorComponentsData, MajorComponents } from "../types";
 
@@ -59,6 +59,7 @@ export const RightSidebar = ({
   const [selectedTargetIds, setSelectedTargetIds] = useState<string[]>([]);
   const [width, setWidth] = useState(300);
   const [isIngestionWizardOpen, setIsIngestionWizardOpen] = useState(false);
+  const [isJobWizardOpen, setIsJobWizardOpen] = useState(false);
   const isDragging = useRef(false);
 
   // Memoized computed values to ensure stability
@@ -71,16 +72,17 @@ export const RightSidebar = ({
       value: selectedNode.data?.value || "",
       processingType: selectedNode.data?.processingType || "",
       etlConfig: selectedNode.data?.etlConfig || {},
-      ingestionConfig: selectedNode.data?.ingestionConfig || {}
+      ingestionConfig: selectedNode.data?.ingestionConfig || {},
+      jobConfig: selectedNode.data?.jobConfig || {} // Add jobConfig for Job nodes
     };
   }, [selectedNode?.id, selectedNode?.data, selectedNode?.type]);
 
   // Determine component visibility with proper memoization
   const componentVisibility = useMemo(() => {
     if (!nodeData) return {
-      showProcessingType: false,
-      showETLConfig: false,
-      showIngestionConfig: false
+      showJobWizardButton: false,
+      showIngestionWizardButton: false,
+      showETLConfig: false
     };
 
     const isJobType = nodeData.type === "Job";
@@ -94,9 +96,9 @@ export const RightSidebar = ({
     const isIngestionType = nodeData.type === MajorComponents.Ingestion;
 
     return {
-      showProcessingType: isJobType,
-      showETLConfig: isETLProcessingType,
-      showIngestionConfig: isIngestionType
+      showJobWizardButton: isJobType,
+      showIngestionWizardButton: isIngestionType,
+      showETLConfig: isETLProcessingType
     };
   }, [nodeData?.type]);
 
@@ -148,57 +150,17 @@ export const RightSidebar = ({
     };
   }, []);
 
-  // Event handlers with useCallback to prevent unnecessary re-renders
-  const handleProcessingTypeChange = useCallback((processingType: ProcessingType) => {
-    if (!selectedNode) return;
-
-    console.log('Processing type changing to:', processingType);
-    updateNodeData(selectedNode.id, { processingType });
-
-    if (onProcessingTypeChange && nodeData?.type === "Job") {
-      onProcessingTypeChange(selectedNode.id, processingType);
-    }
-  }, [selectedNode?.id, nodeData?.type, updateNodeData, onProcessingTypeChange]);
-
+  // Event handlers
   const handleETLConfigChange = useCallback((etlConfig: ETLConfig) => {
     if (!selectedNode) return;
 
-    console.log('ETL Config changing:', etlConfig);
-
-    // Force immediate update with a new object reference
     const updatedData = {
       ...selectedNode.data,
       etlConfig: { ...etlConfig }
     };
 
     updateNodeData(selectedNode.id, updatedData);
-
-    // Force re-render by ensuring state change
-    setTimeout(() => {
-      const updatedNode = getNodes().find(n => n.id === selectedNode.id);
-      console.log('Node after ETL update:', updatedNode?.data?.etlConfig);
-    }, 10);
-  }, [selectedNode?.id, selectedNode?.data, updateNodeData, getNodes]);
-
-  const handleIngestionConfigChange = useCallback((ingestionConfig: IngestionConfig) => {
-    if (!selectedNode) return;
-
-    console.log('Ingestion Config changing:', ingestionConfig);
-
-    // Force immediate update with a new object reference
-    const updatedData = {
-      ...selectedNode.data,
-      ingestionConfig: { ...ingestionConfig }
-    };
-
-    updateNodeData(selectedNode.id, updatedData);
-
-    // Force re-render by ensuring state change
-    setTimeout(() => {
-      const updatedNode = getNodes().find(n => n.id === selectedNode.id);
-      console.log('Node after Ingestion update:', updatedNode?.data?.ingestionConfig);
-    }, 10);
-  }, [selectedNode?.id, selectedNode?.data, updateNodeData, getNodes]);
+  }, [selectedNode?.id, selectedNode?.data, updateNodeData]);
 
   const handleOpenIngestionWizard = useCallback(() => {
     setIsIngestionWizardOpen(true);
@@ -208,9 +170,50 @@ export const RightSidebar = ({
     setIsIngestionWizardOpen(false);
   }, []);
 
-  const handleSaveIngestionConfig = useCallback((ingestionConfig: IngestionConfig) => {
-    handleIngestionConfigChange(ingestionConfig);
-  }, [handleIngestionConfigChange]);
+  const handleOpenJobWizard = useCallback(() => {
+    setIsJobWizardOpen(true);
+  }, []);
+
+  const handleCloseJobWizard = useCallback(() => {
+    setIsJobWizardOpen(false);
+  }, []);
+
+  const handleSaveJobConfig = useCallback((config: any) => {
+    if (!selectedNode) return;
+
+    console.log('Job Config:', config);
+
+    // Get the previous processing type to check if it changed
+    const previousProcessingType = selectedNode.data?.processingType;
+
+    // Update node data with job configuration
+    const updatedData = {
+      ...selectedNode.data,
+      processingType: config.processingType,
+      jobConfig: { ...config }
+    };
+
+    updateNodeData(selectedNode.id, updatedData);
+
+    // Call the onProcessingTypeChange callback to handle node creation/removal
+    if (config.processingType && onProcessingTypeChange) {
+      onProcessingTypeChange(selectedNode.id, config.processingType);
+    }
+
+    handleCloseJobWizard();
+  }, [selectedNode?.id, selectedNode?.data, updateNodeData, onProcessingTypeChange, handleCloseJobWizard]);
+
+  const handleSaveIngestionConfig = useCallback((config: IngestionConfig) => {
+    if (!selectedNode) return;
+
+    const updatedData = {
+      ...selectedNode.data,
+      ingestionConfig: { ...config }
+    };
+
+    updateNodeData(selectedNode.id, updatedData);
+    handleCloseIngestionWizard();
+  }, [selectedNode?.id, selectedNode?.data, updateNodeData, handleCloseIngestionWizard]);
 
   const handleDelete = useCallback(async () => {
     if (!selectedNode) return;
@@ -259,6 +262,15 @@ export const RightSidebar = ({
   if (!selectedNode || !nodeData) {
     return null;
   }
+
+  // Get button text based on node type and configuration state
+  const getJobWizardButtonText = () => {
+    const config = nodeData.jobConfig;
+    if (config && config.processingType) {
+      return `Processing Type: ${config.processingType}`;
+    }
+    return "Configure Job";
+  };
 
   return (
     <Box
@@ -353,35 +365,29 @@ export const RightSidebar = ({
           </PopoverContent>
         </Popover>
 
-        {/* Conditional Components with proper keys and separation */}
-        {componentVisibility.showProcessingType && (
+        {/* Job Wizard Button for Job nodes */}
+        {componentVisibility.showJobWizardButton && (
           <>
             <Divider />
-            <Box key={`processing-${nodeData.id}`}>
-              <ProcessingTypeSelect
-                value={nodeData.processingType}
-                onChange={handleProcessingTypeChange}
-              />
+            <Box key={`job-wizard-${nodeData.id}`}>
+              <Button
+                colorScheme="blue"
+                variant={nodeData.processingType ? "solid" : "outline"}
+                size="sm"
+                width="100%"
+                onClick={handleOpenJobWizard}
+              >
+                {getJobWizardButtonText()}
+              </Button>
             </Box>
           </>
         )}
 
-        {componentVisibility.showETLConfig && (
+        {/* Ingestion Wizard Button for Ingestion nodes */}
+        {/* {componentVisibility.showIngestionWizardButton && (
           <>
             <Divider />
-            <Box key={`etl-${nodeData.id}-${JSON.stringify(nodeData.etlConfig)}`}>
-              <ETLConfiguration
-                value={nodeData.etlConfig}
-                onChange={handleETLConfigChange}
-              />
-            </Box>
-          </>
-        )}
-
-        {componentVisibility.showIngestionConfig && (
-          <>
-            <Divider />
-            <Box key={`ingestion-${nodeData.id}`}>
+            <Box key={`ingestion-wizard-${nodeData.id}`}>
               <Button
                 colorScheme="blue"
                 variant="outline"
@@ -393,16 +399,40 @@ export const RightSidebar = ({
               </Button>
             </Box>
           </>
+        )} */}
+
+        {/* ETL Configuration */}
+        {componentVisibility.showETLConfig && (
+          <>
+            <Divider />
+            <Box key={`etl-${nodeData.id}-${JSON.stringify(nodeData.etlConfig)}`}>
+              <ETLConfiguration
+                value={nodeData.etlConfig}
+                onChange={handleETLConfigChange}
+              />
+            </Box>
+          </>
         )}
       </VStack>
 
-      {/* Ingestion Wizard Modal */}
-      <IngestionWizard
+      {/* Job Wizard Modal for Job nodes */}
+      <JobWizard
+        isOpen={isJobWizardOpen}
+        onClose={handleCloseJobWizard}
+        onSave={handleSaveJobConfig}
+        initialConfig={nodeData?.jobConfig || {
+          processingType: nodeData?.processingType
+        }}
+      />
+
+      {/* Ingestion Wizard Modal for Ingestion nodes */}
+      {/* <IngestionWizard
         isOpen={isIngestionWizardOpen}
         onClose={handleCloseIngestionWizard}
         onSave={handleSaveIngestionConfig}
-        initialConfig={nodeData?.ingestionConfig || {}}
-      />
+        initialConfig={nodeData?.ingestionConfig}
+        nodeType={nodeData?.type}
+      /> */}
     </Box>
   );
 };
