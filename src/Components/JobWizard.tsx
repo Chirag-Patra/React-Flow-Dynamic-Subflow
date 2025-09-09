@@ -22,7 +22,9 @@ import {
   Box,
   Alert,
   AlertIcon,
+  Spinner,
 } from '@chakra-ui/react';
+import { ApiService, JobParametersResponse } from './apiService';
 
 // Job configuration interface
 export interface JobConfig {
@@ -75,7 +77,7 @@ interface StepConfig {
 }
 
 // Define which processing types should show the full ingestion configuration
-const PROCESSING_TYPES_WITH_FULL_CONFIG = ['ingest', 'ingest_etl'];
+const PROCESSING_TYPES_WITH_FULL_CONFIG = ['ingest', 'ingest_etl', 'ingest-etl'];
 
 // Define processing type specific configurations (can be extended in the future)
 const PROCESSING_TYPE_CONFIGS: Record<string, {
@@ -85,7 +87,10 @@ const PROCESSING_TYPE_CONFIGS: Record<string, {
   ingest: {
     requiredSteps: ['all'] // Show all steps
   },
-  ingest_etl: {
+  'ingest_etl': {
+    requiredSteps: ['all'] // Show all steps
+  },
+  'ingest-etl': {
     requiredSteps: ['all'] // Show all steps
   },
   etl: {
@@ -94,7 +99,10 @@ const PROCESSING_TYPE_CONFIGS: Record<string, {
   stream: {
     requiredSteps: ['processing_type_only'] // Only show processing type selection
   },
-  stream_etl: {
+  'stream_etl': {
+    requiredSteps: ['processing_type_only'] // Only show processing type selection
+  },
+  'stream-etl': {
     requiredSteps: ['processing_type_only'] // Only show processing type selection
   }
 };
@@ -107,6 +115,32 @@ const JobWizard: React.FC<JobWizardProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [config, setConfig] = useState<JobConfig>(initialConfig);
+  const [apiData, setApiData] = useState<JobParametersResponse | null>(null);
+  const [isLoadingApi, setIsLoadingApi] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  // Fetch API data when modal opens
+  useEffect(() => {
+    if (isOpen && !apiData) {
+      setIsLoadingApi(true);
+      setApiError(null);
+
+      ApiService.fetchJobParameters()
+        .then((data) => {
+          setApiData(data);
+          if (!data) {
+            setApiError('Failed to load configuration options. Using default values.');
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching API data:', error);
+          setApiError('Failed to connect to configuration service. Using default values.');
+        })
+        .finally(() => {
+          setIsLoadingApi(false);
+        });
+    }
+  }, [isOpen, apiData]);
 
   // Define all possible steps
   const allSteps: StepConfig[] = [
@@ -257,6 +291,18 @@ const JobWizard: React.FC<JobWizardProps> = ({
     }
   };
 
+  // Helper function to render select options from API data or fallback
+  const renderSelectOptions = (field: string, fallbackOptions: string[] = []) => {
+    const apiOptions = ApiService.getFieldOptions(apiData, field);
+    const options = apiOptions.length > 0 ? apiOptions : fallbackOptions;
+
+    return options.map((option) => (
+      <option key={option} value={option}>
+        {ApiService.formatOptionValue(option)}
+      </option>
+    ));
+  };
+
   const renderField = (field: string) => {
     if (!shouldShowField(field)) return null;
 
@@ -272,11 +318,9 @@ const JobWizard: React.FC<JobWizardProps> = ({
               onChange={(e) => handleFieldChange('processingType', e.target.value)}
               placeholder="Select processing type"
             >
-              <option value="ingest">Ingest</option>
-              <option value="etl">ETL</option>
-              <option value="ingest_etl">Ingest-ETL</option>
-              <option value="stream">Stream</option>
-              <option value="stream_etl">Stream-ETL</option>
+              {renderSelectOptions('processingType', [
+                'ingest', 'etl', 'ingest_etl', 'stream', 'stream_etl'
+              ])}
             </Select>
             <FormHelperText>
               {PROCESSING_TYPES_WITH_FULL_CONFIG.includes(fieldValue as string)
@@ -333,11 +377,9 @@ const JobWizard: React.FC<JobWizardProps> = ({
               onChange={(e) => handleFieldChange('trgt_pltfrm', e.target.value)}
               placeholder="Select target platform"
             >
-              <option value="s3">S3</option>
-              <option value="stream">Stream</option>
-              <option value="redshift">Redshift</option>
-              <option value="snowflake">Snowflake</option>
-              <option value="rds">RDS</option>
+              {renderSelectOptions('trgt_pltfrm', [
+                's3', 'stream', 'redshift', 'snowflake', 'rds'
+              ])}
             </Select>
           </FormControl>
         );
@@ -375,13 +417,9 @@ const JobWizard: React.FC<JobWizardProps> = ({
               onChange={(e) => handleFieldChange('load_type', e.target.value)}
               placeholder="Select load type"
             >
-              <option value="full">Full</option>
-              <option value="merge">Merge</option>
-              <option value="append">Append</option>
-              <option value="distinct_merge">Distinct Merge</option>
-              <option value="delete_append">Delete Append</option>
-              <option value="distinct_append">Distinct Append</option>
-              <option value="na">NA</option>
+              {renderSelectOptions('load_type', [
+                'full', 'merge', 'append', 'distinct_merge', 'delete_append', 'distinct_append', 'na'
+              ])}
             </Select>
           </FormControl>
         );
@@ -447,12 +485,9 @@ const JobWizard: React.FC<JobWizardProps> = ({
               onChange={(e) => handleFieldChange('src_file_type', e.target.value)}
               placeholder="Select source file type"
             >
-              <option value="gzip">G-Zip</option>
-              <option value="json">JSON</option>
-              <option value="parquet">Parquet</option>
-              <option value="avro">Avro</option>
-              <option value="xml">XML</option>
-              <option value="txt">TXT</option>
+              {renderSelectOptions('src_file_type', [
+                'gzip', 'json', 'parquet', 'avro', 'xml', 'txt'
+              ])}
             </Select>
           </FormControl>
         );
@@ -477,13 +512,9 @@ const JobWizard: React.FC<JobWizardProps> = ({
               onChange={(e) => handleFieldChange('unld_file_type', e.target.value)}
               placeholder="Select unload file type"
             >
-              <option value="csv">CSV</option>
-              <option value="json">JSON</option>
-              <option value="parquet">Parquet</option>
-              <option value="hudi">Hudi</option>
-              <option value="gzip">G-Zip</option>
-              <option value="csv_zip">CSV-Zip</option>
-              <option value="na">NA</option>
+              {renderSelectOptions('unld_file_type', [
+                'csv', 'json', 'parquet', 'hudi', 'gzip', 'csv_zip', 'na'
+              ])}
             </Select>
           </FormControl>
         );
@@ -509,11 +540,9 @@ const JobWizard: React.FC<JobWizardProps> = ({
               onChange={(e) => handleFieldChange('unld_frqncy', e.target.value)}
               placeholder="Select frequency"
             >
-              <option value="na">NA</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
+              {renderSelectOptions('unld_frqncy', [
+                'na', 'daily', 'weekly', 'monthly', 'yearly'
+              ])}
             </Select>
           </FormControl>
         );
@@ -522,11 +551,15 @@ const JobWizard: React.FC<JobWizardProps> = ({
         return (
           <FormControl key={field} isRequired>
             <FormLabel>Unload Type</FormLabel>
-            <Input
+            <Select
               value={fieldValue as string || ''}
               onChange={(e) => handleFieldChange('unld_type', e.target.value)}
-              placeholder="Enter unload type"
-            />
+              placeholder="Select unload type"
+            >
+              {renderSelectOptions('unld_type', [
+                'na', 'full', 'append', 'merge', 'delete_append'
+              ])}
+            </Select>
           </FormControl>
         );
 
@@ -548,11 +581,15 @@ const JobWizard: React.FC<JobWizardProps> = ({
         return (
           <FormControl key={field}>
             <FormLabel>Unload Target Platform</FormLabel>
-            <Input
+            <Select
               value={fieldValue as string || ''}
               onChange={(e) => handleFieldChange('unld_trgt_pltfrm', e.target.value)}
-              placeholder="Enter unload target platform"
-            />
+              placeholder="Select unload target platform"
+            >
+              {renderSelectOptions('unld_trgt_pltfrm', [
+                'na', 'snowflake', 'redshift-snowflake', 'redshift'
+              ])}
+            </Select>
           </FormControl>
         );
 
@@ -560,11 +597,15 @@ const JobWizard: React.FC<JobWizardProps> = ({
         return (
           <FormControl key={field}>
             <FormLabel>Unload Zone Code</FormLabel>
-            <Input
+            <Select
               value={fieldValue as string || ''}
               onChange={(e) => handleFieldChange('unld_zone_cd', e.target.value)}
-              placeholder="Enter zone code"
-            />
+              placeholder="Select zone code"
+            >
+              {renderSelectOptions('unld_zone_cd', [
+                'na', 'cnfz', 'rawz'
+              ])}
+            </Select>
           </FormControl>
         );
 
@@ -572,11 +613,15 @@ const JobWizard: React.FC<JobWizardProps> = ({
         return (
           <FormControl key={field}>
             <FormLabel>Unload S3 Bucket Set</FormLabel>
-            <Input
+            <Select
               value={fieldValue as string || ''}
               onChange={(e) => handleFieldChange('unld_S3_bucket_set', e.target.value)}
-              placeholder="Enter S3 bucket set"
-            />
+              placeholder="Select S3 bucket set"
+            >
+              {renderSelectOptions('unld_S3_bucket_set', [
+                'na', '-gbd-phi-', '-gbd-nophi-', '-nogbd-phi-', '-nogbd-nophi-'
+              ])}
+            </Select>
           </FormControl>
         );
 
@@ -584,11 +629,13 @@ const JobWizard: React.FC<JobWizardProps> = ({
         return (
           <FormControl key={field} isRequired>
             <FormLabel>Delimiter</FormLabel>
-            <Input
+            <Select
               value={fieldValue as string || ''}
               onChange={(e) => handleFieldChange('dlmtr', e.target.value)}
-              placeholder="Enter delimiter (e.g., comma, pipe)"
-            />
+              placeholder="Select delimiter"
+            >
+              {renderSelectOptions('dlmtr', ['na'])}
+            </Select>
           </FormControl>
         );
 
@@ -596,11 +643,13 @@ const JobWizard: React.FC<JobWizardProps> = ({
         return (
           <FormControl key={field} isRequired>
             <FormLabel>Post Load Method</FormLabel>
-            <Input
+            <Select
               value={fieldValue as string || ''}
               onChange={(e) => handleFieldChange('post_load_mthd', e.target.value)}
-              placeholder="Enter post load method"
-            />
+              placeholder="Select post load method"
+            >
+              {renderSelectOptions('post_load_mthd', ['na'])}
+            </Select>
           </FormControl>
         );
 
@@ -614,11 +663,9 @@ const JobWizard: React.FC<JobWizardProps> = ({
               onChange={(e) => handleFieldChange('job_type', e.target.value)}
               placeholder="Select job type"
             >
-              <option value="glue">Glue</option>
-              <option value="emr">EMR</option>
-              <option value="lambda">Lambda</option>
-              <option value="s3">S3</option>
-              <option value="sfn">SFN</option>
+              {renderSelectOptions('job_type', [
+                'glue', 'emr', 'lambda', 's3', 'sfn'
+              ])}
             </Select>
           </FormControl>
         );
@@ -647,14 +694,11 @@ const JobWizard: React.FC<JobWizardProps> = ({
               onChange={(e) => handleFieldChange('load_frqncy', e.target.value)}
               placeholder="Select load frequency"
             >
-              <option value="na">NA</option>
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="yearly">Yearly</option>
-              <option value="monthly">Monthly</option>
+              {renderSelectOptions('load_frqncy', [
+                'na', 'daily', 'weekly', 'quarterly', 'yearly', 'monthly'
+              ])}
             </Select>
-          </FormControl>
+              </FormControl>
         );
 
       case 'warehouse_size_suffix':
@@ -822,7 +866,7 @@ const JobWizard: React.FC<JobWizardProps> = ({
               </Button>
             )}
           </HStack>
-        </ModalFooter>
+        </ModalFooter>load_frqncy
       </ModalContent>
     </Modal>
   );
