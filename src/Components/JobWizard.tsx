@@ -716,10 +716,17 @@ const JobWizard: React.FC<JobWizardProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" closeOnOverlayClick={false}>
+    <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false}>
       <ModalOverlay />
-      <ModalContent maxWidth="600px">
-        <ModalHeader>
+      <ModalContent
+        width="700px"
+        height="600px"
+        maxWidth="700px"
+        maxHeight="600px"
+        display="flex"
+        flexDirection="column"
+      >
+        <ModalHeader flexShrink={0} pb={2}>
           <VStack align="stretch" spacing={2}>
             <Text>Job Configuration Wizard</Text>
             <Box>
@@ -732,32 +739,60 @@ const JobWizard: React.FC<JobWizardProps> = ({
         </ModalHeader>
         <ModalCloseButton />
 
-        <ModalBody>
-          <VStack spacing={4} align="stretch">
-            {!canProceedToNext() && currentStep > 1 && (
-              <Alert status="warning" size="sm">
-                <AlertIcon />
-                Please fill in all required fields to proceed.
-              </Alert>
-            )}
+        <ModalBody
+          flex="1"
+          overflow="hidden"
+          display="flex"
+          flexDirection="column"
+          py={0}
+        >
+          <Box
+            flex="1"
+            overflowY="auto"
+            pr={2}
+            css={{
+              '&::-webkit-scrollbar': {
+                width: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: '#f1f1f1',
+                borderRadius: '10px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#c1c1c1',
+                borderRadius: '10px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: '#a8a8a8',
+              },
+            }}
+          >
+            <VStack spacing={4} align="stretch" py={4}>
+              {!canProceedToNext() && currentStep > 1 && (
+                <Alert status="warning" size="sm">
+                  <AlertIcon />
+                  Please fill in all required fields to proceed.
+                </Alert>
+              )}
 
-            {currentStepConfig?.fields.map(field => renderField(field))}
+              {currentStepConfig?.fields.map(field => renderField(field))}
 
-            {currentStep === 1 && config.processingType && (
-              <Alert
-                status={PROCESSING_TYPES_WITH_FULL_CONFIG.includes(config.processingType) ? "info" : "success"}
-                size="sm"
-              >
-                <AlertIcon />
-                {PROCESSING_TYPES_WITH_FULL_CONFIG.includes(config.processingType)
-                  ? `You selected "${config.processingType}". Additional configuration steps will be available.`
-                  : `You selected "${config.processingType}". Click Save to complete the configuration.`}
-              </Alert>
-            )}
-          </VStack>
+              {currentStep === 1 && config.processingType && (
+                <Alert
+                  status={PROCESSING_TYPES_WITH_FULL_CONFIG.includes(config.processingType) ? "info" : "success"}
+                  size="sm"
+                >
+                  <AlertIcon />
+                  {PROCESSING_TYPES_WITH_FULL_CONFIG.includes(config.processingType)
+                    ? `You selected "${config.processingType}". Additional configuration steps will be available.`
+                    : `You selected "${config.processingType}". Click Save to complete the configuration.`}
+                </Alert>
+              )}
+            </VStack>
+          </Box>
         </ModalBody>
 
-        <ModalFooter>
+        <ModalFooter flexShrink={0} pt={2}>
           <HStack spacing={3}>
             {steps.length > 1 && (
               <Button
