@@ -41,6 +41,9 @@ export default function MajorComponent({
   let color = "black";
   if (isDark) color = "white";
 
+  // Check if this is an ingestion component
+  const isIngestionComponent = type === MajorComponents.Ingestion;
+
   // Map component types to their labels
   const getComponentLabel = (type: MajorComponents) => {
     const labelMap = {
@@ -95,8 +98,8 @@ export default function MajorComponent({
     >
       <Rotation selected={selected} id={id} />
 
-      {/* Lock/Unlock button */}
-      {parentId && selected && (
+      {/* Lock/Unlock button - hidden for Ingestion components */}
+      {parentId && selected && !isIngestionComponent && (
         <Box
           position="absolute"
           top="-23px"
@@ -184,19 +187,40 @@ export default function MajorComponent({
         </Box>
       </HStack>
 
-      {/* Connection terminals */}
-      <Terminal
-        type="target"
-        position={Position.Left}
-        id="left"
-        isConnectable={connectable}
-      />
-      <Terminal
-        type="source"
-        position={Position.Right}
-        id="right"
-        isConnectable={connectable}
-      />
+      {/* Connection terminals - conditional based on component type */}
+      {isIngestionComponent ? (
+        <>
+          {/* Top and bottom terminals for Ingestion */}
+          <Terminal
+            type="target"
+            position={Position.Top}
+            id="top"
+            isConnectable={connectable}
+          />
+          <Terminal
+            type="source"
+            position={Position.Bottom}
+            id="bottom"
+            isConnectable={connectable}
+          />
+        </>
+      ) : (
+        <>
+          {/* Left and right terminals for other components */}
+          <Terminal
+            type="target"
+            position={Position.Left}
+            id="left"
+            isConnectable={connectable}
+          />
+          <Terminal
+            type="source"
+            position={Position.Right}
+            id="right"
+            isConnectable={connectable}
+          />
+        </>
+      )}
     </Box>
   );
 }

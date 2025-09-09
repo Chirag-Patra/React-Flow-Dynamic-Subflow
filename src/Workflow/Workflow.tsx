@@ -181,10 +181,13 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         value: '',
         visible: showContent,
         connectable: showContent,
+        isAttachedToGroup: true, // Mark as attached to parent
+
         // Copy the job configuration to the ingestion node if it's an ingestion type
         ingestionConfig: jobNode.data?.jobConfig || {}
       },
       parentId: boardId,
+       extent: "parent", // Lock the component within its parent bounds
       draggable: showContent,
       selectable: showContent,
     };
