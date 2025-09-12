@@ -18,6 +18,7 @@ type MajorComponentNode = Node<MajorComponentsData, "string">;
 
 export default function MajorComponent({
   data: {
+    reusableComponenttype,
     value,
     type,
     rotation,
@@ -44,8 +45,21 @@ export default function MajorComponent({
   // Check if this is an ingestion component
   const isIngestionComponent = type === MajorComponents.Ingestion;
 
+  // Check if this is an ETL processing component
+  const isETLProcessingComponent = [
+    MajorComponents.Run_Lamda,
+    MajorComponents.Run_GlueJob,
+    MajorComponents.Run_Eks,
+    MajorComponents.Run_StepFunction
+  ].includes(type);
+
   // Map component types to their labels
   const getComponentLabel = (type: MajorComponents) => {
+    // For ETL processing types, show reusable component type if available
+    if (isETLProcessingComponent && reusableComponenttype && reusableComponenttype !== 'Custom') {
+      return reusableComponenttype;
+    }
+
     const labelMap = {
       [MajorComponents.Js]: 'JavaScript',
       [MajorComponents.Aws]: 'AWS',
@@ -57,7 +71,6 @@ export default function MajorComponent({
       [MajorComponents.Run_Eks]: 'Run EKS',
       [MajorComponents.Run_StepFunction]: 'Run Step Function',
       [MajorComponents.Ingestion]: 'Ingestion',
-
     };
     return labelMap[type] || 'Component';
   };
@@ -67,7 +80,6 @@ export default function MajorComponent({
     const iconProps = { height: 30, color };
 
     switch(type) {
-
       case MajorComponents.Execute_Py:
         return <Python {...iconProps} />;
       case MajorComponents.Email_notification:
@@ -82,7 +94,6 @@ export default function MajorComponent({
         return <Stepfunction {...iconProps} />;
       case MajorComponents.Ingestion:
         return <Ingestion {...iconProps} />;
-
       default:
         return null;
     }
@@ -167,25 +178,45 @@ export default function MajorComponent({
           {renderIcon()}
         </Box>
 
-        {/* Label and value */}
+        {/* Label only - value moved outside */}
         <Box pr={2}>
           <Text
             fontSize="sm"
             fontWeight="medium"
             color={isDark ? "gray.200" : "gray.700"}
+            textAlign="center"
           >
             {getComponentLabel(type)}
           </Text>
-          {value && (
-            <Text
-              fontSize="xs"
-              color={isDark ? "gray.400" : "gray.500"}
-            >
-              {value} {unit}
-            </Text>
-          )}
         </Box>
       </HStack>
+
+      {/* Value display outside the main box - positioned at bottom */}
+      {(value || (isETLProcessingComponent && reusableComponenttype)) && (
+        <Box
+          position="absolute"
+          bottom="-20px"
+          left="50%"
+          transform="translateX(-50%)"
+          bg={isDark ? "gray.900" : "white"}
+          border="1px solid"
+          borderColor={isDark ? "gray.600" : "gray.300"}
+          borderRadius="sm"
+          px={2}
+          py={1}
+          fontSize="xs"
+          color={isDark ? "gray.300" : "gray.600"}
+          whiteSpace="nowrap"
+          boxShadow="sm"
+          zIndex={5}
+        >
+          {isETLProcessingComponent && reusableComponenttype && reusableComponenttype !== 'Custom' ? (
+            <Text>{reusableComponenttype}</Text>
+          ) : value ? (
+            <Text>{value} {unit}</Text>
+          ) : null}
+        </Box>
+      )}
 
       {/* Connection terminals - conditional based on component type */}
       {isIngestionComponent ? (

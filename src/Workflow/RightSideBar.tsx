@@ -23,10 +23,8 @@ import { DeleteIcon } from "@chakra-ui/icons";
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { Node, useReactFlow, Edge, MarkerType } from "@xyflow/react";
 import { useDarkMode } from "../store";
-import ETLConfiguration, { ETLConfig } from "../Components/ETLConfiguration";
-import IngestionWizard from "../Components/IngestionWizard";
-import JobWizard from "../Components/JobWizard"; // Import the new JobWizard component
-import { IngestionConfig } from "../Components/IngestionConfiguration";
+import JobWizard from "../Components/Configuration/Job configuration/JobWizard";
+import ETLWizard from "../Components/Configuration/ETLWizard";
 import { MajorComponentsData, MajorComponents } from "../types";
 
 interface RightSidebarProps {
@@ -55,11 +53,12 @@ export const RightSidebar = ({
   } = useReactFlow();
 
   // State management
+  const [reusableComponenttype, setReusableComponentType] = useState("");
   const [value, setValue] = useState("");
   const [selectedTargetIds, setSelectedTargetIds] = useState<string[]>([]);
   const [width, setWidth] = useState(300);
-  const [isIngestionWizardOpen, setIsIngestionWizardOpen] = useState(false);
   const [isJobWizardOpen, setIsJobWizardOpen] = useState(false);
+  const [isETLWizardOpen, setIsETLWizardOpen] = useState(false);
   const isDragging = useRef(false);
 
   // Memoized computed values to ensure stability
@@ -72,8 +71,9 @@ export const RightSidebar = ({
       value: selectedNode.data?.value || "",
       processingType: selectedNode.data?.processingType || "",
       etlConfig: selectedNode.data?.etlConfig || {},
-      ingestionConfig: selectedNode.data?.ingestionConfig || {},
-      jobConfig: selectedNode.data?.jobConfig || {} // Add jobConfig for Job nodes
+      jobConfig: selectedNode.data?.jobConfig || {},
+      reusableComponenttype: selectedNode.data?.componentType || "",
+
     };
   }, [selectedNode?.id, selectedNode?.data, selectedNode?.type]);
 
@@ -81,8 +81,7 @@ export const RightSidebar = ({
   const componentVisibility = useMemo(() => {
     if (!nodeData) return {
       showJobWizardButton: false,
-      showIngestionWizardButton: false,
-      showETLConfig: false
+      showETLWizardButton: false
     };
 
     const isJobType = nodeData.type === "Job";
@@ -93,12 +92,9 @@ export const RightSidebar = ({
       MajorComponents.Run_StepFunction
     ].includes(nodeData.type as MajorComponents);
 
-    const isIngestionType = nodeData.type === MajorComponents.Ingestion;
-
     return {
       showJobWizardButton: isJobType,
-      showIngestionWizardButton: isIngestionType,
-      showETLConfig: isETLProcessingType
+      showETLWizardButton: isETLProcessingType
     };
   }, [nodeData?.type]);
 
@@ -151,25 +147,6 @@ export const RightSidebar = ({
   }, []);
 
   // Event handlers
-  const handleETLConfigChange = useCallback((etlConfig: ETLConfig) => {
-    if (!selectedNode) return;
-
-    const updatedData = {
-      ...selectedNode.data,
-      etlConfig: { ...etlConfig }
-    };
-
-    updateNodeData(selectedNode.id, updatedData);
-  }, [selectedNode?.id, selectedNode?.data, updateNodeData]);
-
-  const handleOpenIngestionWizard = useCallback(() => {
-    setIsIngestionWizardOpen(true);
-  }, []);
-
-  const handleCloseIngestionWizard = useCallback(() => {
-    setIsIngestionWizardOpen(false);
-  }, []);
-
   const handleOpenJobWizard = useCallback(() => {
     setIsJobWizardOpen(true);
   }, []);
@@ -178,13 +155,18 @@ export const RightSidebar = ({
     setIsJobWizardOpen(false);
   }, []);
 
+  const handleOpenETLWizard = useCallback(() => {
+    setIsETLWizardOpen(true);
+  }, []);
+
+  const handleCloseETLWizard = useCallback(() => {
+    setIsETLWizardOpen(false);
+  }, []);
+
   const handleSaveJobConfig = useCallback((config: any) => {
     if (!selectedNode) return;
 
     console.log('Job Config:', config);
-
-    // Get the previous processing type to check if it changed
-    const previousProcessingType = selectedNode.data?.processingType;
 
     // Update node data with job configuration
     const updatedData = {
@@ -203,17 +185,20 @@ export const RightSidebar = ({
     handleCloseJobWizard();
   }, [selectedNode?.id, selectedNode?.data, updateNodeData, onProcessingTypeChange, handleCloseJobWizard]);
 
-  const handleSaveIngestionConfig = useCallback((config: IngestionConfig) => {
+  const handleSaveETLConfig = useCallback((config: any) => {
     if (!selectedNode) return;
 
+    console.log('ETL Config:', config);
+
+    // Update node data with ETL configuration
     const updatedData = {
       ...selectedNode.data,
-      ingestionConfig: { ...config }
+      etlConfig: { ...config }
     };
 
     updateNodeData(selectedNode.id, updatedData);
-    handleCloseIngestionWizard();
-  }, [selectedNode?.id, selectedNode?.data, updateNodeData, handleCloseIngestionWizard]);
+    handleCloseETLWizard();
+  }, [selectedNode?.id, selectedNode?.data, updateNodeData, handleCloseETLWizard]);
 
   const handleDelete = useCallback(async () => {
     if (!selectedNode) return;
@@ -272,6 +257,18 @@ export const RightSidebar = ({
     return "Configure Job";
   };
 
+  const getETLWizardButtonText = () => {
+    const config = nodeData.etlConfig;
+    if (config && config.etl_stp_job_nm) {
+      const componentType = config?.componentType || '';
+      return `ETL : ${componentType} - ${config.etl_stp_job_nm}`;
+    }
+    if (config && config.componentType) {
+      return `ETL : ${config.componentType}`;
+    }
+    return "Configure ETL";
+  };
+
   return (
     <Box
       position="fixed"
@@ -326,7 +323,7 @@ export const RightSidebar = ({
         <InputGroup size="sm">
           <Input
             value={value}
-            placeholder={`ID: ${nodeData.id}`}
+            placeholder={`Enter ${nodeData.type} name/value`}
             onChange={(e) => {
               const newValue = e.target.value;
               setValue(newValue);
@@ -383,33 +380,27 @@ export const RightSidebar = ({
           </>
         )}
 
-        {/* Ingestion Wizard Button for Ingestion nodes */}
-        {/* {componentVisibility.showIngestionWizardButton && (
+        {/* ETL Wizard Button for ETL processing nodes */}
+        {componentVisibility.showETLWizardButton && (
           <>
             <Divider />
-            <Box key={`ingestion-wizard-${nodeData.id}`}>
+            <Box key={`etl-wizard-${nodeData.id}`}>
               <Button
-                colorScheme="blue"
-                variant="outline"
+                colorScheme="green"
+                variant={nodeData.etlConfig?.etl_stp_job_nm ? "solid" : "outline"}
                 size="sm"
                 width="100%"
-                onClick={handleOpenIngestionWizard}
+                onClick={handleOpenETLWizard}
               >
-                Configure Ingestion
+                {getETLWizardButtonText()}
               </Button>
-            </Box>
-          </>
-        )} */}
-
-        {/* ETL Configuration */}
-        {componentVisibility.showETLConfig && (
-          <>
-            <Divider />
-            <Box key={`etl-${nodeData.id}-${JSON.stringify(nodeData.etlConfig)}`}>
-              <ETLConfiguration
-                value={nodeData.etlConfig}
-                onChange={handleETLConfigChange}
-              />
+              {/* Show reusable component info if configured */}
+              {nodeData.reusableComponent && nodeData.componentType && (
+                setReusableComponentType(nodeData.componentType),
+                <Box mt={1} fontSize="xs" color="gray.600" textAlign="center">
+                  Reusable: {nodeData.componentType}
+                </Box>
+              )}
             </Box>
           </>
         )}
@@ -425,14 +416,14 @@ export const RightSidebar = ({
         }}
       />
 
-      {/* Ingestion Wizard Modal for Ingestion nodes */}
-      {/* <IngestionWizard
-        isOpen={isIngestionWizardOpen}
-        onClose={handleCloseIngestionWizard}
-        onSave={handleSaveIngestionConfig}
-        initialConfig={nodeData?.ingestionConfig}
-        nodeType={nodeData?.type}
-      /> */}
+      {/* ETL Wizard Modal for ETL processing nodes */}
+      <ETLWizard
+        isOpen={isETLWizardOpen}
+        onClose={handleCloseETLWizard}
+        onSave={handleSaveETLConfig}
+        initialConfig={nodeData?.etlConfig || {}}
+      />
+
     </Box>
   );
 };

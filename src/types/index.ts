@@ -1,5 +1,5 @@
 export enum MajorComponents {
- 
+
   Board = "Job",
   Js = "Js",
   Aws = "Aws",
@@ -19,6 +19,7 @@ export enum MajorComponentsState {
 }
 
 export type MajorComponentsData = {
+  reusableComponenttype?: string;
   value?: number;
   type?: MajorComponents;
   rotation?: number;
@@ -28,7 +29,7 @@ export type MajorComponentsData = {
   connectable?: boolean;
   processingType?: ""
   etlConfig?: ""
-  ingestionConfig?: ""
+  jobConfig?: ""
 };
 
 export enum HistoryAction {

@@ -7,7 +7,7 @@ import {
 import { toPng } from "html-to-image";
 import React from "react";
 import { Download } from "react-bootstrap-icons";
-import { useDarkMode } from "../store";
+import { useDarkMode } from "../../store";
 import { Tooltip } from '@chakra-ui/react';
 
 const IMAGE_WIDTH = 1024;
