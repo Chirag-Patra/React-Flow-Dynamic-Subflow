@@ -1,4 +1,4 @@
-// JobWizard.tsx (Refactored)
+// JobWizard.tsx (Updated with Submit API)
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Modal,
@@ -16,6 +16,7 @@ import {
   Box,
   Alert,
   AlertIcon,
+  useToast,
 } from '@chakra-ui/react';
 import { ApiService, JobParametersResponse } from '../../apiService';
 import DynamicFormField from '../DynamicFormField';
@@ -74,6 +75,8 @@ const JobWizard: React.FC<JobWizardProps> = ({
   const [apiData, setApiData] = useState<JobParametersResponse | null>(null);
   const [isLoadingApi, setIsLoadingApi] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const toast = useToast();
 
   // Fetch API data when modal opens
   useEffect(() => {
@@ -147,6 +150,113 @@ const JobWizard: React.FC<JobWizardProps> = ({
   const handleSave = () => {
     onSave(config);
     onClose();
+  };
+
+  // Function to build the API payload
+  const buildApiPayload = (config: JobConfig) => {
+    return {
+      "aplctn_cd": "ABCSRNL",
+      "domain_cd": config.domain_cd || "acct",
+      "clnt_id": config.clnt_id || "1",
+      "sor_cd": config.sor_cd || "abacus",
+      "trgt_tbl_nm": config.trgt_tbl_nm || "test_chirag_wf",
+      "trgt_schma": "edl",
+      "trgt_db_nm": "d01_edl",
+      "prcsng_type": config.processingType || "ingest",
+      "load_type": config.load_type || "full",
+      "load_frmt_parms": config.load_frmt_parms || "{}",
+      "pre_load_mthd": config.pre_load_mthd || "na",
+      "s3_inbnd_bkt": "crln-313460006431-ssm-dev-filetransfer",
+      "s3_bkup_bkt": "na",
+      "trgt_pltfrm": config.trgt_pltfrm || "snowflake",
+      "stg_schma": "edl_stg",
+      "key_list": config.key_list || "{\"filter\":\"NA\",\"default\":[\"*\"],\"orderby\":[\"NA\"],\"partitionby\":[\"NA\"]}",
+      "del_key_list": config.del_key_list || "na",
+      "src_file_type": config.src_file_type || "gzip",
+      "unld_file_type": config.unld_file_type || "gzip",
+      "unld_partn_key": config.unld_partn_key || "na",
+      "unld_frqncy": config.unld_frqncy || "na",
+      "unld_type": config.unld_type || "na",
+      "unld_frmt_parms": config.unld_frmt_parms || "{}",
+      "unld_zone_cd": config.unld_zone_cd || "cnfz",
+      "unld_trgt_pltfrm": config.unld_trgt_pltfrm || "snowflake",
+      "vrnc_alwd_pct": "0.0",
+      "dlmtr": config.dlmtr || "na",
+      "post_load_mthd": config.post_load_mthd || "na",
+      "job_type": config.job_type || "glue",
+      "etl_job_parms": config.etl_job_parms || "{}",
+      "sys_job_parms": "{}",
+      "cfx_ftp_dtls": "{}",
+      "kafka_dtls": "{}",
+      "load_frqncy": config.load_frqncy || "daily",
+      "dscvr_schma_flag": "n",
+      "rqstr_id": "al84771",
+      "ownrshp_team": config.ownrshp_team || "AEDL",
+      "unld_S3_bucket_set": config.unld_S3_bucket_set || "-gbd-phi-",
+      "warehouse_size_suffix": config.warehouse_size_suffix || "--BLANK--",
+      "data_copy_flag": "n",
+      "actv_flag": config.actv_flag || "n",
+      "last_updt_userid": "SYSTEM",
+      "s3_bkt_key_cmbntn": `crln-313460006431-ssm-dev-filetransfer/inbound/abcsrnl/${config.domain_cd || "acct"}/${config.sor_cd || "abacus"}/${config.trgt_tbl_nm || "test_chirag_wf"}`,
+      "job_id": "221124101",
+      "job_nm": `${config.processingType || "ingest"}-${config.trgt_tbl_nm || "test_chirag_wf"}`,
+      "s3_inbnd_key": `inbound/abcsrnl/${config.domain_cd || "acct"}/${config.sor_cd || "abacus"}/${config.trgt_tbl_nm || "test_chirag_wf"}`,
+      "s3_archv_key": `abcsrnl/${config.domain_cd || "acct"}/${config.sor_cd || "abacus"}/${config.trgt_tbl_nm || "test_chirag_wf"}`,
+      "s3_bkup_key": `abcsrnl/${config.domain_cd || "acct"}/${config.sor_cd || "abacus"}/${config.trgt_tbl_nm || "test_chirag_wf"}`,
+      "s3_app_key": `abcsrnl/${config.domain_cd || "acct"}/${config.sor_cd || "abacus"}/${config.trgt_tbl_nm || "test_chirag_wf"}`,
+      "s3_cnsmptn_key": `${config.domain_cd || "acct"}/${config.sor_cd || "abacus"}/${config.trgt_tbl_nm || "test_chirag_wf"}`,
+      "s3_archv_bkt": "crln-abcsrnl-dev-archz-gbd-phi-useast2",
+      "s3_app_bkt": "crln-abcsrnl-dev-dataz-gbd-phi-useast2",
+      "s3_cnsmptn_bkt": "crln-sf-dev-dataz-gbd-phi-useast2",
+      "del_tbl_nm": `${config.trgt_tbl_nm || "test_chirag_wf"}_del`,
+      "stg_tbl_nm": `${config.trgt_tbl_nm || "test_chirag_wf"}_stg`
+    };
+  };
+
+  // Function to submit the configuration
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+
+    try {
+      const payload = buildApiPayload(config);
+
+      const response = await fetch('https://aedl-/api/processing/metadata-request?env=DEV', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'hhhh'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: "Success",
+          description: "Configuration submitted successfully!",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+
+        // Optionally call onSave as well
+        onSave(config);
+        onClose();
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error submitting configuration:', error);
+      toast({
+        title: "Error",
+        description: `Failed to submit configuration: ${error.message}`,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Check if we can save (depends on processing type)
@@ -277,13 +387,24 @@ const JobWizard: React.FC<JobWizardProps> = ({
                 Next
               </Button>
             ) : (
-              <Button
-                colorScheme="green"
-                onClick={handleSave}
-                isDisabled={!canSave()}
-              >
-                Save Configuration
-              </Button>
+              <>
+                <Button
+                  colorScheme="green"
+                  onClick={handleSave}
+                  isDisabled={!canSave()}
+                >
+                  Save Configuration
+                </Button>
+                <Button
+                  colorScheme="blue"
+                  onClick={handleSubmit}
+                  isDisabled={!canSave()}
+                  isLoading={isSubmitting}
+                  loadingText="Submitting..."
+                >
+                  Submit
+                </Button>
+              </>
             )}
           </HStack>
         </ModalFooter>
