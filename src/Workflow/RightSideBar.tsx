@@ -273,14 +273,33 @@ export const RightSidebar = ({
     <Box
       position="fixed"
       right="0"
-      height="100vh"
+      top="49.5px"
+      height="calc(100vh - 50px)"
       width={`${width}px`}
-      bg="white"
+      bg="#2D3748"
+      color="whiteAlpha.900"
       p={4}
       boxShadow="lg"
       zIndex={1000}
-      overflow="auto"
-      borderLeft="1px solid #e2e8f0"
+      overflowY="auto"
+      overflowX="hidden"
+      borderLeft="1px solid"
+      borderColor="gray.600"
+      sx={{
+        "&::-webkit-scrollbar": {
+          width: "8px",
+        },
+        "&::-webkit-scrollbar-track": {
+          background: "transparent",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          background: "gray.600",
+          borderRadius: "4px",
+        },
+        "&::-webkit-scrollbar-thumb:hover": {
+          background: "gray.500",
+        },
+      }}
     >
       {/* Resizable Handle */}
       <Box
@@ -297,18 +316,20 @@ export const RightSidebar = ({
         _after={{
           content: '""',
           position: "absolute",
-          right: "0",
+          left: "0",
           top: "0",
           height: "100%",
           width: "2px",
-          bg: "gray.700",
+          bg: "gray.600",
         }}
       />
 
       <VStack spacing={4} align="stretch">
         {/* Header */}
         <Flex justify="space-between" align="center">
-          <Heading fontSize="sm">{nodeData.type?.toUpperCase()}</Heading>
+          <Heading fontSize="sm" fontWeight="semibold" color="white">
+            {nodeData.type?.toUpperCase()}
+          </Heading>
           <IconButton
             icon={<DeleteIcon />}
             aria-label="Delete node"
@@ -316,6 +337,8 @@ export const RightSidebar = ({
             colorScheme="red"
             variant="ghost"
             onClick={handleDelete}
+            color="whiteAlpha.900"
+            _hover={{ bg: "whiteAlpha.200" }}
           />
         </Flex>
 
@@ -329,22 +352,40 @@ export const RightSidebar = ({
               setValue(newValue);
               updateNodeData(selectedNode.id, { value: newValue });
             }}
+            bg="gray.700"
+            border="1px solid"
+            borderColor="gray.600"
+            color="white"
+            _placeholder={{ color: "whiteAlpha.500" }}
+            _hover={{ borderColor: "gray.500" }}
+            _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
           />
         </InputGroup>
 
         {/* Connections */}
         <Popover placement="bottom-start">
           <PopoverTrigger>
-            <Button size="sm" variant="outline" width="100%">
+            <Button
+              size="sm"
+              variant="outline"
+              width="100%"
+              bg="gray.700"
+              color="white"
+              borderColor="gray.600"
+              _hover={{ bg: "gray.600" }}
+              _active={{ bg: "gray.500" }}
+            >
               {selectedTargetIds.length > 0
                 ? `Connected to ${selectedTargetIds.length} node(s)`
                 : "Connect to node(s)..."}
             </Button>
           </PopoverTrigger>
-          <PopoverContent zIndex={10}>
-            <PopoverArrow />
-            <PopoverCloseButton />
-            <PopoverHeader>Select connections</PopoverHeader>
+          <PopoverContent zIndex={10} bg="gray.700" borderColor="gray.600">
+            <PopoverArrow bg="gray.700" />
+            <PopoverCloseButton color="whiteAlpha.900" />
+            <PopoverHeader color="white" borderColor="gray.600">
+              Select connections
+            </PopoverHeader>
             <PopoverBody>
               <CheckboxGroup
                 value={selectedTargetIds}
@@ -352,7 +393,20 @@ export const RightSidebar = ({
               >
                 <Stack spacing={2}>
                   {allNodes.map((n) => (
-                    <Checkbox key={n.id} value={n.id}>
+                    <Checkbox
+                      key={n.id}
+                      value={n.id}
+                      colorScheme="blue"
+                      sx={{
+                        "& .chakra-checkbox__control": {
+                          bg: "gray.600",
+                          borderColor: "gray.500",
+                        },
+                        "& .chakra-checkbox__label": {
+                          color: "white",
+                        },
+                      }}
+                    >
                       {String(n.data?.type || n.type).toUpperCase()} - {n.id}
                     </Checkbox>
                   ))}
@@ -365,7 +419,7 @@ export const RightSidebar = ({
         {/* Job Wizard Button for Job nodes */}
         {componentVisibility.showJobWizardButton && (
           <>
-            <Divider />
+            <Divider borderColor="gray.700" />
             <Box key={`job-wizard-${nodeData.id}`}>
               <Button
                 colorScheme="blue"
@@ -373,6 +427,10 @@ export const RightSidebar = ({
                 size="sm"
                 width="100%"
                 onClick={handleOpenJobWizard}
+                bg={nodeData.processingType ? "blue.500" : "transparent"}
+                color="white"
+                borderColor="blue.400"
+                _hover={{ bg: nodeData.processingType ? "blue.600" : "whiteAlpha.100" }}
               >
                 {getJobWizardButtonText()}
               </Button>
@@ -383,7 +441,7 @@ export const RightSidebar = ({
         {/* ETL Wizard Button for ETL processing nodes */}
         {componentVisibility.showETLWizardButton && (
           <>
-            <Divider />
+            <Divider borderColor="gray.700" />
             <Box key={`etl-wizard-${nodeData.id}`}>
               <Button
                 colorScheme="green"
@@ -391,13 +449,17 @@ export const RightSidebar = ({
                 size="sm"
                 width="100%"
                 onClick={handleOpenETLWizard}
+                bg={nodeData.etlConfig?.etl_stp_job_nm ? "green.500" : "transparent"}
+                color="white"
+                borderColor="green.400"
+                _hover={{ bg: nodeData.etlConfig?.etl_stp_job_nm ? "green.600" : "whiteAlpha.100" }}
               >
                 {getETLWizardButtonText()}
               </Button>
               {/* Show reusable component info if configured */}
               {nodeData.reusableComponent && nodeData.componentType && (
                 setReusableComponentType(nodeData.componentType),
-                <Box mt={1} fontSize="xs" color="gray.600" textAlign="center">
+                <Box mt={1} fontSize="xs" color="whiteAlpha.600" textAlign="center">
                   Reusable: {nodeData.componentType}
                 </Box>
               )}

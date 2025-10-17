@@ -1,63 +1,65 @@
-import { Box, Flex, Text, IconButton } from "@chakra-ui/react";
-import { ExportFlow } from "../Components/ToolBar/ExportFlow";
-import { ImportFlow } from "../Components/ToolBar/ImportFlow";
-import { ClearCanvas } from "../Components/ToolBar/ClearCanvas";
-import DownloadBtn from "../Components/ToolBar/DownloadBtn";
+import { Box, Flex, Text, Button, Divider, HStack } from "@chakra-ui/react";
 import { Node, Edge } from "@xyflow/react";
+
+// Import the refactored, AWS-style buttons
+import {
+  ExportButton,
+  ImportButton,
+  ClearCanvasButton,
+  DownloadImageButton,
+} from "../Components/ToolBar/ToolbarButtons"; // Adjust the path as needed
 
 interface TopBarProps {
   nodes: Node[];
   edges: Edge[];
   onImport: (flow: { nodes?: Node[]; edges?: Edge[] }) => void;
   onClear: () => void;
+  workflowName?: string; // Made optional with a default value
 }
 
-export const TopBar = ({ nodes, edges, onImport, onClear }: TopBarProps) => {
+export const TopBar = ({
+  nodes,
+  edges,
+  onImport,
+  onClear,
+  workflowName = "", // Provide a default name
+}: TopBarProps) => {
   return (
     <Box
       as="header"
-      bg="white"
+      bg="#232F3E" // AWS Console dark header
+      color="whiteAlpha.900"
       borderBottom="1px solid"
-      borderColor="gray.200"
+      borderColor="gray.700"
       px={6}
-      py={3}
+      py={2}
       position="relative"
       zIndex={1000}
     >
       <Flex justify="space-between" align="center">
-        <Text
-          fontSize="2xl"
-          fontWeight="bold"
-          fontFamily="cursive"
-          sx={{
-            textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
-            background: 'linear-gradient(to right, #4f46e5, #af78cfff)',
-            backgroundClip: 'text',
-            color: 'transparent',
-            display: 'inline-block',
-            _hover: {
-              transform: 'scale(1.02)',
-              transition: 'transform 0.2s ease-in-out'
-            }
-          }}
-        >
-          WorkFlow.io
-        </Text>
-
-        <Flex gap={2} align="center">
-          <Text
-            fontSize="md"
-            fontWeight="semibold"
-            color="gray.600"
-            mr={3}
-          >
-            Toolbar
+        {/* Left Side: Service and Workflow Name */}
+        <HStack spacing={4} align="center">
+          <Text fontSize="lg" fontWeight="bold">
+            Step Functions
           </Text>
-          <DownloadBtn />
-          <ExportFlow nodes={nodes} edges={edges} />
-          <ImportFlow onImport={onImport} />
-          <ClearCanvas onClear={onClear} />
-        </Flex>
+          <Divider orientation="vertical" h="20px" borderColor="gray.600" />
+          <Text fontSize="md" color="whiteAlpha.800">
+            {workflowName}
+          </Text>
+        </HStack>
+
+        {/* Right Side: Action Buttons */}
+        <HStack spacing={2}>
+          {/* Integrated Functional Buttons */}
+          <DownloadImageButton />
+          <ExportButton nodes={nodes} edges={edges} />
+          <ImportButton onImport={onImport} />
+          <ClearCanvasButton onClear={onClear} />
+
+          {/* Divider before primary action */}
+          <Divider orientation="vertical" h="20px" borderColor="gray.600" mx={2} />
+
+        </HStack>
       </Flex>
     </Box>
   );
