@@ -273,7 +273,7 @@ export const RightSidebar = ({
     <Box
       position="fixed"
       right="0"
-      top="49.5px"
+      top="60.5px"
       height="calc(100vh - 50px)"
       width={`${width}px`}
       bg="#2D3748"

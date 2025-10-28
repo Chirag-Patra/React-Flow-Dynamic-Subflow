@@ -104,10 +104,10 @@ export default function MajorComponent({
       pos="relative"
       style={{
        // transform: `rotate(${rotation}deg)`,
-        visibility: visible ? "visible" : "hidden",
+       // visibility: visible ? "visible" : "hidden",
       }}
     >
-      {/* <Rotation selected={selected} id={id} /> */}  
+      {/* <Rotation selected={selected} id={id} /> */}
 
       {/* Lock/Unlock button - hidden for Ingestion components */}
       {/* {parentId && selected && !isIngestionComponent && (

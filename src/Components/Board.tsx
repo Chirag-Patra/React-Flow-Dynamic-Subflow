@@ -1,6 +1,6 @@
 import { Box, Text, Badge } from "@chakra-ui/react";
 import { Node, NodeProps, NodeResizer, useStore, Handle, Position } from "@xyflow/react";
-import React from "react";
+import React, { useState } from "react";
 import { MajorComponentsData, MajorComponents } from "../types";
 import { getUnit } from "../utils";
 import Placeholder from "./Placeholder";
@@ -11,7 +11,7 @@ import Terminal from "./Terminal";
 type BoardNode = Node<MajorComponentsData, "string">;
 
 export default function Board({ type,
-  data: { value, processingType }, selected }: NodeProps<BoardNode>) {
+  data: { value, processingType, isDragOver }, selected }: NodeProps<BoardNode>) {
 
   const unit = getUnit(type as MajorComponents);
   const showContent = useStore(zoomSelector);
@@ -21,15 +21,21 @@ export default function Board({ type,
   let color = "black";
   if (isDark) color = "white";
 
+  // Change border color when dragging over
+  const borderColor = isDragOver
+    ? (isDark ? "#4299e1" : "#3182ce") // Blue when dragging over
+    : color;
+
   return (
     <Box
       position="relative"
-      border={`2px solid ${color}`}
+      border={`2px solid ${borderColor}`}
       borderRadius="8px"
       height="100%"
       width="100%"
       bg={isDark ? "rgba(100, 150, 200, 0.15)" : "rgba(173, 216, 230, 0.3)"}
-      {...(selected && { boxShadow: `${color} 0px 0px 4px` })}
+      {...(selected && { boxShadow: `${borderColor} 0px 0px 4px` })}
+      transition="border-color 0.2s ease"
     >
       {selected && <NodeResizer minWidth={200} minHeight={200} />}
 

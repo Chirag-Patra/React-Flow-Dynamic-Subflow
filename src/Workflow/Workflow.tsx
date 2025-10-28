@@ -491,6 +491,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       data: { type, value: '' },
       extent: "parent",
       parentId: Job?.id,
+      expandParent: true,
     };
     console.log("Node to be created:", node);
   } else {

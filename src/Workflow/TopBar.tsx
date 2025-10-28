@@ -1,5 +1,6 @@
-import { Box, Flex, Text, Button, Divider, HStack } from "@chakra-ui/react";
+import { Box, Flex, Text, Button, Divider, HStack, Image } from "@chakra-ui/react";
 import { Node, Edge } from "@xyflow/react";
+import ElevanceLogo from "../logo/Elevance_logo.png";
 
 // Import the refactored, AWS-style buttons
 import {
@@ -27,22 +28,24 @@ export const TopBar = ({
   return (
     <Box
       as="header"
-      bg="#232F3E" // AWS Console dark header
+      bg="#20376F" // Updated background color
       color="whiteAlpha.900"
       borderBottom="1px solid"
       borderColor="gray.700"
       px={6}
-      py={2}
+      py={4} // Increased padding for more height
       position="relative"
       zIndex={1000}
+      height="60px" // Set explicit height
     >
-      <Flex justify="space-between" align="center">
-        {/* Left Side: Service and Workflow Name */}
+      <Flex justify="space-between" align="center" height="100%">
+        {/* Left Side: Logo, Service and Workflow Name */}
         <HStack spacing={4} align="center">
+          <Image src={ElevanceLogo} alt="Elevance Logo" height="40px" objectFit="contain" />
+          <Divider orientation="vertical" h="30px" borderColor="gray.600" />
           <Text fontSize="lg" fontWeight="bold">
-            Step Functions
+            Workflow
           </Text>
-          <Divider orientation="vertical" h="20px" borderColor="gray.600" />
           <Text fontSize="md" color="whiteAlpha.800">
             {workflowName}
           </Text>
@@ -57,7 +60,7 @@ export const TopBar = ({
           <ClearCanvasButton onClear={onClear} />
 
           {/* Divider before primary action */}
-          <Divider orientation="vertical" h="20px" borderColor="gray.600" mx={2} />
+          <Divider orientation="vertical" h="30px" borderColor="gray.600" mx={2} />
 
         </HStack>
       </Flex>

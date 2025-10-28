@@ -60,7 +60,7 @@ export const LeftSidebar = ({ onDragStart }: LeftSidebarProps) => {
       borderColor="gray.700"
       position="fixed"
       left={0}
-      top="49.5px"
+      top="60.5px"
       zIndex={100}
     >
       <Tabs variant="line" colorScheme="blue" h="100%" display="flex" flexDirection="column">
