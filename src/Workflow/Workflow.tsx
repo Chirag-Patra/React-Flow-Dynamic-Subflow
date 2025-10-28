@@ -56,6 +56,7 @@ interface WorkflowProps {
 export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPropsNodes, setEdges: setPropsEdges }: WorkflowProps) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(propsNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(propsEdges);
+  const [isDragging, setIsDragging] = useState(false); // Add this line
 
   // Keep track of the last props to detect external changes
   const lastPropsNodes = useRef(propsNodes);
@@ -221,170 +222,288 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
     event.dataTransfer.dropEffect = "move";
   };
 
+  // const onDrop: React.DragEventHandler<HTMLDivElement> = (event) => {
+  //   event.preventDefault();
+  //   const type = dragOutsideRef.current;
+
+  //   if (!type) return;
+
+  //   let position = screenToFlowPosition({
+  //     x: event.clientX,
+  //     y: event.clientY,
+  //   });
+
+  //   const boards = nodes?.filter(
+  //     (node) => node.type === MajorComponents.Board
+  //   );
+  //   const Job = boards.find((Job) => {
+  //     return isPointInBox(
+  //       { x: position.x, y: position.y },
+  //       {
+  //         x: Job.position?.x || 0,
+  //         y: Job?.position?.y || 0,
+  //         height: Job?.measured?.height || 0,
+  //         width: Job?.measured?.width || 0,
+  //       }
+  //     );
+  //   });
+
+  //   if (Job) {
+  //     const { x, y } = Job?.position || {
+  //       x: 0,
+  //       y: 0,
+  //     };
+  //     const { x: dragX, y: dragY } = position || {
+  //       x: 0,
+  //       y: 0,
+  //     };
+  //     position = { x: dragX - x, y: dragY - y };
+  //   }
+
+  //   let node: Node | undefined;
+  //   if (
+  //     [
+  //       MajorComponents.Js,
+  //       MajorComponents.Aws,
+  //       MajorComponents.Db,
+  //       MajorComponents.Email_notification,
+  //       MajorComponents.Execute_Py,
+  //       MajorComponents.Run_Lamda,
+  //       MajorComponents.Run_GlueJob,
+  //       MajorComponents.Run_Eks,
+  //       MajorComponents.Run_StepFunction,
+  //       MajorComponents.Ingestion,
+  //     ].includes(type)
+  //   ) {
+  //     node = {
+  //       id: uuid(),
+  //       type: "MajorComponent",
+  //       position,
+  //       data: { type, value: '' },
+  //       parentId: Job?.id,
+  //     };
+  //   }
+  //   else if (type === MajorComponents.Js) {
+  //     node = {
+  //       id: uuid(),
+  //       type,
+  //       position,
+  //       data: { value: 12 },
+  //       parentId: Job?.id,
+  //     };
+  //   }
+  //   else if (type === MajorComponents.Aws) {
+  //     node = {
+  //       id: uuid(),
+  //       type,
+  //       position,
+  //       data: { value: 12 },
+  //       parentId: Job?.id,
+  //     };
+  //   }
+  //   else if (type === MajorComponents.Db) {
+  //     node = {
+  //       id: uuid(),
+  //       type,
+  //       position,
+  //       data: { value: 12 },
+  //       parentId: Job?.id,
+  //     };
+  //   }
+  //   else if (type === MajorComponents.Email_notification) {
+  //     node = {
+  //       id: uuid(),
+  //       type,
+  //       position,
+  //       data: { value: 12 },
+  //       parentId: Job?.id,
+  //     };
+  //   }
+  //   else if (type === MajorComponents.Execute_Py) {
+  //     node = {
+  //       id: uuid(),
+  //       type,
+  //       position,
+  //       data: { value: 12 },
+  //       parentId: Job?.id,
+  //     };
+  //   }
+  //   else if (type === MajorComponents.Run_Lamda) {
+  //     node = {
+  //       id: uuid(),
+  //       type,
+  //       position,
+  //       data: { value: 12 },
+  //       parentId: Job?.id,
+  //     };
+  //   }
+  //   else if (type === MajorComponents.Run_GlueJob) {
+  //     node = {
+  //       id: uuid(),
+  //       type,
+  //       position,
+  //       data: { value: 12 },
+  //       parentId: Job?.id,
+  //     };
+  //   }
+  //   else if (type === MajorComponents.Run_Eks) {
+  //     node = {
+  //       id: uuid(),
+  //       type,
+  //       position,
+  //       data: { value: 12 },
+  //       parentId: Job?.id,
+  //     };
+  //   }
+  //   else if (type === MajorComponents.Run_StepFunction) {
+  //     node = {
+  //       id: uuid(),
+  //       type,
+  //       position,
+  //       data: { value: 12 },
+  //       parentId: Job?.id,
+  //     };
+  //   }
+  //    else if (type === MajorComponents.Ingestion) {
+  //     node = {
+  //       id: uuid(),
+  //       type,
+  //       position,
+  //       data: { value: 12 },
+  //       parentId: Job?.id,
+  //     };
+  //   }
+  //   else if (type === MajorComponents.Board) {
+  //     node = {
+  //       id: uuid(),
+  //       type,
+  //       position,
+  //       data: {},
+  //       style: { height: 200, width: 200 },
+  //     };
+  //   }
+
+  //   if (node) addNode(node);
+  // };
+
+
   const onDrop: React.DragEventHandler<HTMLDivElement> = (event) => {
-    event.preventDefault();
-    const type = dragOutsideRef.current;
+  event.preventDefault();
+  setIsDragging(false);
+  const type = dragOutsideRef.current;
 
-    if (!type) return;
+  console.log("onDrop triggered, type:", type);
 
-    let position = screenToFlowPosition({
-      x: event.clientX,
-      y: event.clientY,
-    });
+  if (!type) {
+    console.log("No type found");
+    return;
+  }
 
-    const boards = nodes?.filter(
-      (node) => node.type === MajorComponents.Board
+  let position = screenToFlowPosition({
+    x: event.clientX,
+    y: event.clientY,
+  });
+
+  console.log("Drop position:", position);
+  console.log("All nodes:", nodes);
+
+  // Board/Job can be dropped anywhere on the background
+  if (type === MajorComponents.Board) {
+    console.log("Creating Board/Job");
+    const node: Node = {
+      id: uuid(),
+      type: "Job",
+      position,
+      data: {},
+      style: { height: 200, width: 200 },
+    };
+    addNode(node);
+    return; // Exit early
+  }
+
+  // For all other components, check if they're being dropped inside a Job
+  const boards = nodes?.filter(
+    (node) => node.type === "Job"
+  );
+
+  console.log("Found boards:", boards);
+
+  const Job = boards.find((Job) => {
+    const isInside = isPointInBox(
+      { x: position.x, y: position.y },
+      {
+        x: Job.position?.x || 0,
+        y: Job?.position?.y || 0,
+        height: Job?.measured?.height || 0,
+        width: Job?.measured?.width || 0,
+      }
     );
-    const Job = boards.find((Job) => {
-      return isPointInBox(
-        { x: position.x, y: position.y },
-        {
-          x: Job.position?.x || 0,
-          y: Job?.position?.y || 0,
-          height: Job?.measured?.height || 0,
-          width: Job?.measured?.width || 0,
-        }
-      );
+    console.log("Checking Job:", Job.id, "isInside:", isInside, "Job bounds:", {
+      x: Job.position?.x,
+      y: Job.position?.y,
+      height: Job?.measured?.height,
+      width: Job?.measured?.width,
     });
+    return isInside;
+  });
 
-    if (Job) {
-      const { x, y } = Job?.position || {
-        x: 0,
-        y: 0,
-      };
-      const { x: dragX, y: dragY } = position || {
-        x: 0,
-        y: 0,
-      };
-      position = { x: dragX - x, y: dragY - y };
-    }
+  console.log("Selected Job:", Job);
 
-    let node: Node | undefined;
-    if (
-      [
-        MajorComponents.Js,
-        MajorComponents.Aws,
-        MajorComponents.Db,
-        MajorComponents.Email_notification,
-        MajorComponents.Execute_Py,
-        MajorComponents.Run_Lamda,
-        MajorComponents.Run_GlueJob,
-        MajorComponents.Run_Eks,
-        MajorComponents.Run_StepFunction,
-        MajorComponents.Ingestion,
-      ].includes(type)
-    ) {
-      node = {
-        id: uuid(),
-        type: "MajorComponent",
-        position,
-        data: { type, value: '' },
-        parentId: Job?.id,
-      };
-    }
-    else if (type === MajorComponents.Js) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
-        parentId: Job?.id,
-      };
-    }
-    else if (type === MajorComponents.Aws) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
-        parentId: Job?.id,
-      };
-    }
-    else if (type === MajorComponents.Db) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
-        parentId: Job?.id,
-      };
-    }
-    else if (type === MajorComponents.Email_notification) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
-        parentId: Job?.id,
-      };
-    }
-    else if (type === MajorComponents.Execute_Py) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
-        parentId: Job?.id,
-      };
-    }
-    else if (type === MajorComponents.Run_Lamda) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
-        parentId: Job?.id,
-      };
-    }
-    else if (type === MajorComponents.Run_GlueJob) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
-        parentId: Job?.id,
-      };
-    }
-    else if (type === MajorComponents.Run_Eks) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
-        parentId: Job?.id,
-      };
-    }
-    else if (type === MajorComponents.Run_StepFunction) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
-        parentId: Job?.id,
-      };
-    }
-     else if (type === MajorComponents.Ingestion) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: { value: 12 },
-        parentId: Job?.id,
-      };
-    }
-    else if (type === MajorComponents.Board) {
-      node = {
-        id: uuid(),
-        type,
-        position,
-        data: {},
-        style: { height: 200, width: 200 },
-      };
-    }
+  // If no Job found, don't create the node
+  if (!Job) {
+    console.log("No Job found - cannot drop component");
+    return;
+  }
 
-    if (node) addNode(node);
+  // Calculate relative position inside the Job
+  const { x, y } = Job?.position || {
+    x: 0,
+    y: 0,
   };
+  const { x: dragX, y: dragY } = position || {
+    x: 0,
+    y: 0,
+  };
+  position = { x: dragX - x, y: dragY - y };
 
+  console.log("Relative position inside Job:", position);
+
+  // Create node inside the Job
+  let node: Node | undefined;
+  if (
+    [
+      MajorComponents.Js,
+      MajorComponents.Aws,
+      MajorComponents.Db,
+      MajorComponents.Email_notification,
+      MajorComponents.Execute_Py,
+      MajorComponents.Run_Lamda,
+      MajorComponents.Run_GlueJob,
+      MajorComponents.Run_Eks,
+      MajorComponents.Run_StepFunction,
+      MajorComponents.Ingestion,
+    ].includes(type)
+  ) {
+    node = {
+      id: uuid(),
+      type: "MajorComponent",
+      position,
+      data: { type, value: '' },
+      extent: "parent",
+      parentId: Job?.id,
+    };
+    console.log("Node to be created:", node);
+  } else {
+    console.log("Type not in allowed list:", type);
+  }
+
+  if (node) {
+    console.log("Adding node");
+    addNode(node);
+  } else {
+    console.log("No node created");
+  }
+};
   const [selectedNode, setSelectedNode] = useState<Node | undefined>();
 
   const onNodeClick = (event: React.MouseEvent<Element>, node: Node) => {
@@ -633,6 +752,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
 
   return (
     <Box height="calc(100vh - 60px)" width="100vw" position="relative">
+
       {/* Left Sidebar */}
       <LeftSidebar
         onDragStart={onDragStart}
@@ -654,6 +774,29 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         height="100%"
         transition="margin-right 0.3s ease"
       >
+         {/* Blur overlay when dragging - positioned inside the canvas */}
+      {isDragging && (
+        <Box
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          zIndex={999}
+          pointerEvents="none"
+        >
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            bg={isDark ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.5)"}
+            backdropFilter="blur(8px)"
+            WebkitBackdropFilter="blur(8px)" // For Safari support
+          />
+        </Box>
+      )}
         <ReactFlow
           onInit={setRfInstance}
           nodes={nodes}

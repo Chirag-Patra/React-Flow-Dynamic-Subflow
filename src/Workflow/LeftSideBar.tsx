@@ -86,6 +86,22 @@ export const LeftSidebar = ({ onDragStart }: LeftSidebarProps) => {
 
         {/* Tab Content */}
         <TabPanels flex="1" overflowY="auto">
+          {/* Components Panel */}
+          <TabPanel p={4}>
+            <VStack spacing={2} align="stretch">
+              {PARENT.map((component) =>
+                component ? (
+                  <DraggableNode
+                    key={component.label}
+                    component={component}
+                    onDragStart={onDragStart}
+                  />
+                ) : null
+              )}
+            </VStack>
+          </TabPanel>
+
+
           {/* Framework Panel */}
           <TabPanel p={4}>
             <VStack spacing={2} align="stretch">
@@ -101,20 +117,7 @@ export const LeftSidebar = ({ onDragStart }: LeftSidebarProps) => {
             </VStack>
           </TabPanel>
 
-          {/* Components Panel */}
-          <TabPanel p={4}>
-            <VStack spacing={2} align="stretch">
-              {PARENT.map((component) =>
-                component ? (
-                  <DraggableNode
-                    key={component.label}
-                    component={component}
-                    onDragStart={onDragStart}
-                  />
-                ) : null
-              )}
-            </VStack>
-          </TabPanel>
+
         </TabPanels>
       </Tabs>
     </Box>

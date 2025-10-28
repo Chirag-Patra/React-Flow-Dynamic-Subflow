@@ -103,14 +103,14 @@ export default function MajorComponent({
     <Box
       pos="relative"
       style={{
-        transform: `rotate(${rotation}deg)`,
+       // transform: `rotate(${rotation}deg)`,
         visibility: visible ? "visible" : "hidden",
       }}
     >
-      <Rotation selected={selected} id={id} />
+      {/* <Rotation selected={selected} id={id} /> */}  
 
       {/* Lock/Unlock button - hidden for Ingestion components */}
-      {parentId && selected && !isIngestionComponent && (
+      {/* {parentId && selected && !isIngestionComponent && (
         <Box
           position="absolute"
           top="-23px"
@@ -126,7 +126,7 @@ export default function MajorComponent({
         >
           {isAttachedToGroup ? <Lock /> : <Unlock />}
         </Box>
-      )}
+      )} */}
 
       {/* Addition state indicators */}
       {isAdditionValid && (
@@ -219,10 +219,10 @@ export default function MajorComponent({
       )}
 
       {/* Connection terminals - conditional based on component type */}
-      {isIngestionComponent ? (
-        <>
+      {/* {isIngestionComponent ? ( */}
+        {/* <> */}
           {/* Top and bottom terminals for Ingestion */}
-          <Terminal
+          {/* <Terminal
             type="target"
             position={Position.Top}
             id="top"
@@ -234,11 +234,11 @@ export default function MajorComponent({
             id="bottom"
             isConnectable={connectable}
           />
-        </>
-      ) : (
-        <>
+        </> */}
+      {/* ) : (
+        <> */}
           {/* Left and right terminals for other components */}
-          <Terminal
+          {/* <Terminal
             type="target"
             position={Position.Left}
             id="left"
@@ -251,7 +251,21 @@ export default function MajorComponent({
             isConnectable={connectable}
           />
         </>
-      )}
+      )} */}
+        {/* </> */}
+
+      <Terminal
+            type="target"
+            position={Position.Top}
+            id="top"
+            isConnectable={connectable}
+          />
+          <Terminal
+            type="source"
+            position={Position.Bottom}
+            id="bottom"
+            isConnectable={connectable}
+          />
     </Box>
   );
 }
