@@ -56,7 +56,7 @@ export const RightSidebar = ({
   const [reusableComponenttype, setReusableComponentType] = useState("");
   const [value, setValue] = useState("");
   const [selectedTargetIds, setSelectedTargetIds] = useState<string[]>([]);
-  const [width, setWidth] = useState(300);
+  const [width, setWidth] = useState(318);
   const [isJobWizardOpen, setIsJobWizardOpen] = useState(false);
   const [isETLWizardOpen, setIsETLWizardOpen] = useState(false);
   const isDragging = useRef(false);
@@ -129,7 +129,7 @@ export const RightSidebar = ({
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
       const newWidth = window.innerWidth - e.clientX;
-      if (newWidth > 240 && newWidth < 600) {
+      if (newWidth > 317 && newWidth < 600) {
         setWidth(newWidth);
       }
     };
