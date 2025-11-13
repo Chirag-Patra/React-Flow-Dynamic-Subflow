@@ -1,3 +1,4 @@
+// RightSidebar.tsx - Updated version
 import {
   Box,
   Heading,
@@ -18,13 +19,15 @@ import {
   Stack,
   VStack,
   Divider,
+  Badge,
+  Text,
 } from "@chakra-ui/react";
 import { DeleteIcon } from "@chakra-ui/icons";
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { Node, useReactFlow, Edge, MarkerType } from "@xyflow/react";
 import { useDarkMode } from "../store";
-import JobWizard from "../Components/Configuration/Job configuration/JobWizard";
-import ETLWizard from "../Components/Configuration/ETLWizard";
+import UniversalWizard from "../Components/Configuration/Universal/UniversalWizard";
+import { getSchemaForComponent } from "../Components/Configuration/Universal/schemas";
 import { MajorComponentsData, MajorComponents } from "../types";
 
 interface RightSidebarProps {
@@ -53,15 +56,14 @@ export const RightSidebar = ({
   } = useReactFlow();
 
   // State management
-  const [reusableComponenttype, setReusableComponentType] = useState("");
   const [value, setValue] = useState("");
   const [selectedTargetIds, setSelectedTargetIds] = useState<string[]>([]);
   const [width, setWidth] = useState(318);
-  const [isJobWizardOpen, setIsJobWizardOpen] = useState(false);
-  const [isETLWizardOpen, setIsETLWizardOpen] = useState(false);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [currentWizardType, setCurrentWizardType] = useState<string | null>(null);
   const isDragging = useRef(false);
 
-  // Memoized computed values to ensure stability
+  // Memoized computed values
   const nodeData = useMemo(() => {
     if (!selectedNode) return null;
 
@@ -72,31 +74,21 @@ export const RightSidebar = ({
       processingType: selectedNode.data?.processingType || "",
       etlConfig: selectedNode.data?.etlConfig || {},
       jobConfig: selectedNode.data?.jobConfig || {},
-      reusableComponenttype: selectedNode.data?.componentType || "",
-
+      componentType: selectedNode.data?.componentType || "",
+      config: selectedNode.data?.config || {}, // Universal config storage
     };
   }, [selectedNode?.id, selectedNode?.data, selectedNode?.type]);
 
-  // Determine component visibility with proper memoization
-  const componentVisibility = useMemo(() => {
-    if (!nodeData) return {
-      showJobWizardButton: false,
-      showETLWizardButton: false
-    };
-
-    const isJobType = nodeData.type === "Job";
-    const isETLProcessingType = [
-      MajorComponents.Run_Lamda,
-      MajorComponents.Run_Eks,
-      MajorComponents.Run_GlueJob,
-      MajorComponents.Run_StepFunction
-    ].includes(nodeData.type as MajorComponents);
-
-    return {
-      showJobWizardButton: isJobType,
-      showETLWizardButton: isETLProcessingType
-    };
+  // Determine which wizard schema to use
+  const wizardSchema = useMemo(() => {
+    if (!nodeData?.type) return null;
+    return getSchemaForComponent(nodeData.type as string);
   }, [nodeData?.type]);
+
+  // Determine if wizard button should be shown
+  const shouldShowWizardButton = useMemo(() => {
+    return wizardSchema !== null;
+  }, [wizardSchema]);
 
   const allNodes = useMemo(() => {
     if (!selectedNode) return [];
@@ -147,58 +139,44 @@ export const RightSidebar = ({
   }, []);
 
   // Event handlers
-  const handleOpenJobWizard = useCallback(() => {
-    setIsJobWizardOpen(true);
+  const handleOpenWizard = useCallback(() => {
+    if (nodeData?.type) {
+      setCurrentWizardType(nodeData.type as string);
+      setIsWizardOpen(true);
+    }
+  }, [nodeData?.type]);
+
+  const handleCloseWizard = useCallback(() => {
+    setIsWizardOpen(false);
+    setCurrentWizardType(null);
   }, []);
 
-  const handleCloseJobWizard = useCallback(() => {
-    setIsJobWizardOpen(false);
-  }, []);
-
-  const handleOpenETLWizard = useCallback(() => {
-    setIsETLWizardOpen(true);
-  }, []);
-
-  const handleCloseETLWizard = useCallback(() => {
-    setIsETLWizardOpen(false);
-  }, []);
-
-  const handleSaveJobConfig = useCallback((config: any) => {
+  const handleSaveConfig = useCallback((config: any) => {
     if (!selectedNode) return;
 
-    console.log('Job Config:', config);
+    console.log('Saved Config:', config);
 
-    // Update node data with job configuration
+    // Determine which config key to use based on node type
+    const configKey = nodeData?.type === 'Job' ? 'jobConfig' : nodeData?.type === 'lamda' ?'etlConfig' : 'etlConfig';
+
+    // Update node data with configuration
     const updatedData = {
       ...selectedNode.data,
-      processingType: config.processingType,
-      jobConfig: { ...config }
+      [configKey]: { ...config },
+      config: { ...config }, // Also store in universal config
+      processingType: config.processingType || selectedNode.data?.processingType,
+      componentType: config.componentType || selectedNode.data?.componentType,
     };
 
     updateNodeData(selectedNode.id, updatedData);
 
-    // Call the onProcessingTypeChange callback to handle node creation/removal
-    if (config.processingType && onProcessingTypeChange) {
+    // Call the onProcessingTypeChange callback for Job nodes
+    if (nodeData?.type === 'Job' && config.processingType && onProcessingTypeChange) {
       onProcessingTypeChange(selectedNode.id, config.processingType);
     }
 
-    handleCloseJobWizard();
-  }, [selectedNode?.id, selectedNode?.data, updateNodeData, onProcessingTypeChange, handleCloseJobWizard]);
-
-  const handleSaveETLConfig = useCallback((config: any) => {
-    if (!selectedNode) return;
-
-    console.log('ETL Config:', config);
-
-    // Update node data with ETL configuration
-    const updatedData = {
-      ...selectedNode.data,
-      etlConfig: { ...config }
-    };
-
-    updateNodeData(selectedNode.id, updatedData);
-    handleCloseETLWizard();
-  }, [selectedNode?.id, selectedNode?.data, updateNodeData, handleCloseETLWizard]);
+    handleCloseWizard();
+  }, [selectedNode?.id, selectedNode?.data, nodeData?.type, updateNodeData, onProcessingTypeChange, handleCloseWizard]);
 
   const handleDelete = useCallback(async () => {
     if (!selectedNode) return;
@@ -248,26 +226,46 @@ export const RightSidebar = ({
     return null;
   }
 
-  // Get button text based on node type and configuration state
-  const getJobWizardButtonText = () => {
-    const config = nodeData.jobConfig;
-    if (config && config.processingType) {
-      return `Processing Type: ${config.processingType}`;
+  // Get button text and color based on configuration state
+  const getWizardButtonConfig = () => {
+    const isJobNode = nodeData.type === 'Job';
+    const config = isJobNode ? nodeData.jobConfig : nodeData.etlConfig;
+
+    let buttonText = 'Configure';
+    let colorScheme = 'blue';
+    let isConfigured = false;
+    let configSummary = '';
+
+    if (isJobNode) {
+      if (config?.processingType) {
+        buttonText = `Processing Type: ${config.processingType}`;
+        isConfigured = true;
+        configSummary = config.processingType;
+      } else {
+        buttonText = 'Configure Job';
+      }
+      colorScheme = 'blue';
+    } else {
+      // ETL nodes
+      if (config?.etl_stp_job_nm) {
+        const componentType = config?.componentType || nodeData.type;
+        buttonText = `${componentType}: ${config.etl_stp_job_nm}`;
+        isConfigured = true;
+        configSummary = config.etl_stp_job_nm;
+      } else if (config?.componentType) {
+        buttonText = `Configure ${config.componentType}`;
+        isConfigured = true;
+        configSummary = config.componentType;
+      } else {
+        buttonText = `Configure ${nodeData.type}`;
+      }
+      colorScheme = 'green';
     }
-    return "Configure Job";
+
+    return { buttonText, colorScheme, isConfigured, configSummary };
   };
 
-  const getETLWizardButtonText = () => {
-    const config = nodeData.etlConfig;
-    if (config && config.etl_stp_job_nm) {
-      const componentType = config?.componentType || '';
-      return `ETL : ${componentType} - ${config.etl_stp_job_nm}`;
-    }
-    if (config && config.componentType) {
-      return `ETL : ${config.componentType}`;
-    }
-    return "Configure ETL";
-  };
+  const wizardButtonConfig = getWizardButtonConfig();
 
   return (
     <Box
@@ -416,76 +414,59 @@ export const RightSidebar = ({
           </PopoverContent>
         </Popover>
 
-        {/* Job Wizard Button for Job nodes */}
-        {componentVisibility.showJobWizardButton && (
+        {/* Universal Configuration Button */}
+        {shouldShowWizardButton && wizardSchema && (
           <>
             <Divider borderColor="gray.700" />
-            <Box key={`job-wizard-${nodeData.id}`}>
+            <Box>
               <Button
-                colorScheme="blue"
-                variant={nodeData.processingType ? "solid" : "outline"}
+                colorScheme={wizardButtonConfig.colorScheme}
+                variant={wizardButtonConfig.isConfigured ? "solid" : "outline"}
                 size="sm"
                 width="100%"
-                onClick={handleOpenJobWizard}
-                bg={nodeData.processingType ? "blue.500" : "transparent"}
+                onClick={handleOpenWizard}
+                bg={wizardButtonConfig.isConfigured ? `${wizardButtonConfig.colorScheme}.500` : "transparent"}
                 color="white"
-                borderColor="blue.400"
-                _hover={{ bg: nodeData.processingType ? "blue.600" : "whiteAlpha.100" }}
+                borderColor={`${wizardButtonConfig.colorScheme}.400`}
+                _hover={{
+                  bg: wizardButtonConfig.isConfigured
+                    ? `${wizardButtonConfig.colorScheme}.600`
+                    : "whiteAlpha.100"
+                }}
               >
-                {getJobWizardButtonText()}
+                {wizardButtonConfig.buttonText}
               </Button>
-            </Box>
-          </>
-        )}
 
-        {/* ETL Wizard Button for ETL processing nodes */}
-        {componentVisibility.showETLWizardButton && (
-          <>
-            <Divider borderColor="gray.700" />
-            <Box key={`etl-wizard-${nodeData.id}`}>
-              <Button
-                colorScheme="green"
-                variant={nodeData.etlConfig?.etl_stp_job_nm ? "solid" : "outline"}
-                size="sm"
-                width="100%"
-                onClick={handleOpenETLWizard}
-                bg={nodeData.etlConfig?.etl_stp_job_nm ? "green.500" : "transparent"}
-                color="white"
-                borderColor="green.400"
-                _hover={{ bg: nodeData.etlConfig?.etl_stp_job_nm ? "green.600" : "whiteAlpha.100" }}
-              >
-                {getETLWizardButtonText()}
-              </Button>
-              {/* Show reusable component info if configured */}
-              {nodeData.reusableComponent && nodeData.componentType && (
-                setReusableComponentType(nodeData.componentType),
-                <Box mt={1} fontSize="xs" color="whiteAlpha.600" textAlign="center">
-                  Reusable: {nodeData.componentType}
-                </Box>
+              {/* Configuration Status Badge */}
+              {wizardButtonConfig.isConfigured && (
+                <Flex mt={2} align="center" justify="center">
+                  <Badge colorScheme="green" fontSize="xs">
+                    Configured
+                  </Badge>
+                </Flex>
+              )}
+
+              {/* Component Type Info */}
+              {nodeData.componentType && (
+                <Text mt={1} fontSize="xs" color="whiteAlpha.600" textAlign="center">
+                  Type: {nodeData.componentType}
+                </Text>
               )}
             </Box>
           </>
         )}
       </VStack>
 
-      {/* Job Wizard Modal for Job nodes */}
-      <JobWizard
-        isOpen={isJobWizardOpen}
-        onClose={handleCloseJobWizard}
-        onSave={handleSaveJobConfig}
-        initialConfig={nodeData?.jobConfig || {
-          processingType: nodeData?.processingType
-        }}
-      />
-
-      {/* ETL Wizard Modal for ETL processing nodes */}
-      <ETLWizard
-        isOpen={isETLWizardOpen}
-        onClose={handleCloseETLWizard}
-        onSave={handleSaveETLConfig}
-        initialConfig={nodeData?.etlConfig || {}}
-      />
-
+      {/* Universal Wizard Modal */}
+      {wizardSchema && (
+        <UniversalWizard
+          isOpen={isWizardOpen}
+          onClose={handleCloseWizard}
+          onSave={handleSaveConfig}
+          initialConfig={nodeData.type === 'Job' ? nodeData.jobConfig : nodeData.type=== "lamda" ? nodeData.etlConfig : {}}
+          schema={wizardSchema}
+        />
+      )}
     </Box>
   );
 };
