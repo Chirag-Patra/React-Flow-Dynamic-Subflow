@@ -15,29 +15,8 @@ export const isPointInBox = (
   );
 };
 
+// Legacy electrical component units (Resistor, Inductor, etc.) have been removed from MajorComponents.
+// Return undefined for all current component types; keep function to avoid refactor ripple.
 export function getUnit(type: MajorComponents) {
-  let unit;
-  switch (type) {
-    case MajorComponents.Resistor: {
-      unit = "kΩ";
-      break;
-    }
-    case MajorComponents.Inductor: {
-      unit = "H";
-      break;
-    }
-    case MajorComponents.Capacitor: {
-      unit = "μF";
-      break;
-    }
-    case MajorComponents.Battery: {
-      unit = "V";
-      break;
-    }
-    case MajorComponents.Bulb: {
-      unit = "W";
-      break;
-    }
-  }
-  return unit;
+  return undefined;
 }

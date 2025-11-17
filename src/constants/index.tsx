@@ -12,7 +12,6 @@ export const initialNodes: Node[] = [
 ];
 
 export const COMPONENTS = [
-
   {
     icon: <Email height={40} />,
     type: MajorComponents.Email_notification,
@@ -23,25 +22,22 @@ export const COMPONENTS = [
     type: MajorComponents.Execute_Py,
     label: "Execute Py",
   },
-   {
+  {
     icon: <Lamda height={40} />,
     type: MajorComponents.Run_Lamda,
     label: "Run Lamda",
   },
-  ,
-   {
+  {
     icon: <GlueJob height={40} />,
     type: MajorComponents.Run_GlueJob,
     label: "Run GlueJob",
   },
-  ,
-   {
+  {
     icon: <Eks height={40} />,
     type: MajorComponents.Run_Eks,
     label: "Run Eks",
   },
-  ,
-   {
+  {
     icon: <Stepfunction height={40} />,
     type: MajorComponents.Run_StepFunction,
     label: "Run StepFunction",
@@ -59,13 +55,33 @@ export const PARENT = [
   {
     icon: (
       <Box
-        height="40px"
-        width="40px"
+        height="30px"
+        width="30px"
         borderRadius="4px"
         border="1px solid black"
       ></Box>
     ),
     type: MajorComponents.Board,
     label: "Job",
+  },
+  {
+    icon: (
+      <Box
+        height="25px"
+        width="25px"
+        borderRadius="4px"
+        border="2px solid red"
+        bg="rgba(255, 100, 100, 0.2)"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        fontSize="9px"
+        fontWeight="bold"
+      >
+        MAP
+      </Box>
+    ),
+    type: MajorComponents.Map,
+    label: "Map",
   },
 ];

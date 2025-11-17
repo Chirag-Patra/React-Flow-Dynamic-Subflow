@@ -28,7 +28,7 @@ import { Node, useReactFlow, Edge, MarkerType } from "@xyflow/react";
 import { useDarkMode } from "../store";
 import UniversalWizard from "../Components/Configuration/Universal/UniversalWizard";
 import { getSchemaForComponent } from "../Components/Configuration/Universal/schemas";
-import { MajorComponentsData, MajorComponents } from "../types";
+import { MajorComponentsData, MajorComponents, ComponentConfig } from "../types";
 
 interface RightSidebarProps {
   selectedNode: Node<MajorComponentsData> | undefined;
@@ -72,10 +72,10 @@ export const RightSidebar = ({
       type: selectedNode.data?.type || selectedNode.type,
       value: selectedNode.data?.value || "",
       processingType: selectedNode.data?.processingType || "",
-      etlConfig: selectedNode.data?.etlConfig || {},
-      jobConfig: selectedNode.data?.jobConfig || {},
+      etlConfig: (selectedNode.data?.etlConfig || {}) as ComponentConfig,
+      jobConfig: (selectedNode.data?.jobConfig || {}) as ComponentConfig,
       componentType: selectedNode.data?.componentType || "",
-      config: selectedNode.data?.config || {}, // Universal config storage
+      config: (selectedNode.data?.config || {}) as ComponentConfig, // Universal config storage
     };
   }, [selectedNode?.id, selectedNode?.data, selectedNode?.type]);
 
@@ -98,7 +98,7 @@ export const RightSidebar = ({
   // Sync local state with selected node
   useEffect(() => {
     if (nodeData) {
-      setValue(nodeData.value);
+      setValue(typeof nodeData.value === 'number' ? String(nodeData.value) : nodeData.value);
     } else {
       setValue("");
     }
@@ -157,7 +157,7 @@ export const RightSidebar = ({
     console.log('Saved Config:', config);
 
     // Determine which config key to use based on node type
-    const configKey = nodeData?.type === 'Job' ? 'jobConfig' : nodeData?.type === 'lamda' ?'etlConfig' : 'etlConfig';
+  const configKey = nodeData?.type === 'Job' ? 'jobConfig' : nodeData?.type === 'lamda' ? 'etlConfig' : 'etlConfig';
 
     // Update node data with configuration
     const updatedData = {
@@ -229,7 +229,7 @@ export const RightSidebar = ({
   // Get button text and color based on configuration state
   const getWizardButtonConfig = () => {
     const isJobNode = nodeData.type === 'Job';
-    const config = isJobNode ? nodeData.jobConfig : nodeData.etlConfig;
+  const config: ComponentConfig = isJobNode ? nodeData.jobConfig : nodeData.etlConfig;
 
     let buttonText = 'Configure';
     let colorScheme = 'blue';

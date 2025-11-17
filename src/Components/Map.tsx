@@ -1,5 +1,5 @@
 import { Box, Text, Badge } from "@chakra-ui/react";
-import { Node, NodeProps, NodeResizer, useStore, Handle, Position } from "@xyflow/react";
+import { Node, NodeProps, useStore, Handle, Position } from "@xyflow/react";
 import React from "react";
 import { MajorComponentsData, MajorComponents } from "../types";
 import { getUnit } from "../utils";
@@ -12,7 +12,8 @@ type MapNode = Node<MajorComponentsData, "string">;
 export default function Map({
   type,
   data: { value, processingType, isDragOver },
-  selected
+  selected,
+  id
 }: NodeProps<MapNode>) {
 
   const unit = getUnit(type as MajorComponents);
@@ -38,15 +39,14 @@ export default function Map({
       position="relative"
       border={`2px solid ${borderColor}`}
       borderRadius="8px"
-      height="100%"
-      width="100%"
+      height="100px"
+      width="200px"
       bg={dropAreaBg}
       {...(selected && { boxShadow: `${borderColor} 0px 0px 4px` })}
       transition="border-color 0.2s ease"
       display="flex"
       flexDirection="column"
     >
-      {selected && <NodeResizer minWidth={250} minHeight={250} />}
 
       {/* Header Section - Not droppable */}
       <Box
@@ -54,7 +54,7 @@ export default function Map({
         borderTopRadius="6px"
         p={2}
         borderBottom={`2px solid ${borderColor}`}
-        minHeight="40px"
+        height="30px"
         display="flex"
         alignItems="center"
         justifyContent="center"
@@ -69,7 +69,7 @@ export default function Map({
         </Text>
 
         {/* Processing Type Badge */}
-        {processingType && (
+        {/* {processingType && typeof processingType === 'string' && (
           <Badge
             position="absolute"
             top="5px"
@@ -79,43 +79,65 @@ export default function Map({
           >
             {processingType.replace('_', ' ').toUpperCase()}
           </Badge>
-        )}
+        )} */}
       </Box>
 
-      {/* Droppable Area - Where nodes can be placed */}
+      {/* Droppable Area - Rectangular drop zone for components */}
       <Box
         flex="1"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        border="2px dashed"
+        borderColor={isDragOver ? (isDark ? "#4299e1" : "#3182ce") : (isDark ? "gray.500" : "gray.400")}
+        borderRadius="6px"
+        backgroundColor={
+          isDragOver 
+            ? (isDark ? "rgba(66, 153, 225, 0.1)" : "rgba(49, 130, 206, 0.1)")
+            : (isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.3)")
+        }
+        m={1.5}
         position="relative"
-        p={3}
-        className="map-drop-area"
+        className="map-drop-zone"
         data-droppable="true"
-        minHeight="180px"
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("Drag over Map drop zone:", id);
+        }}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("Drag enter Map drop zone:", id);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          console.log("Dropped in Map drop zone:", id);
+        }}
+        transition="all 0.2s ease"
+        _hover={{
+          borderColor: isDark ? "blue.300" : "blue.400",
+          backgroundColor: isDark ? "rgba(66, 153, 225, 0.05)" : "rgba(49, 130, 206, 0.05)"
+        }}
       >
-        {/* "Overview" label in the droppable area */}
-        <Text
-          fontSize="xs"
-          color={isDark ? "gray.300" : "gray.600"}
-          position="absolute"
-          top="8px"
-          left="10px"
-          fontStyle="italic"
-        >
-          Overview
-        </Text>
-
-        {/* Placeholder text when empty */}
         {!value && (
-          <Text
-            fontSize="xs"
-            color={isDark ? "gray.400" : "gray.500"}
-            textAlign="center"
-            position="absolute"
-            top="50%"
-            left="50%"
-            transform="translate(-50%, -50%)"
-          >
-            Drop nodes here
-          </Text>
+          <Box textAlign="center">
+            <Text 
+              fontSize="sm" 
+              color={isDark ? "gray.300" : "gray.600"}
+              fontWeight="medium"
+              mb={1}
+            >
+              Drop State Here
+            </Text>
+            <Text 
+              fontSize="xs" 
+              color={isDark ? "gray.500" : "gray.500"}
+              fontStyle="italic"
+            >
+              Components will auto-center
+            </Text>
+          </Box>
         )}
       </Box>
 

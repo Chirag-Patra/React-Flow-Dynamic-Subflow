@@ -1,6 +1,7 @@
 export enum MajorComponents {
 
   Board = "Job",
+  Map = "Map",
   Js = "Js",
   Aws = "Aws",
   Db = "Db",
@@ -27,10 +28,22 @@ export type MajorComponentsData = {
   isAttachedToGroup?: boolean;
   visible?: boolean;
   connectable?: boolean;
-  processingType?: ""
-  etlConfig?: ""
-  jobConfig?: ""
+  processingType?: string;
+  etlConfig?: string;
+  jobConfig?: string;
+  isDragOver?: boolean;
+  // Added optional componentType and universal config storage used in RightSideBar
+  componentType?: string;
+  config?: ComponentConfig;
 };
+
+// Generic configuration shape used by wizards / RightSideBar
+export interface ComponentConfig {
+  processingType?: string;
+  etl_stp_job_nm?: string;
+  componentType?: string;
+  [key: string]: any;
+}
 
 export enum HistoryAction {
   AddNode = "addNode",

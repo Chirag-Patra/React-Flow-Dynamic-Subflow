@@ -31,7 +31,7 @@ export default function MajorComponent({
   id,
   parentId,
 }: NodeProps<MajorComponentNode>) {
-  const unit = getUnit(type as MajorComponents);
+  const unit = type ? getUnit(type as MajorComponents) : undefined;
 
   const isAdditionValid = state === MajorComponentsState.Add;
   const isAdditionInvalid = state === MajorComponentsState.NotAdd;
@@ -46,21 +46,22 @@ export default function MajorComponent({
   const isIngestionComponent = type === MajorComponents.Ingestion;
 
   // Check if this is an ETL processing component
-  const isETLProcessingComponent = [
+  const isETLProcessingComponent = type ? [
     MajorComponents.Run_Lamda,
     MajorComponents.Run_GlueJob,
     MajorComponents.Run_Eks,
     MajorComponents.Run_StepFunction
-  ].includes(type);
+  ].includes(type) : false;
 
   // Map component types to their labels
-  const getComponentLabel = (type: MajorComponents) => {
+  const getComponentLabel = (type?: MajorComponents) => {
+    if (!type) return 'Component';
     // For ETL processing types, show reusable component type if available
     if (isETLProcessingComponent && reusableComponenttype && reusableComponenttype !== 'Custom') {
       return reusableComponenttype;
     }
 
-    const labelMap = {
+    const labelMap: Partial<Record<MajorComponents, string>> = {
       [MajorComponents.Js]: 'JavaScript',
       [MajorComponents.Aws]: 'AWS',
       [MajorComponents.Execute_Py]: 'Execute Py',
@@ -71,13 +72,15 @@ export default function MajorComponent({
       [MajorComponents.Run_Eks]: 'Run EKS',
       [MajorComponents.Run_StepFunction]: 'Run Step Function',
       [MajorComponents.Ingestion]: 'Ingestion',
+      [MajorComponents.Board]: 'Job',
+      [MajorComponents.Map]: 'Map',
     };
     return labelMap[type] || 'Component';
   };
 
   // Function to render the icon based on type
   const renderIcon = () => {
-    const iconProps = { height: 30, color };
+    const iconProps = { height: 30 }; // Remove color prop to let icons use their designed colors
 
     switch(type) {
       case MajorComponents.Execute_Py:
@@ -155,7 +158,9 @@ export default function MajorComponent({
           selected ? "blue.500" :
           isDark ? "gray.600" : "gray.300"
         }
-        minW="140px"
+        //minW="140px"
+        h='55px'
+        w="180px"
         align="center"
         transition="all 0.2s"
         _hover={{

@@ -247,9 +247,10 @@ const JobWizard: React.FC<JobWizardProps> = ({
       }
     } catch (error) {
       console.error('Error submitting configuration:', error);
+      const message = error instanceof Error ? error.message : String(error);
       toast({
         title: "Error",
-        description: `Failed to submit configuration: ${error.message}`,
+        description: `Failed to submit configuration: ${message}`,
         status: "error",
         duration: 5000,
         isClosable: true,

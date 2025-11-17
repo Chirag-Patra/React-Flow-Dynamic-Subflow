@@ -28,6 +28,7 @@ import customEdge from "../Components/customEdge";
 import ConnectionLine from "../Components/ConnectionLine";
 import { MajorComponentsState, MajorComponents } from "../types";
 import Board from "../Components/Board";
+import Map from "../Components/Map";
 import { isPointInBox, zoomSelector } from "../utils";
 import useKeyBindings from "../hooks/useKeyBindings";
 import { useData, useUpdateData } from "../api";
@@ -40,6 +41,7 @@ import { Sun, Moon } from "react-bootstrap-icons";
 const nodeTypes = {
   MajorComponent: MajorComponent,
   Job: Board,
+  Map: Map,
 };
 
 const edgeTypes = {
@@ -222,171 +224,6 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
     event.dataTransfer.dropEffect = "move";
   };
 
-  // const onDrop: React.DragEventHandler<HTMLDivElement> = (event) => {
-  //   event.preventDefault();
-  //   const type = dragOutsideRef.current;
-
-  //   if (!type) return;
-
-  //   let position = screenToFlowPosition({
-  //     x: event.clientX,
-  //     y: event.clientY,
-  //   });
-
-  //   const boards = nodes?.filter(
-  //     (node) => node.type === MajorComponents.Board
-  //   );
-  //   const Job = boards.find((Job) => {
-  //     return isPointInBox(
-  //       { x: position.x, y: position.y },
-  //       {
-  //         x: Job.position?.x || 0,
-  //         y: Job?.position?.y || 0,
-  //         height: Job?.measured?.height || 0,
-  //         width: Job?.measured?.width || 0,
-  //       }
-  //     );
-  //   });
-
-  //   if (Job) {
-  //     const { x, y } = Job?.position || {
-  //       x: 0,
-  //       y: 0,
-  //     };
-  //     const { x: dragX, y: dragY } = position || {
-  //       x: 0,
-  //       y: 0,
-  //     };
-  //     position = { x: dragX - x, y: dragY - y };
-  //   }
-
-  //   let node: Node | undefined;
-  //   if (
-  //     [
-  //       MajorComponents.Js,
-  //       MajorComponents.Aws,
-  //       MajorComponents.Db,
-  //       MajorComponents.Email_notification,
-  //       MajorComponents.Execute_Py,
-  //       MajorComponents.Run_Lamda,
-  //       MajorComponents.Run_GlueJob,
-  //       MajorComponents.Run_Eks,
-  //       MajorComponents.Run_StepFunction,
-  //       MajorComponents.Ingestion,
-  //     ].includes(type)
-  //   ) {
-  //     node = {
-  //       id: uuid(),
-  //       type: "MajorComponent",
-  //       position,
-  //       data: { type, value: '' },
-  //       parentId: Job?.id,
-  //     };
-  //   }
-  //   else if (type === MajorComponents.Js) {
-  //     node = {
-  //       id: uuid(),
-  //       type,
-  //       position,
-  //       data: { value: 12 },
-  //       parentId: Job?.id,
-  //     };
-  //   }
-  //   else if (type === MajorComponents.Aws) {
-  //     node = {
-  //       id: uuid(),
-  //       type,
-  //       position,
-  //       data: { value: 12 },
-  //       parentId: Job?.id,
-  //     };
-  //   }
-  //   else if (type === MajorComponents.Db) {
-  //     node = {
-  //       id: uuid(),
-  //       type,
-  //       position,
-  //       data: { value: 12 },
-  //       parentId: Job?.id,
-  //     };
-  //   }
-  //   else if (type === MajorComponents.Email_notification) {
-  //     node = {
-  //       id: uuid(),
-  //       type,
-  //       position,
-  //       data: { value: 12 },
-  //       parentId: Job?.id,
-  //     };
-  //   }
-  //   else if (type === MajorComponents.Execute_Py) {
-  //     node = {
-  //       id: uuid(),
-  //       type,
-  //       position,
-  //       data: { value: 12 },
-  //       parentId: Job?.id,
-  //     };
-  //   }
-  //   else if (type === MajorComponents.Run_Lamda) {
-  //     node = {
-  //       id: uuid(),
-  //       type,
-  //       position,
-  //       data: { value: 12 },
-  //       parentId: Job?.id,
-  //     };
-  //   }
-  //   else if (type === MajorComponents.Run_GlueJob) {
-  //     node = {
-  //       id: uuid(),
-  //       type,
-  //       position,
-  //       data: { value: 12 },
-  //       parentId: Job?.id,
-  //     };
-  //   }
-  //   else if (type === MajorComponents.Run_Eks) {
-  //     node = {
-  //       id: uuid(),
-  //       type,
-  //       position,
-  //       data: { value: 12 },
-  //       parentId: Job?.id,
-  //     };
-  //   }
-  //   else if (type === MajorComponents.Run_StepFunction) {
-  //     node = {
-  //       id: uuid(),
-  //       type,
-  //       position,
-  //       data: { value: 12 },
-  //       parentId: Job?.id,
-  //     };
-  //   }
-  //    else if (type === MajorComponents.Ingestion) {
-  //     node = {
-  //       id: uuid(),
-  //       type,
-  //       position,
-  //       data: { value: 12 },
-  //       parentId: Job?.id,
-  //     };
-  //   }
-  //   else if (type === MajorComponents.Board) {
-  //     node = {
-  //       id: uuid(),
-  //       type,
-  //       position,
-  //       data: {},
-  //       style: { height: 200, width: 200 },
-  //     };
-  //   }
-
-  //   if (node) addNode(node);
-  // };
-
-
   const onDrop: React.DragEventHandler<HTMLDivElement> = (event) => {
   event.preventDefault();
   setIsDragging(false);
@@ -421,54 +258,215 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
     return; // Exit early
   }
 
-  // For all other components, check if they're being dropped inside a Job
-  const boards = nodes?.filter(
-    (node) => node.type === "Job"
-  );
-
-  console.log("Found boards:", boards);
-
-  const Job = boards.find((Job) => {
-    const isInside = isPointInBox(
-      { x: position.x, y: position.y },
-      {
-        x: Job.position?.x || 0,
-        y: Job?.position?.y || 0,
-        height: Job?.measured?.height || 0,
-        width: Job?.measured?.width || 0,
-      }
-    );
-    console.log("Checking Job:", Job.id, "isInside:", isInside, "Job bounds:", {
-      x: Job.position?.x,
-      y: Job.position?.y,
-      height: Job?.measured?.height,
-      width: Job?.measured?.width,
+  // Map can be dropped anywhere on the background or inside Job
+  if (type === MajorComponents.Map) {
+    console.log("Creating Map");
+    
+    // Check if dropping inside a Job
+    const boards = nodes?.filter((node) => node.type === "Job");
+    const Job = boards.find((Job) => {
+      return isPointInBox(
+        { x: position.x, y: position.y },
+        {
+          x: Job.position?.x || 0,
+          y: Job?.position?.y || 0,
+          height: Job?.measured?.height || 0,
+          width: Job?.measured?.width || 0,
+        }
+      );
     });
+
+    let mapPosition = position;
+    let parentId = undefined;
+
+    if (Job) {
+      // Calculate relative position inside the Job
+      const { x, y } = Job?.position || { x: 0, y: 0 };
+      const { x: dragX, y: dragY } = position || { x: 0, y: 0 };
+      mapPosition = { x: dragX - x, y: dragY - y };
+      parentId = Job.id;
+    }
+
+    const node: Node = {
+      id: uuid(),
+      type: "Map",
+      position: mapPosition,
+      data: { type, value: '' },
+      style: { height: 100, width: 200 },
+      ...(parentId && { 
+        parentId,
+        extent: "parent",
+        expandParent: true 
+      }),
+    };
+    addNode(node);
+    return; // Exit early
+  }
+
+  // Check if dropping inside any container (Job or Map)
+  // Priority: Map containers first, then Job containers
+  const allContainers = [
+    ...nodes.filter((node) => node.type === "Map"),
+    ...nodes.filter((node) => node.type === "Job")
+  ];
+
+  console.log("Found containers:", allContainers);
+
+  let finalParentId: string | undefined;
+  let finalPosition = position;
+
+  // Find the deepest/smallest container that contains the drop point
+  const container = allContainers.find((containerNode) => {
+    let containerAbsX = containerNode.position?.x || 0;
+    let containerAbsY = containerNode.position?.y || 0;
+    
+    // If container has a parent, add parent's position
+    if (containerNode.parentId) {
+      const parent = nodes.find(n => n.id === containerNode.parentId);
+      if (parent) {
+        containerAbsX += parent.position?.x || 0;
+        containerAbsY += parent.position?.y || 0;
+      }
+    }
+      
+    let isInside = false;
+    
+    if (containerNode.type === "Map") {
+      // For Map components, only allow drops in the inner rectangular drop zone
+      // The drop zone has minimal margins of 2px to fit 180px component in 200px Map
+      const dropZoneMargin = 2;
+      const headerHeight = 20;
+      const containerHeight = containerNode?.measured?.height || (containerNode.type === "Map" ? 100 : 200);
+      const containerWidth = containerNode?.measured?.width || (containerNode.type === "Map" ? 200 : 200);
+      
+      isInside = isPointInBox(
+        { x: position.x, y: position.y },
+        {
+          x: containerAbsX + dropZoneMargin,
+          y: containerAbsY + headerHeight + dropZoneMargin,
+          height: containerHeight - headerHeight - (dropZoneMargin * 2),
+          width: containerWidth - (dropZoneMargin * 2),
+        }
+      );
+    } else {
+      // For Job components, use the entire container area
+      isInside = isPointInBox(
+        { x: position.x, y: position.y },
+        {
+          x: containerAbsX,
+          y: containerAbsY,
+          height: containerNode?.measured?.height || 200,
+          width: containerNode?.measured?.width || 200,
+        }
+      );
+    }
+    
+    console.log(`Checking ${containerNode.type}:`, containerNode.id, "isInside:", isInside);
     return isInside;
   });
 
-  console.log("Selected Job:", Job);
-
-  // If no Job found, don't create the node
-  if (!Job) {
-    console.log("No Job found - cannot drop component");
+  if (container) {
+    console.log("Dropping inside container:", container.type, container.id);
+    finalParentId = container.id;
+    
+    // Calculate position relative to the container
+    let containerAbsX = container.position?.x || 0;
+    let containerAbsY = container.position?.y || 0;
+    
+    if (container.parentId) {
+      const parent = nodes.find(n => n.id === container.parentId);
+      if (parent) {
+        containerAbsX += parent.position?.x || 0;
+        containerAbsY += parent.position?.y || 0;
+      }
+    }
+    
+    if (container.type === "Map") {
+      // For Map components, center components with smart positioning for multiple components
+      const dropZoneMargin = 4;  // Minimal margin to fit 180px component in 200px Map
+      const headerHeight = 30;   // Reduced header height for smaller Map
+      const containerHeight = container?.measured?.height || 100;
+      const containerWidth = container?.measured?.width || 200;
+      
+      // Calculate the drop zone dimensions
+      const dropZoneWidth = containerWidth - (dropZoneMargin * 2);
+      const dropZoneHeight = containerHeight - headerHeight - (dropZoneMargin * 2);
+      
+      // Component dimensions (matching actual MajorComponent size)
+      const componentWidth = 180;  // Actual component width
+      const componentHeight = 55;  // Actual component height
+      const componentSpacing = 10; // Spacing between components
+      
+      // Count existing components in this Map
+      const existingComponents = nodes.filter(n => n.parentId === container.id);
+      const componentCount = existingComponents.length;
+      
+      // Calculate position based on component count
+      let xPos, yPos;
+      
+      if (componentCount === 0) {
+        // First component - center it perfectly with equal margins on all sides
+        const availableWidth = dropZoneWidth - componentWidth;
+        const availableHeight = dropZoneHeight - componentHeight;
+        xPos = dropZoneMargin + availableWidth / 2;
+        yPos = headerHeight + dropZoneMargin + availableHeight / 2;
+      } else {
+        // Multiple components - arrange in a centered grid pattern with equal spacing
+        const minMargin = 1; // Minimal margin from edges due to tight space
+        const availableGridWidth = dropZoneWidth - (2 * minMargin);
+        const componentsPerRow = Math.max(1, Math.floor(availableGridWidth / (componentWidth + componentSpacing)));
+        const totalComponents = componentCount + 1; // Include the new component being added
+        const totalRows = Math.ceil(totalComponents / componentsPerRow);
+        
+        // Current component position in grid
+        const row = Math.floor(componentCount / componentsPerRow);
+        const col = componentCount % componentsPerRow;
+        
+        // Calculate grid dimensions
+        const componentsInCurrentRow = Math.min(componentsPerRow, totalComponents - (row * componentsPerRow));
+        const currentRowWidth = (componentsInCurrentRow * componentWidth) + ((componentsInCurrentRow - 1) * componentSpacing);
+        
+        // Center the current row with minimum margins
+        const rowStartX = dropZoneMargin + minMargin + (availableGridWidth - currentRowWidth) / 2;
+        
+        // Calculate total grid height
+        const totalGridHeight = (totalRows * componentHeight) + ((totalRows - 1) * componentSpacing);
+        const gridStartY = headerHeight + dropZoneMargin + (dropZoneHeight - totalGridHeight) / 2;
+        
+        xPos = rowStartX + col * (componentWidth + componentSpacing);
+        yPos = gridStartY + row * (componentHeight + componentSpacing);
+        
+        console.log("Grid positioning:", {
+          componentCount,
+          totalComponents,
+          row,
+          col,
+          componentsPerRow,
+          currentRowWidth,
+          dropZoneWidth,
+          xPos,
+          yPos
+        });
+      }
+      
+      finalPosition = { x: xPos, y: yPos };
+      console.log("Map centering - Final position:", finalPosition);
+    } else {
+      // For Job components, use standard relative positioning
+      finalPosition = { 
+        x: position.x - containerAbsX, 
+        y: position.y - containerAbsY 
+      };
+    }
+  } else {
+    console.log("No container found - cannot drop component");
     return;
   }
 
-  // Calculate relative position inside the Job
-  const { x, y } = Job?.position || {
-    x: 0,
-    y: 0,
-  };
-  const { x: dragX, y: dragY } = position || {
-    x: 0,
-    y: 0,
-  };
-  position = { x: dragX - x, y: dragY - y };
+  console.log("Final parent ID:", finalParentId);
+  console.log("Final position:", finalPosition);
 
-  console.log("Relative position inside Job:", position);
-
-  // Create node inside the Job
+  // Create node inside the Job or Map
   let node: Node | undefined;
   if (
     [
@@ -484,16 +482,22 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       MajorComponents.Ingestion,
     ].includes(type)
   ) {
+    // Check if parent is a Map component to determine draggable state
+    const parentContainer = container;
+    const isParentMap = parentContainer?.type === "Map";
+    
     node = {
       id: uuid(),
       type: "MajorComponent",
-      position,
+      position: finalPosition,
       data: { type, value: '' },
       extent: "parent",
-      parentId: Job?.id,
+      parentId: finalParentId,
       expandParent: true,
+      draggable: !isParentMap, // Components in Map are not draggable
+      selectable: showContent,
     };
-    console.log("Node to be created:", node);
+    console.log("Node to be created:", node, "isParentMap:", isParentMap);
   } else {
     console.log("Type not in allowed list:", type);
   }
@@ -550,23 +554,32 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
               ...node.data,
               state:
                 overlappingNode &&
-                  [
-                    MajorComponents.Js,
-                    MajorComponents.Aws,
-                    MajorComponents.Db,
-                    MajorComponents.Email_notification,
-                    MajorComponents.Execute_Py,
-                    MajorComponents.Run_Lamda,
-                    MajorComponents.Run_GlueJob,
-                    MajorComponents.Run_Eks,
-                    MajorComponents.Run_StepFunction,
-                    MajorComponents.Ingestion,
-                  ].includes(
-                    overlappingNode?.data?.type as MajorComponents
+                  (
+                    // Handle component-to-component merging
+                    [
+                      MajorComponents.Js,
+                      MajorComponents.Aws,
+                      MajorComponents.Db,
+                      MajorComponents.Email_notification,
+                      MajorComponents.Execute_Py,
+                      MajorComponents.Run_Lamda,
+                      MajorComponents.Run_GlueJob,
+                      MajorComponents.Run_Eks,
+                      MajorComponents.Run_StepFunction,
+                      MajorComponents.Ingestion,
+                    ].includes(overlappingNode?.data?.type as MajorComponents) ||
+                    // Handle dropping on containers
+                    overlappingNode?.type === 'Job' ||
+                    overlappingNode?.type === 'Map'
                   )
-                  ? overlappingNode?.data?.type === dragNode?.data?.type
-                    ? MajorComponentsState.Add
-                    : MajorComponentsState.NotAdd
+                  ? (
+                      // If overlapping with containers, no state change needed
+                      overlappingNode?.type === 'Job' || overlappingNode?.type === 'Map' ? undefined :
+                      // If overlapping with same component type, show Add state
+                      overlappingNode?.data?.type === dragNode?.data?.type
+                        ? MajorComponentsState.Add
+                        : MajorComponentsState.NotAdd
+                    )
                   : undefined,
             },
           };
@@ -577,12 +590,13 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
   };
 
   const onNodeDragStop: OnNodeDrag = (evt, dragNode) => {
-    if (dragNode.type === 'Job') {
+    if (dragNode.type === 'Job' || dragNode.type === 'Map') {
       return;
     }
     if (
       !overlappingNodeRef.current ||
       (overlappingNodeRef?.current?.type !== MajorComponents.Board &&
+        overlappingNodeRef?.current?.type !== 'Map' &&
         dragNode?.parentId)
     ) {
       setNodes((prevNodes) => {
@@ -641,7 +655,9 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       );
     }
 
-    if (overlappingNodeRef?.current?.type === MajorComponents.Board) {
+    // Handle dynamic subgrouping for Board and Map components
+    if (overlappingNodeRef?.current?.type === MajorComponents.Board || 
+        overlappingNodeRef?.current?.type === 'Map') {
       setNodes((prevNodes) => [
         overlappingNodeRef?.current as Node,
         ...prevNodes
@@ -657,27 +673,89 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
                 y: 0,
               };
 
+              // Check if the new parent is a Map to set draggable state and position
+              const isNewParentMap = overlappingNodeRef?.current?.type === 'Map';
+              
               let position;
-              if (!node.parentId) {
-                position = { x: dragX - x, y: dragY - y };
-              } else if (
-                node.parentId &&
-                node?.parentId !== overlappingNodeRef?.current?.id
-              ) {
-                const prevBoard = prevNodes?.find(
-                  (node) => node?.id === dragNode?.parentId
-                );
-                const { x: prevBoardX, y: prevBoardY } =
-                  prevBoard?.position || {
-                    x: 0,
-                    y: 0,
+              
+              if (isNewParentMap) {
+                // For Map containers, center the component automatically
+                const dropZoneMargin = 2;
+                const headerHeight = 20;
+                const containerHeight = overlappingNodeRef?.current?.measured?.height || 100;
+                const containerWidth = overlappingNodeRef?.current?.measured?.width || 200;
+                
+                const dropZoneWidth = containerWidth - (dropZoneMargin * 2);
+                const dropZoneHeight = containerHeight - headerHeight - (dropZoneMargin * 2);
+                
+                const componentWidth = 180;
+                const componentHeight = 55;
+                const componentSpacing = 10;
+                
+                // Count existing components in this Map
+                const existingComponents = prevNodes.filter(n => n.parentId === overlappingNodeRef?.current?.id);
+                const componentCount = existingComponents.length;
+                
+                // Calculate centered position
+                let xPos, yPos;
+                
+                if (componentCount === 0) {
+                  // First component - center it perfectly with equal margins on all sides
+                  const availableWidth = dropZoneWidth - componentWidth;
+                  const availableHeight = dropZoneHeight - componentHeight;
+                  xPos = dropZoneMargin + availableWidth / 2;
+                  yPos = headerHeight + dropZoneMargin + availableHeight / 2;
+                } else {
+                  // Multiple components - arrange in a centered grid pattern with equal spacing
+                  const minMargin = 1; // Minimal margin from edges due to tight space
+                  const availableGridWidth = dropZoneWidth - (2 * minMargin);
+                  const componentsPerRow = Math.max(1, Math.floor(availableGridWidth / (componentWidth + componentSpacing)));
+                  const totalComponents = componentCount + 1; // Include the new component being moved
+                  const totalRows = Math.ceil(totalComponents / componentsPerRow);
+                  
+                  // Current component position in grid
+                  const row = Math.floor(componentCount / componentsPerRow);
+                  const col = componentCount % componentsPerRow;
+                  
+                  // Calculate grid dimensions
+                  const componentsInCurrentRow = Math.min(componentsPerRow, totalComponents - (row * componentsPerRow));
+                  const currentRowWidth = (componentsInCurrentRow * componentWidth) + ((componentsInCurrentRow - 1) * componentSpacing);
+                  
+                  // Center the current row with minimum margins
+                  const rowStartX = dropZoneMargin + minMargin + (availableGridWidth - currentRowWidth) / 2;
+                  
+                  // Calculate total grid height
+                  const totalGridHeight = (totalRows * componentHeight) + ((totalRows - 1) * componentSpacing);
+                  const gridStartY = headerHeight + dropZoneMargin + (dropZoneHeight - totalGridHeight) / 2;
+                  
+                  xPos = rowStartX + col * (componentWidth + componentSpacing);
+                  yPos = gridStartY + row * (componentHeight + componentSpacing);
+                }
+                
+                position = { x: xPos, y: yPos };
+              } else {
+                // For non-Map containers, use standard positioning
+                if (!node.parentId) {
+                  position = { x: dragX - x, y: dragY - y };
+                } else if (
+                  node.parentId &&
+                  node?.parentId !== overlappingNodeRef?.current?.id
+                ) {
+                  const prevParent = prevNodes?.find(
+                    (node) => node?.id === dragNode?.parentId
+                  );
+                  const { x: prevParentX, y: prevParentY } =
+                    prevParent?.position || {
+                      x: 0,
+                      y: 0,
+                    };
+                  position = {
+                    x: dragX + prevParentX - x,
+                    y: dragY + prevParentY - y,
                   };
-                position = {
-                  x: dragX + prevBoardX - x,
-                  y: dragY + prevBoardY - y,
-                };
+                }
               }
-
+              
               return {
                 ...node,
                 parentId: overlappingNodeRef?.current?.id,
@@ -685,7 +763,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
                   dragNode?.parentId !== overlappingNodeRef?.current?.id) && {
                   position,
                 }),
-                draggable: showContent,
+                draggable: isNewParentMap ? false : showContent, // Components in Map are not draggable
                 selectable: showContent,
                 data: {
                   ...node.data,
@@ -706,9 +784,13 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
     setNodes((prevNodes) =>
       prevNodes.map((node) => {
         if (node.parentId) {
+          // Find the parent node to check if it's a Map
+          const parentNode = prevNodes.find(n => n.id === node.parentId);
+          const isParentMap = parentNode?.type === "Map";
+          
           return {
             ...node,
-            draggable: showContent,
+            draggable: isParentMap ? false : showContent, // Components in Map are not draggable
             selectable: showContent,
             data: {
               ...node.data,
@@ -718,7 +800,6 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
           };
         }
         return {
-          ...node,
           ...node,
           draggable: true,
           selectable: true,
@@ -794,7 +875,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
             bottom={0}
             bg={isDark ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.5)"}
             backdropFilter="blur(8px)"
-            WebkitBackdropFilter="blur(8px)" // For Safari support
+            style={{ WebkitBackdropFilter: 'blur(8px)' }} // For Safari support
           />
         </Box>
       )}
