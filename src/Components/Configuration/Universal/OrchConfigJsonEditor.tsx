@@ -1,37 +1,33 @@
-// OrchConfigJsonEditor.tsx
 import React, { useState, useEffect } from 'react';
 import {
   Modal,
   ModalOverlay,
   ModalContent,
-  ModalHeader,
-  ModalFooter,
   ModalBody,
-  ModalCloseButton,
   Button,
   VStack,
   HStack,
-  FormControl,
-  FormLabel,
   Input,
   Select,
-  Textarea,
-  RadioGroup,
-  Radio,
-  Stack,
-  IconButton,
   Box,
   Text,
-  Divider,
-  Alert,
-  AlertIcon,
   useToast,
   Badge,
-  Grid,
-  GridItem,
+  Flex,
+  IconButton,
+  Tooltip,
+  useColorModeValue,
+  Icon,
 } from '@chakra-ui/react';
-import { AddIcon, DeleteIcon, CopyIcon } from '@chakra-ui/icons';
+import {
+  CopyIcon,
+  CloseIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  CheckIcon
+} from '@chakra-ui/icons';
 
+// --- Interfaces ---
 interface OrchConfigData {
   dpndnt_job_id_lst?: string[];
   dpndnt_btch_id_lst?: string[];
@@ -51,19 +47,50 @@ interface ScheduledDayOption {
   week: string;
 }
 
-interface OrchConfigJsonEditorProps {
+interface VisualJsonEditorProps {
   isOpen: boolean;
   onClose: (data?: OrchConfigData) => void;
   initialData?: OrchConfigData;
 }
 
-const OrchConfigJsonEditor: React.FC<OrchConfigJsonEditorProps> = ({
+// --- Icons & Helpers ---
+const FolderIcon = (props: any) => (
+  <Icon viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
+  </Icon>
+);
+
+const TypeBadge = ({ type }: { type: 'string' | 'array' | 'number' | 'boolean' | 'object' }) => {
+  const colors = {
+    string: { bg: 'green.100', color: 'green.700', label: 'St' },
+    array: { bg: 'purple.100', color: 'purple.700', label: 'Ar' },
+    number: { bg: 'blue.100', color: 'blue.700', label: 'Nm' },
+    boolean: { bg: 'orange.100', color: 'orange.700', label: 'Bl' },
+    object: { bg: 'gray.100', color: 'gray.700', label: 'Ob' },
+  };
+  const style = colors[type];
+  return (
+    <Flex
+      bg={style.bg} color={style.color}
+      w="24px" h="24px" borderRadius="md"
+      align="center" justify="center"
+      fontSize="xs" fontWeight="bold"
+      cursor="help"
+    >
+      {style.label}
+    </Flex>
+  );
+};
+
+// --- Main Component ---
+const VisualJsonEditor: React.FC<VisualJsonEditorProps> = ({
   isOpen,
   onClose,
   initialData = {}
 }) => {
   const toast = useToast();
-  
+
+  // --- State ---
   const defaultData: OrchConfigData = {
     dpndnt_job_id_lst: [],
     dpndnt_btch_id_lst: [],
@@ -79,20 +106,43 @@ const OrchConfigJsonEditor: React.FC<OrchConfigJsonEditorProps> = ({
   };
 
   const [configData, setConfigData] = useState<OrchConfigData>({ ...defaultData, ...initialData });
-  const [scheduledDateType, setScheduledDateType] = useState<'dd' | 'dd-mm' | 'EOM' | 'both'>('both');
+
+  // Store arrays as strings internally to avoid re-render issues
+  const [jobIdsText, setJobIdsText] = useState('');
+  const [batchIdsText, setBatchIdsText] = useState('');
+
   const [scheduledDayOptions, setScheduledDayOptions] = useState<ScheduledDayOption[]>([{ day: '', week: '' }]);
+
+  // Cutoff time state
   const [startCutoffTime, setStartCutoffTime] = useState('');
   const [endCutoffTime, setEndCutoffTime] = useState('');
   const [timeSymbol, setTimeSymbol] = useState<'>=' | '<=' | ''>('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Initialize data from props
+  // UI State
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({
+    root: true,
+    dependencies: true,
+    scheduling: true,
+    system: true
+  });
+
+  // --- Effects (Parsing Initial Data) ---
   useEffect(() => {
-    if (isOpen && initialData) {
+    if (isOpen) {
       const parsedData = { ...defaultData, ...initialData };
       setConfigData(parsedData);
-      
-      // Parse scheduled_cutoff_time
+
+      // Parse job ids
+      if (Array.isArray(parsedData.dpndnt_job_id_lst)) {
+        setJobIdsText(parsedData.dpndnt_job_id_lst.join(', '));
+      }
+
+      // Parse batch ids
+      if (Array.isArray(parsedData.dpndnt_btch_id_lst)) {
+        setBatchIdsText(parsedData.dpndnt_btch_id_lst.join(', '));
+      }
+
+      // Parse cutoff time
       if (parsedData.scheduled_cutoff_time) {
         const timeStr = parsedData.scheduled_cutoff_time;
         if (timeStr.includes(',')) {
@@ -105,487 +155,611 @@ const OrchConfigJsonEditor: React.FC<OrchConfigJsonEditorProps> = ({
           setTimeSymbol(symbol as any);
           setStartCutoffTime(timeStr.replace(/[>=<]/g, ''));
         }
+      } else {
+        setTimeSymbol('');
+        setStartCutoffTime('');
+        setEndCutoffTime('');
       }
-      
-      // Parse scheduled_day
+
+      // Parse scheduled days
       if (parsedData.scheduled_day) {
         const dayOptions = parsedData.scheduled_day.split(',').map(item => {
           const [day, week] = item.split('-');
           return { day: day || '', week: week || '' };
         });
         setScheduledDayOptions(dayOptions.length > 0 ? dayOptions : [{ day: '', week: '' }]);
+      } else {
+        setScheduledDayOptions([{ day: '', week: '' }]);
       }
     }
-  }, [isOpen, initialData]);
+  }, [isOpen]);
 
-  const handleInputChange = (field: keyof OrchConfigData, value: any) => {
-    setConfigData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const validateScheduledDate = (value: string) => {
-    if (!value) return '';
-    
-    const dates = value.split(',');
-    const ddRegex = /^\d{2}$/;
-    const ddMmRegex = /^\d{2}-\d{2}$/;
-    
-    for (const date of dates) {
-      const trimmed = date.trim();
-      
-      if (scheduledDateType === 'dd') {
-        if (!ddRegex.test(trimmed) || parseInt(trimmed) > 31 || parseInt(trimmed) < 1) {
-          return 'Date format should be dd (01-31)';
-        }
-      } else if (scheduledDateType === 'dd-mm') {
-        if (!ddMmRegex.test(trimmed)) {
-          return 'Date format should be dd-mm';
-        }
-        const [day, month] = trimmed.split('-').map(Number);
-        if (day > 31 || day < 1 || month > 12 || month < 1) {
-          return 'Invalid day or month';
-        }
-      } else if (scheduledDateType === 'EOM') {
-        if (!trimmed.startsWith('EOM')) {
-          return 'Date format should start with EOM';
-        }
-      } else if (scheduledDateType === 'both') {
-        if (!trimmed.startsWith('EOM') && !trimmed.startsWith('na')) {
-          if (trimmed.includes('-')) {
-            if (!ddMmRegex.test(trimmed)) {
-              return 'Invalid format for dd-mm';
-            }
-          } else {
-            if (!ddRegex.test(trimmed)) {
-              return 'Invalid format for dd';
-            }
-          }
-        }
-      }
-    }
-    return '';
-  };
-
-  const addScheduledDayOption = () => {
-    setScheduledDayOptions(prev => [...prev, { day: '', week: '' }]);
-  };
-
-  const removeScheduledDayOption = (index: number) => {
-    if (scheduledDayOptions.length > 1) {
-      const updated = scheduledDayOptions.filter((_, i) => i !== index);
-      setScheduledDayOptions(updated);
-      updateScheduledDay(updated);
-    }
-  };
-
-  const updateScheduledDayOption = (index: number, field: 'day' | 'week', value: string) => {
-    const updated = [...scheduledDayOptions];
-    updated[index] = { ...updated[index], [field]: value };
-    setScheduledDayOptions(updated);
-    updateScheduledDay(updated);
-  };
-
-  const updateScheduledDay = (options: ScheduledDayOption[]) => {
-    const formatted = options
-      .filter(opt => opt.day)
-      .map(opt => opt.week ? `${opt.day}-${opt.week}` : opt.day)
-      .join(',');
-    setConfigData(prev => ({ ...prev, scheduled_day: formatted }));
+  // --- Handlers ---
+  const toggleNode = (node: string) => {
+    setExpandedNodes(prev => ({ ...prev, [node]: !prev[node] }));
   };
 
   const buildScheduledCutoffTime = () => {
     if (!startCutoffTime && !endCutoffTime) return '';
-    
     let result = '';
-    if (startCutoffTime && timeSymbol) {
-      result = `${timeSymbol}${startCutoffTime}`;
-    }
+    if (startCutoffTime && timeSymbol) result = `${timeSymbol}${startCutoffTime}`;
     if (endCutoffTime && (timeSymbol === '>=' || !timeSymbol)) {
       result += result ? `,<=${endCutoffTime}` : `<=${endCutoffTime}`;
     }
     return result;
   };
 
-  const handleSave = () => {
-    // Validate
-    const newErrors: Record<string, string> = {};
-    
-    if (configData.scheduled_dt) {
-      const dateError = validateScheduledDate(configData.scheduled_dt);
-      if (dateError) newErrors.scheduled_dt = dateError;
-    }
+  const getCleanData = () => {
+    // Convert text back to arrays
+    const jobIdArray = jobIdsText ? jobIdsText.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const batchIdArray = batchIdsText ? batchIdsText.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-    if (endCutoffTime && !startCutoffTime && timeSymbol !== '<=') {
-      newErrors.scheduled_cutoff_time = 'Start cutoff time cannot be empty when end time is set';
-    }
-
-    setErrors(newErrors);
-    
-    if (Object.keys(newErrors).length > 0) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please fix the validation errors before saving',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    // Build final data
     const finalData = {
       ...configData,
       scheduled_cutoff_time: buildScheduledCutoffTime(),
-      dpndnt_job_id_lst: Array.isArray(configData.dpndnt_job_id_lst) 
-        ? configData.dpndnt_job_id_lst 
-        : configData.dpndnt_job_id_lst ? [configData.dpndnt_job_id_lst as any] : [],
-      dpndnt_btch_id_lst: Array.isArray(configData.dpndnt_btch_id_lst)
-        ? configData.dpndnt_btch_id_lst
-        : configData.dpndnt_btch_id_lst ? [configData.dpndnt_btch_id_lst as any] : [],
+      dpndnt_job_id_lst: jobIdArray,
+      dpndnt_btch_id_lst: batchIdArray,
     };
 
-    // Remove empty or 'na' values
+    // Remove empty/na keys
     Object.keys(finalData).forEach(key => {
-      const value = finalData[key as keyof OrchConfigData];
-      if (value === '' || value === 'na' || (Array.isArray(value) && value.length === 0)) {
-        delete finalData[key as keyof OrchConfigData];
+      const k = key as keyof OrchConfigData;
+      const val = finalData[k];
+      if (val === '' || val === 'na' || (Array.isArray(val) && val.length === 0)) {
+        delete finalData[k];
       }
     });
+    return finalData;
+  };
 
-    onClose(finalData);
+  const handleSave = () => {
+    onClose(getCleanData());
   };
 
   const handleCopyToClipboard = () => {
-    const jsonString = JSON.stringify(configData, null, 2);
-    navigator.clipboard.writeText(jsonString);
-    toast({
-      title: 'Copied!',
-      description: 'JSON data copied to clipboard',
-      status: 'success',
-      duration: 2000,
-      isClosable: true,
-    });
+    navigator.clipboard.writeText(JSON.stringify(getCleanData(), null, 2));
+    toast({ title: 'Copied JSON', status: 'success', duration: 1000 });
+  };
+
+  // --- Syntax Highlighter for Left Panel ---
+  const SyntaxHighlightedJson = ({ data }: { data: object }) => {
+    const jsonStr = JSON.stringify(data, null, 2);
+    const lines = jsonStr.split('\n');
+
+    return (
+      <Box fontFamily="'Fira Code', monospace" fontSize="13px" lineHeight="1.6">
+        {lines.map((line, i) => {
+          // Simple regex coloring
+          const keyMatch = line.match(/^(\s*)"(.+)":/);
+          const valStringMatch = line.match(/: "(.+)"/);
+          const valBoolMatch = line.match(/: (true|false|null|[0-9]+)/);
+
+          return (
+            <Flex key={i} w="full" _hover={{ bg: 'whiteAlpha.50' }}>
+              <Text color="gray.600" w="30px" textAlign="right" mr={4} userSelect="none">
+                {i + 1}
+              </Text>
+              <Box whiteSpace="pre">
+                {keyMatch ? (
+                  <>
+                    <Text as="span" color="gray.500">{keyMatch[1]}</Text>
+                    <Text as="span" color="#d375a3">"{keyMatch[2]}"</Text>
+                    <Text as="span" color="gray.400">:</Text>
+                    {valStringMatch && <Text as="span" color="#98c379"> "{valStringMatch[1]}"</Text>}
+                    {valBoolMatch && <Text as="span" color="#d19a66"> {valBoolMatch[1]}</Text>}
+                    {!valStringMatch && !valBoolMatch && <Text as="span" color="gray.400">{line.replace(keyMatch[0], '')}</Text>}
+                  </>
+                ) : (
+                  <Text as="span" color="gray.400">{line}</Text>
+                )}
+              </Box>
+            </Flex>
+          );
+        })}
+      </Box>
+    );
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={() => onClose()} size="6xl" scrollBehavior="inside">
+    <Modal isOpen={isOpen} onClose={() => onClose()} size="6xl" motionPreset="slideInBottom">
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <HStack>
-            <Text>Orchestrator Configuration Editor</Text>
-            <Badge colorScheme="blue">JSON Editor</Badge>
-          </HStack>
-        </ModalHeader>
-        <ModalCloseButton />
-        
-        <ModalBody>
-          <VStack spacing={6} align="stretch">
-            
-            {/* Dependent Job Configuration */}
-            <Box>
-              <Text fontSize="lg" fontWeight="bold" mb={3}>Dependency Configuration</Text>
-              <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-                <GridItem>
-                  <FormControl>
-                    <FormLabel>Dependent Job ID List</FormLabel>
-                    <Textarea
-                      placeholder="Enter job IDs (comma-separated or JSON array)"
-                      value={Array.isArray(configData.dpndnt_job_id_lst) 
-                        ? configData.dpndnt_job_id_lst.join(', ')
-                        : configData.dpndnt_job_id_lst || ''}
-                      onChange={(e) => handleInputChange('dpndnt_job_id_lst', e.target.value.split(', '))}
-                      rows={3}
-                    />
-                  </FormControl>
-                </GridItem>
-                
-                <GridItem>
-                  <FormControl>
-                    <FormLabel>Dependent Batch ID List</FormLabel>
-                    <Textarea
-                      placeholder="Enter batch IDs (comma-separated or JSON array)"
-                      value={Array.isArray(configData.dpndnt_btch_id_lst)
-                        ? configData.dpndnt_btch_id_lst.join(', ')
-                        : configData.dpndnt_btch_id_lst || ''}
-                      onChange={(e) => handleInputChange('dpndnt_btch_id_lst', e.target.value.split(', '))}
-                      rows={3}
-                    />
-                  </FormControl>
-                </GridItem>
-                
-                <GridItem>
-                  <FormControl>
-                    <FormLabel>Dependent Job Process Type</FormLabel>
-                    <Select
-                      value={configData.dpndnt_job_process_type || 'na'}
-                      onChange={(e) => handleInputChange('dpndnt_job_process_type', e.target.value)}
-                    >
-                      <option value="na">N/A</option>
-                      <option value="batch">Batch</option>
-                      <option value="stream">Stream</option>
-                      <option value="real-time">Real-time</option>
-                    </Select>
-                  </FormControl>
-                </GridItem>
-                
-                <GridItem>
-                  <FormControl>
-                    <FormLabel>Dependent Cutoff Date</FormLabel>
-                    <Input
-                      type="date"
-                      value={configData.dpndnt_cutoff_dt || ''}
-                      onChange={(e) => handleInputChange('dpndnt_cutoff_dt', e.target.value)}
-                    />
-                  </FormControl>
-                </GridItem>
-              </Grid>
+      <ModalContent maxH="90vh" borderRadius="lg" overflow="hidden">
+        <ModalBody p={0} display="flex" h="85vh">
+
+          {/* --- LEFT PANEL: Code View (Dark) --- */}
+          <Box
+            w="40%"
+            bg="#282a36"
+            h="full"
+            borderRight="1px solid"
+            borderColor="whiteAlpha.200"
+            display="flex"
+            flexDirection="column"
+          >
+            {/* Header */}
+            <Flex p={4} justify="space-between" align="center" borderBottom="1px solid" borderColor="whiteAlpha.100">
+               <Text color="white" fontWeight="bold">Orch_config.json</Text>
+               <Badge bg="purple.500" color="white" variant="solid">JSON</Badge>
+            </Flex>
+
+            {/* Code Area */}
+            <Box flex={1} overflowY="auto" p={4} css={{ '&::-webkit-scrollbar': { width: '8px' }, '&::-webkit-scrollbar-thumb': { background: '#44475a' } }}>
+               <SyntaxHighlightedJson data={getCleanData()} />
             </Box>
 
-            <Divider />
+            {/* Footer Status */}
+            <Flex p={2} bg="#191a21" fontSize="xs" color="gray.400" justify="space-between">
+               <Text>Ln {Object.keys(configData).length}, Col 1</Text>
+               <Text>UTF-8</Text>
+            </Flex>
+          </Box>
 
-            {/* Scheduling Configuration */}
-            <Box>
-              <Text fontSize="lg" fontWeight="bold" mb={3}>Scheduling Configuration</Text>
-              
-              {/* Scheduled Cutoff Time */}
-              <FormControl mb={4} isInvalid={!!errors.scheduled_cutoff_time}>
-                <FormLabel>Scheduled Cutoff Time</FormLabel>
-                <HStack spacing={3}>
-                  <Select
-                    value={timeSymbol}
-                    onChange={(e) => setTimeSymbol(e.target.value as any)}
-                    width="100px"
+
+          {/* --- RIGHT PANEL: Visual Editor (Light) --- */}
+          <Box
+            w="60%"
+            bg="#f4f5f7"
+            h="full"
+            display="flex"
+            flexDirection="column"
+          >
+            {/* Toolbar */}
+            <Flex p={4} bg="white" borderBottom="1px solid" borderColor="gray.200" justify="space-between" align="center" shadow="sm">
+              <HStack>
+                <FolderIcon boxSize={5} color="purple.500" />
+                <Text fontWeight="bold" color="gray.700" fontSize="lg">Edit Configuration</Text>
+              </HStack>
+              <HStack>
+                <Button size="sm" leftIcon={<CopyIcon />} onClick={handleCopyToClipboard}>Copy</Button>
+                <Button size="sm" colorScheme="purple" leftIcon={<CheckIcon />} onClick={handleSave}>Save Changes</Button>
+                <IconButton size="sm" aria-label="close" icon={<CloseIcon />} onClick={() => onClose()} />
+              </HStack>
+            </Flex>
+
+            {/* Tree Editor Area */}
+            <Box flex={1} overflowY="auto" p={8}>
+
+              {/* Root Group */}
+              <Box>
+                {/* Root Node */}
+                <HStack
+                  w="full"
+                  bg="white"
+                  p={2}
+                  pl={4}
+                  spacing={3}
+                  borderRadius="md"
+                  mb={2}
+                  border="1px solid"
+                  borderColor="transparent"
+                  _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+                  transition="all 0.2s"
+                >
+                  <Box w="20px" cursor="pointer" onClick={() => toggleNode('root')}>
+                    {expandedNodes.root ? <ChevronDownIcon color="gray.400" /> : <ChevronRightIcon color="gray.400" />}
+                  </Box>
+                  <TypeBadge type="object" />
+                  <Text
+                    fontSize="sm"
+                    fontWeight="medium"
+                    color="gray.600"
+                    minW="140px"
+                    cursor="pointer"
+                    onClick={() => toggleNode('root')}
                   >
-                    <option value="">None</option>
-                    <option value=">=">{'>='}</option>
-                    <option value="<=">{'<='}</option>
-                  </Select>
-                  
-                  <Input
-                    type="time"
-                    step="1"
-                    value={startCutoffTime}
-                    onChange={(e) => setStartCutoffTime(e.target.value)}
-                    placeholder="Start time"
-                  />
-                  
-                  {(timeSymbol === '>=' || !timeSymbol) && (
-                    <>
-                      <Text>to</Text>
-                      <Input
-                        type="time"
-                        step="1"
-                        value={endCutoffTime}
-                        onChange={(e) => setEndCutoffTime(e.target.value)}
-                        placeholder="End time (optional)"
-                      />
-                    </>
-                  )}
+                    Orch Config Json
+                  </Text>
+                  <Text fontSize="xs" color="gray.400" fontStyle="italic">Object container</Text>
                 </HStack>
-                {errors.scheduled_cutoff_time && (
-                  <Text color="red.500" fontSize="sm">{errors.scheduled_cutoff_time}</Text>
-                )}
-              </FormControl>
 
-              {/* Scheduled Day */}
-              <FormControl mb={4}>
-                <FormLabel>Scheduled Day</FormLabel>
-                <VStack align="stretch" spacing={2}>
-                  <Input
-                    value={configData.scheduled_day || ''}
-                    placeholder="Generated from options below"
-                    isReadOnly
-                    bg="gray.50"
-                  />
-                  {scheduledDayOptions.map((option, index) => (
-                    <HStack key={index} spacing={3}>
-                      <Select
-                        value={option.day}
-                        onChange={(e) => updateScheduledDayOption(index, 'day', e.target.value)}
-                        placeholder="Select day"
-                        flex={2}
+                {expandedNodes.root && (
+                  <Box pl={6} borderLeft="1px dashed" borderColor="gray.300" ml={3}>
+
+                    {/* Dependencies Group */}
+                    <HStack
+                      w="full"
+                      bg="white"
+                      p={2}
+                      pl={4}
+                      spacing={3}
+                      borderRadius="md"
+                      mb={2}
+                      border="1px solid"
+                      borderColor="transparent"
+                      _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+                      transition="all 0.2s"
+                    >
+                      <Box w="20px" cursor="pointer" onClick={() => toggleNode('dependencies')}>
+                        {expandedNodes.dependencies ? <ChevronDownIcon color="gray.400" /> : <ChevronRightIcon color="gray.400" />}
+                      </Box>
+                      <TypeBadge type="object" />
+                      <Text
+                        fontSize="sm"
+                        fontWeight="medium"
+                        color="gray.600"
+                        minW="140px"
+                        cursor="pointer"
+                        onClick={() => toggleNode('dependencies')}
                       >
-                        <option value="Monday">Monday</option>
-                        <option value="Tuesday">Tuesday</option>
-                        <option value="Wednesday">Wednesday</option>
-                        <option value="Thursday">Thursday</option>
-                        <option value="Friday">Friday</option>
-                        <option value="Saturday">Saturday</option>
-                        <option value="Sunday">Sunday</option>
-                      </Select>
-                      
-                      <Select
-                        value={option.week}
-                        onChange={(e) => updateScheduledDayOption(index, 'week', e.target.value)}
-                        placeholder="Week"
-                        flex={1}
-                      >
-                        <option value="01">01</option>
-                        <option value="02">02</option>
-                        <option value="03">03</option>
-                        <option value="04">04</option>
-                        <option value="EOM">EOM</option>
-                      </Select>
-                      
-                      <IconButton
-                        aria-label="Add option"
-                        icon={<AddIcon />}
-                        onClick={addScheduledDayOption}
-                        size="sm"
-                      />
-                      
-                      {scheduledDayOptions.length > 1 && (
-                        <IconButton
-                          aria-label="Remove option"
-                          icon={<DeleteIcon />}
-                          onClick={() => removeScheduledDayOption(index)}
-                          colorScheme="red"
-                          size="sm"
-                        />
-                      )}
+                        dependencies_config
+                      </Text>
+                      <Text fontSize="xs" color="gray.400" fontStyle="italic">Object container</Text>
                     </HStack>
-                  ))}
-                </VStack>
-              </FormControl>
 
-              {/* Scheduled Date */}
-              <FormControl mb={4} isInvalid={!!errors.scheduled_dt}>
-                <FormLabel>Scheduled Date</FormLabel>
-                <RadioGroup value={scheduledDateType} onChange={(value) => setScheduledDateType(value as any)}>
-                  <Stack direction="row" mb={2}>
-                    <Radio value="dd">DD</Radio>
-                    <Radio value="dd-mm">DD-MM</Radio>
-                    <Radio value="EOM">EOM</Radio>
-                    <Radio value="both">All Formats</Radio>
-                  </Stack>
-                </RadioGroup>
-                <Input
-                  value={configData.scheduled_dt || ''}
-                  onChange={(e) => handleInputChange('scheduled_dt', e.target.value)}
-                  placeholder={`Enter dates in ${scheduledDateType} format (comma-separated)`}
-                />
-                {errors.scheduled_dt && (
-                  <Text color="red.500" fontSize="sm">{errors.scheduled_dt}</Text>
+                    {expandedNodes.dependencies && (
+                      <Box pl={6} borderLeft="1px dashed" borderColor="gray.300" ml={3} mb={4}>
+
+                        {/* Job IDs */}
+                        <HStack
+                          w="full"
+                          bg="white"
+                          p={2}
+                          pl={4}
+                          spacing={3}
+                          borderRadius="md"
+                          mb={2}
+                          border="1px solid"
+                          borderColor="transparent"
+                          _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+                          transition="all 0.2s"
+                        >
+                          <Box w="6px" h="6px" borderRadius="full" bg="gray.200" ml={5} />
+                          <TypeBadge type="array" />
+                          <Text fontSize="sm" fontWeight="medium" color="gray.600" minW="140px">
+                            job_ids
+                          </Text>
+                          <Flex flex={1} align="center" bg="gray.50" borderRadius="md" px={2} h="32px">
+                            <Input
+                              variant="unstyled"
+                              size="sm"
+                              placeholder="job1, job2..."
+                              value={jobIdsText}
+                              onChange={(e) => setJobIdsText(e.target.value)}
+                              color="gray.700"
+                            />
+                          </Flex>
+                          <IconButton
+                            aria-label="clear"
+                            icon={<CloseIcon />}
+                            size="xs"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={() => setJobIdsText('')}
+                          />
+                        </HStack>
+
+                        {/* Batch IDs */}
+                        <HStack
+                          w="full"
+                          bg="white"
+                          p={2}
+                          pl={4}
+                          spacing={3}
+                          borderRadius="md"
+                          mb={2}
+                          border="1px solid"
+                          borderColor="transparent"
+                          _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+                          transition="all 0.2s"
+                        >
+                          <Box w="6px" h="6px" borderRadius="full" bg="gray.200" ml={5} />
+                          <TypeBadge type="array" />
+                          <Text fontSize="sm" fontWeight="medium" color="gray.600" minW="140px">
+                            batch_ids
+                          </Text>
+                          <Flex flex={1} align="center" bg="gray.50" borderRadius="md" px={2} h="32px">
+                            <Input
+                              variant="unstyled"
+                              size="sm"
+                              placeholder="batch1, batch2..."
+                              value={batchIdsText}
+                              onChange={(e) => setBatchIdsText(e.target.value)}
+                              color="gray.700"
+                            />
+                          </Flex>
+                          <IconButton
+                            aria-label="clear"
+                            icon={<CloseIcon />}
+                            size="xs"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={() => setBatchIdsText('')}
+                          />
+                        </HStack>
+
+                        {/* Process Type */}
+                        <HStack
+                          w="full"
+                          bg="white"
+                          p={2}
+                          pl={4}
+                          spacing={3}
+                          borderRadius="md"
+                          mb={2}
+                          border="1px solid"
+                          borderColor="transparent"
+                          _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+                          transition="all 0.2s"
+                        >
+                          <Box w="6px" h="6px" borderRadius="full" bg="gray.200" ml={5} />
+                          <TypeBadge type="string" />
+                          <Text fontSize="sm" fontWeight="medium" color="gray.600" minW="140px">
+                            process_type
+                          </Text>
+                          <Flex flex={1} align="center" bg="gray.50" borderRadius="md" px={2} h="32px">
+                            <Input
+                              variant="unstyled"
+                              size="sm"
+                              placeholder="value"
+                              value={configData.dpndnt_job_process_type === 'na' ? '' : configData.dpndnt_job_process_type}
+                              onChange={(e) => setConfigData(prev => ({...prev, dpndnt_job_process_type: e.target.value || 'na'}))}
+                              color="gray.700"
+                            />
+                          </Flex>
+                          <IconButton
+                            aria-label="clear"
+                            icon={<CloseIcon />}
+                            size="xs"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={() => setConfigData(prev => ({...prev, dpndnt_job_process_type: 'na'}))}
+                          />
+                        </HStack>
+
+                      </Box>
+                    )}
+
+                    {/* Scheduling Group */}
+                    <HStack
+                      w="full"
+                      bg="white"
+                      p={2}
+                      pl={4}
+                      spacing={3}
+                      borderRadius="md"
+                      mb={2}
+                      border="1px solid"
+                      borderColor="transparent"
+                      _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+                      transition="all 0.2s"
+                    >
+                      <Box w="20px" cursor="pointer" onClick={() => toggleNode('scheduling')}>
+                        {expandedNodes.scheduling ? <ChevronDownIcon color="gray.400" /> : <ChevronRightIcon color="gray.400" />}
+                      </Box>
+                      <TypeBadge type="object" />
+                      <Text
+                        fontSize="sm"
+                        fontWeight="medium"
+                        color="gray.600"
+                        minW="140px"
+                        cursor="pointer"
+                        onClick={() => toggleNode('scheduling')}
+                      >
+                        scheduling_config
+                      </Text>
+                      <Text fontSize="xs" color="gray.400" fontStyle="italic">Object container</Text>
+                    </HStack>
+
+                    {expandedNodes.scheduling && (
+                      <Box pl={6} borderLeft="1px dashed" borderColor="gray.300" ml={3} mb={4}>
+
+                        {/* Scheduled Date */}
+                        <HStack
+                          w="full"
+                          bg="white"
+                          p={2}
+                          pl={4}
+                          spacing={3}
+                          borderRadius="md"
+                          mb={2}
+                          border="1px solid"
+                          borderColor="transparent"
+                          _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+                          transition="all 0.2s"
+                        >
+                          <Box w="6px" h="6px" borderRadius="full" bg="gray.200" ml={5} />
+                          <TypeBadge type="string" />
+                          <Text fontSize="sm" fontWeight="medium" color="gray.600" minW="140px">
+                            scheduled_date
+                          </Text>
+                          <Flex flex={1} align="center" bg="gray.50" borderRadius="md" px={2} h="32px">
+                            <Input
+                              variant="unstyled"
+                              size="sm"
+                              placeholder="e.g. 01, EOM"
+                              value={configData.scheduled_dt || ''}
+                              onChange={(e) => setConfigData(prev => ({...prev, scheduled_dt: e.target.value}))}
+                              color="gray.700"
+                            />
+                          </Flex>
+                          <IconButton
+                            aria-label="clear"
+                            icon={<CloseIcon />}
+                            size="xs"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={() => setConfigData(prev => ({...prev, scheduled_dt: ''}))}
+                          />
+                        </HStack>
+
+                        {/* Cutoff Time */}
+                        <HStack w="full" bg="white" p={2} pl={4} spacing={3} borderRadius="md" mb={2} border="1px solid transparent" _hover={{ borderColor: 'purple.200', shadow: 'sm' }}>
+                          <Box w="6px" h="6px" borderRadius="full" bg="gray.200" ml={5} />
+                          <TypeBadge type="string" />
+                          <Text fontSize="sm" fontWeight="medium" color="gray.600" minW="140px">cutoff_time</Text>
+                          <Select w="80px" size="xs" value={timeSymbol} onChange={(e: any) => setTimeSymbol(e.target.value)}>
+                            <option value="">=</option>
+                            <option value=">=">{'>='}</option>
+                            <option value="<=">{'<='}</option>
+                          </Select>
+                          <Input variant="unstyled" size="sm" type="time" step="1" value={startCutoffTime} onChange={(e) => setStartCutoffTime(e.target.value)} />
+                          {(timeSymbol === '>=' || !timeSymbol) && (
+                            <>
+                              <Text fontSize="xs">to</Text>
+                              <Input variant="unstyled" size="sm" type="time" step="1" value={endCutoffTime} onChange={(e) => setEndCutoffTime(e.target.value)} />
+                            </>
+                          )}
+                        </HStack>
+
+                        {/* Dynamic Day List */}
+                        {scheduledDayOptions.map((opt, idx) => (
+                          <HStack key={idx} w="full" bg="white" p={2} pl={4} spacing={3} borderRadius="md" mb={2} ml={0}>
+                            <Box w="6px" h="6px" borderRadius="full" bg="gray.200" ml={5} />
+                            <TypeBadge type="object" />
+                            <Text fontSize="sm" fontWeight="medium" color="gray.600" minW="140px">day_config_{idx+1}</Text>
+                            <Select size="xs" variant="filled" w="100px" placeholder="Day" value={opt.day} onChange={(e) => {
+                              const newOpts = [...scheduledDayOptions];
+                              newOpts[idx].day = e.target.value;
+                              setScheduledDayOptions(newOpts);
+                              const str = newOpts.filter(o=>o.day).map(o => o.week ? `${o.day}-${o.week}` : o.day).join(',');
+                              setConfigData(prev => ({...prev, scheduled_day: str}));
+                            }}>
+                              <option value="Monday">Monday</option>
+                              <option value="Friday">Friday</option>
+                            </Select>
+                            <Select size="xs" variant="filled" w="80px" placeholder="Week" value={opt.week} onChange={(e) => {
+                              const newOpts = [...scheduledDayOptions];
+                              newOpts[idx].week = e.target.value;
+                              setScheduledDayOptions(newOpts);
+                              const str = newOpts.filter(o=>o.day).map(o => o.week ? `${o.day}-${o.week}` : o.day).join(',');
+                              setConfigData(prev => ({...prev, scheduled_day: str}));
+                            }}>
+                              <option value="01">1st</option>
+                              <option value="EOM">Last</option>
+                            </Select>
+                            <IconButton aria-label="add" icon={<CopyIcon/>} size="xs" onClick={() => setScheduledDayOptions([...scheduledDayOptions, {day:'', week:''}])} />
+                          </HStack>
+                        ))}
+                      </Box>
+                    )}
+
+                    {/* System Group */}
+                    <HStack
+                      w="full"
+                      bg="white"
+                      p={2}
+                      pl={4}
+                      spacing={3}
+                      borderRadius="md"
+                      mb={2}
+                      border="1px solid"
+                      borderColor="transparent"
+                      _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+                      transition="all 0.2s"
+                    >
+                      <Box w="20px" cursor="pointer" onClick={() => toggleNode('system')}>
+                        {expandedNodes.system ? <ChevronDownIcon color="gray.400" /> : <ChevronRightIcon color="gray.400" />}
+                      </Box>
+                      <TypeBadge type="object" />
+                      <Text
+                        fontSize="sm"
+                        fontWeight="medium"
+                        color="gray.600"
+                        minW="140px"
+                        cursor="pointer"
+                        onClick={() => toggleNode('system')}
+                      >
+                        system_config
+                      </Text>
+                      <Text fontSize="xs" color="gray.400" fontStyle="italic">Object container</Text>
+                    </HStack>
+
+                    {expandedNodes.system && (
+                      <Box pl={6} borderLeft="1px dashed" borderColor="gray.300" ml={3}>
+
+                        {/* Check Window */}
+                        <HStack
+                          w="full"
+                          bg="white"
+                          p={2}
+                          pl={4}
+                          spacing={3}
+                          borderRadius="md"
+                          mb={2}
+                          border="1px solid"
+                          borderColor="transparent"
+                          _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+                          transition="all 0.2s"
+                        >
+                          <Box w="6px" h="6px" borderRadius="full" bg="gray.200" ml={5} />
+                          <TypeBadge type="number" />
+                          <Text fontSize="sm" fontWeight="medium" color="gray.600" minW="140px">
+                            check_window
+                          </Text>
+                          <Flex flex={1} align="center" bg="gray.50" borderRadius="md" px={2} h="32px">
+                            <Input
+                              variant="unstyled"
+                              size="sm"
+                              placeholder="Days (e.g. 1)"
+                              value={configData.dependency_check_window === 'na' ? '' : configData.dependency_check_window}
+                              onChange={(e) => setConfigData(prev => ({...prev, dependency_check_window: e.target.value || 'na'}))}
+                              color="gray.700"
+                            />
+                          </Flex>
+                          <IconButton
+                            aria-label="clear"
+                            icon={<CloseIcon />}
+                            size="xs"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={() => setConfigData(prev => ({...prev, dependency_check_window: 'na'}))}
+                          />
+                        </HStack>
+
+                        {/* Retry */}
+                        <HStack
+                          w="full"
+                          bg="white"
+                          p={2}
+                          pl={4}
+                          spacing={3}
+                          borderRadius="md"
+                          mb={2}
+                          border="1px solid"
+                          borderColor="transparent"
+                          _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+                          transition="all 0.2s"
+                        >
+                          <Box w="6px" h="6px" borderRadius="full" bg="gray.200" ml={5} />
+                          <TypeBadge type="boolean" />
+                          <Text fontSize="sm" fontWeight="medium" color="gray.600" minW="140px">
+                            retry_enabled
+                          </Text>
+                          <Flex flex={1} align="center" bg="gray.50" borderRadius="md" px={2} h="32px">
+                            <Select
+                              variant="unstyled"
+                              size="sm"
+                              value={configData.retry || 'na'}
+                              onChange={(e) => setConfigData(prev => ({...prev, retry: e.target.value}))}
+                              color={configData.retry === 'na' ? 'gray.400' : 'gray.800'}
+                            >
+                              <option value="na">N/A</option>
+                              <option value="yes">Yes</option>
+                              <option value="no">No</option>
+                            </Select>
+                          </Flex>
+                          <IconButton
+                            aria-label="clear"
+                            icon={<CloseIcon />}
+                            size="xs"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={() => setConfigData(prev => ({...prev, retry: 'na'}))}
+                          />
+                        </HStack>
+
+                      </Box>
+                    )}
+                  </Box>
                 )}
-              </FormControl>
-            </Box>
-
-            <Divider />
-
-            {/* System Configuration */}
-            <Box>
-              <Text fontSize="lg" fontWeight="bold" mb={3}>System Configuration</Text>
-              <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-                <GridItem>
-                  <FormControl>
-                    <FormLabel>Dependency Check Window (days)</FormLabel>
-                    <Select
-                      value={configData.dependency_check_window || 'na'}
-                      onChange={(e) => handleInputChange('dependency_check_window', e.target.value)}
-                    >
-                      <option value="na">N/A</option>
-                      {Array.from({ length: 91 }, (_, i) => (
-                        <option key={i} value={i.toString()}>{i}</option>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </GridItem>
-                
-                <GridItem>
-                  <FormControl>
-                    <FormLabel>Keep Active (days)</FormLabel>
-                    <Select
-                      value={configData.keep_active_in_days || 'na'}
-                      onChange={(e) => handleInputChange('keep_active_in_days', e.target.value)}
-                    >
-                      <option value="na">N/A</option>
-                      {Array.from({ length: 91 }, (_, i) => (
-                        <option key={i} value={i.toString()}>{i}</option>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </GridItem>
-                
-                <GridItem>
-                  <FormControl>
-                    <FormLabel>Check All Dependent Job Steps</FormLabel>
-                    <RadioGroup
-                      value={configData.check_all_dpndnt_job_steps || 'na'}
-                      onChange={(value) => handleInputChange('check_all_dpndnt_job_steps', value)}
-                    >
-                      <Stack direction="row">
-                        <Radio value="yes">Yes</Radio>
-                        <Radio value="no">No</Radio>
-                        <Radio value="na">N/A</Radio>
-                      </Stack>
-                    </RadioGroup>
-                  </FormControl>
-                </GridItem>
-                
-                <GridItem>
-                  <FormControl>
-                    <FormLabel>Retry</FormLabel>
-                    <RadioGroup
-                      value={configData.retry || 'na'}
-                      onChange={(value) => handleInputChange('retry', value)}
-                    >
-                      <Stack direction="row">
-                        <Radio value="yes">Yes</Radio>
-                        <Radio value="no">No</Radio>
-                        <Radio value="na">N/A</Radio>
-                      </Stack>
-                    </RadioGroup>
-                  </FormControl>
-                </GridItem>
-              </Grid>
-            </Box>
-
-            {/* JSON Preview */}
-            <Box>
-              <Text fontSize="lg" fontWeight="bold" mb={3}>JSON Preview</Text>
-              <Box position="relative">
-                <Textarea
-                  value={JSON.stringify({ ...configData, scheduled_cutoff_time: buildScheduledCutoffTime() }, null, 2)}
-                  isReadOnly
-                  bg="gray.50"
-                  fontFamily="mono"
-                  fontSize="sm"
-                  rows={8}
-                />
-                <IconButton
-                  aria-label="Copy JSON"
-                  icon={<CopyIcon />}
-                  onClick={handleCopyToClipboard}
-                  position="absolute"
-                  top={2}
-                  right={2}
-                  size="sm"
-                />
               </Box>
-            </Box>
-          </VStack>
-        </ModalBody>
 
-        <ModalFooter>
-          <HStack spacing={3}>
-            <Button variant="outline" onClick={handleCopyToClipboard} leftIcon={<CopyIcon />}>
-              Copy JSON
-            </Button>
-            <Button variant="outline" onClick={() => onClose()}>
-              Cancel
-            </Button>
-            <Button colorScheme="blue" onClick={handleSave}>
-              Save Configuration
-            </Button>
-          </HStack>
-        </ModalFooter>
+            </Box>
+          </Box>
+        </ModalBody>
       </ModalContent>
     </Modal>
   );
 };
 
-export default OrchConfigJsonEditor;
+export default VisualJsonEditor;
