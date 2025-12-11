@@ -18,13 +18,16 @@ import {
   Tooltip,
   useColorModeValue,
   Icon,
+  useBreakpointValue,
 } from '@chakra-ui/react';
 import {
   CopyIcon,
   CloseIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  CheckIcon
+  CheckIcon,
+  ViewIcon,
+  EditIcon,
 } from '@chakra-ui/icons';
 
 // --- Interfaces ---
@@ -89,6 +92,10 @@ const VisualJsonEditor: React.FC<VisualJsonEditorProps> = ({
   initialData = {}
 }) => {
   const toast = useToast();
+
+  // --- Responsive View Toggle ---
+  const [viewMode, setViewMode] = useState<'code' | 'editor'>('editor');
+  const isMobile = useBreakpointValue({ base: true, lg: false });
 
   // --- State ---
   const defaultData: OrchConfigData = {
@@ -261,29 +268,83 @@ const VisualJsonEditor: React.FC<VisualJsonEditorProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={() => onClose()} size="6xl" motionPreset="slideInBottom">
+    <Modal
+      isOpen={isOpen}
+      onClose={() => onClose()}
+      size="6xl"
+      motionPreset="slideInBottom"
+      scrollBehavior="inside"
+    >
       <ModalOverlay />
-      <ModalContent maxH="90vh" borderRadius="lg" overflow="hidden">
-        <ModalBody p={0} display="flex" h="85vh">
+      <ModalContent
+        maxH={{ base: "95vh", lg: "90vh" }}
+        h={{ base: "95vh", lg: "85vh" }}
+        borderRadius="lg"
+        mx={{ base: 2, lg: 4 }}
+        my={{ base: 2, lg: "auto" }}
+      >
+        <ModalBody p={0} display="flex" flexDirection={{ base: "column", lg: "row" }} h="full">
+
+          {/* Mobile View Toggle */}
+          {isMobile && (
+            <Flex
+              p={2}
+              bg="white"
+              borderBottom="1px solid"
+              borderColor="gray.200"
+              justify="center"
+              gap={2}
+            >
+              <Button
+                size="sm"
+                leftIcon={<EditIcon />}
+                colorScheme={viewMode === 'editor' ? 'purple' : 'gray'}
+                variant={viewMode === 'editor' ? 'solid' : 'outline'}
+                onClick={() => setViewMode('editor')}
+                flex={1}
+              >
+                Editor
+              </Button>
+              <Button
+                size="sm"
+                leftIcon={<ViewIcon />}
+                colorScheme={viewMode === 'code' ? 'purple' : 'gray'}
+                variant={viewMode === 'code' ? 'solid' : 'outline'}
+                onClick={() => setViewMode('code')}
+                flex={1}
+              >
+                JSON
+              </Button>
+            </Flex>
+          )}
 
           {/* --- LEFT PANEL: Code View (Dark) --- */}
           <Box
-            w="40%"
+            w={{ base: "100%", lg: "40%" }}
+            display={{ base: viewMode === 'code' ? 'flex' : 'none', lg: 'flex' }}
             bg="#282a36"
             h="full"
-            borderRight="1px solid"
+            borderRight={{ base: "none", lg: "1px solid" }}
             borderColor="whiteAlpha.200"
-            display="flex"
             flexDirection="column"
           >
             {/* Header */}
             <Flex p={4} justify="space-between" align="center" borderBottom="1px solid" borderColor="whiteAlpha.100">
-               <Text color="white" fontWeight="bold">Orch_config.json</Text>
+               <Text color="white" fontWeight="bold" fontSize={{ base: "sm", lg: "md" }}>Orch_config.json</Text>
                <Badge bg="purple.500" color="white" variant="solid">JSON</Badge>
             </Flex>
 
             {/* Code Area */}
-            <Box flex={1} overflowY="auto" p={4} css={{ '&::-webkit-scrollbar': { width: '8px' }, '&::-webkit-scrollbar-thumb': { background: '#44475a' } }}>
+            <Box
+              flex={1}
+              overflowY="auto"
+              overflowX="auto"
+              p={4}
+              css={{
+                '&::-webkit-scrollbar': { width: '8px', height: '8px' },
+                '&::-webkit-scrollbar-thumb': { background: '#44475a', borderRadius: '4px' }
+              }}
+            >
                <SyntaxHighlightedJson data={getCleanData()} />
             </Box>
 
@@ -297,30 +358,77 @@ const VisualJsonEditor: React.FC<VisualJsonEditorProps> = ({
 
           {/* --- RIGHT PANEL: Visual Editor (Light) --- */}
           <Box
-            w="60%"
+            w={{ base: "100%", lg: "60%" }}
+            display={{ base: viewMode === 'editor' ? 'flex' : 'none', lg: 'flex' }}
             bg="#f4f5f7"
             h="full"
-            display="flex"
             flexDirection="column"
           >
             {/* Toolbar */}
-            <Flex p={4} bg="white" borderBottom="1px solid" borderColor="gray.200" justify="space-between" align="center" shadow="sm">
-              <HStack>
-                <FolderIcon boxSize={5} color="purple.500" />
-                <Text fontWeight="bold" color="gray.700" fontSize="lg">Edit Configuration</Text>
+            <Flex
+              p={{ base: 3, lg: 4 }}
+              bg="white"
+              borderBottom="1px solid"
+              borderColor="gray.200"
+              justify="space-between"
+              align="center"
+              shadow="sm"
+              flexWrap="wrap"
+              gap={2}
+            >
+              <HStack spacing={{ base: 2, lg: 3 }}>
+                <FolderIcon boxSize={{ base: 4, lg: 5 }} color="purple.500" />
+                <Text fontWeight="bold" color="gray.700" fontSize={{ base: "md", lg: "lg" }}>
+                  Edit Configuration
+                </Text>
               </HStack>
-              <HStack>
-                <Button size="sm" leftIcon={<CopyIcon />} onClick={handleCopyToClipboard}>Copy</Button>
-                <Button size="sm" colorScheme="purple" leftIcon={<CheckIcon />} onClick={handleSave}>Save Changes</Button>
-                <IconButton size="sm" aria-label="close" icon={<CloseIcon />} onClick={() => onClose()} />
+              <HStack spacing={{ base: 1, lg: 2 }}>
+                <Button
+                  size="sm"
+                  leftIcon={<CopyIcon />}
+                  onClick={handleCopyToClipboard}
+                  display={{ base: 'none', md: 'flex' }}
+                >
+                  Copy
+                </Button>
+                <IconButton
+                  size="sm"
+                  aria-label="copy"
+                  icon={<CopyIcon />}
+                  onClick={handleCopyToClipboard}
+                  display={{ base: 'flex', md: 'none' }}
+                />
+                <Button
+                  size="sm"
+                  colorScheme="purple"
+                  leftIcon={<CheckIcon />}
+                  onClick={handleSave}
+                >
+                  Save
+                </Button>
+                <IconButton
+                  size="sm"
+                  aria-label="close"
+                  icon={<CloseIcon />}
+                  onClick={() => onClose()}
+                />
               </HStack>
             </Flex>
 
             {/* Tree Editor Area */}
-            <Box flex={1} overflowY="auto" p={8}>
+            <Box
+              flex={1}
+              overflowY="auto"
+              overflowX="auto"
+              p={{ base: 4, lg: 8 }}
+              css={{
+                '&::-webkit-scrollbar': { width: '8px', height: '8px' },
+                '&::-webkit-scrollbar-thumb': { background: '#cbd5e0', borderRadius: '4px' }
+              }}
+            >
 
               {/* Root Group */}
-              <Box>
+              <Box minW={{ base: "320px", lg: "auto" }}>
                 {/* Root Node */}
                 <HStack
                   w="full"
@@ -349,7 +457,9 @@ const VisualJsonEditor: React.FC<VisualJsonEditorProps> = ({
                   >
                     Orch Config Json
                   </Text>
-                  <Text fontSize="xs" color="gray.400" fontStyle="italic">Object container</Text>
+                  <Text fontSize="xs" color="gray.400" fontStyle="italic" display={{ base: 'none', md: 'block' }}>
+                    Object container
+                  </Text>
                 </HStack>
 
                 {expandedNodes.root && (
@@ -383,7 +493,9 @@ const VisualJsonEditor: React.FC<VisualJsonEditorProps> = ({
                       >
                         dependencies_config
                       </Text>
-                      <Text fontSize="xs" color="gray.400" fontStyle="italic">Object container</Text>
+                      <Text fontSize="xs" color="gray.400" fontStyle="italic" display={{ base: 'none', md: 'block' }}>
+                        Object container
+                      </Text>
                     </HStack>
 
                     {expandedNodes.dependencies && (
@@ -537,7 +649,9 @@ const VisualJsonEditor: React.FC<VisualJsonEditorProps> = ({
                       >
                         scheduling_config
                       </Text>
-                      <Text fontSize="xs" color="gray.400" fontStyle="italic">Object container</Text>
+                      <Text fontSize="xs" color="gray.400" fontStyle="italic" display={{ base: 'none', md: 'block' }}>
+                        Object container
+                      </Text>
                     </HStack>
 
                     {expandedNodes.scheduling && (
@@ -583,52 +697,76 @@ const VisualJsonEditor: React.FC<VisualJsonEditorProps> = ({
                         </HStack>
 
                         {/* Cutoff Time */}
-                        <HStack w="full" bg="white" p={2} pl={4} spacing={3} borderRadius="md" mb={2} border="1px solid transparent" _hover={{ borderColor: 'purple.200', shadow: 'sm' }}>
-                          <Box w="6px" h="6px" borderRadius="full" bg="gray.200" ml={5} />
-                          <TypeBadge type="string" />
-                          <Text fontSize="sm" fontWeight="medium" color="gray.600" minW="140px">cutoff_time</Text>
-                          <Select w="80px" size="xs" value={timeSymbol} onChange={(e: any) => setTimeSymbol(e.target.value)}>
-                            <option value="">=</option>
-                            <option value=">=">{'>='}</option>
-                            <option value="<=">{'<='}</option>
-                          </Select>
-                          <Input variant="unstyled" size="sm" type="time" step="1" value={startCutoffTime} onChange={(e) => setStartCutoffTime(e.target.value)} />
-                          {(timeSymbol === '>=' || !timeSymbol) && (
-                            <>
-                              <Text fontSize="xs">to</Text>
-                              <Input variant="unstyled" size="sm" type="time" step="1" value={endCutoffTime} onChange={(e) => setEndCutoffTime(e.target.value)} />
-                            </>
-                          )}
-                        </HStack>
+                        <VStack w="full" spacing={2} align="stretch">
+                          <HStack w="full" bg="white" p={2} pl={4} spacing={3} borderRadius="md" border="1px solid transparent" _hover={{ borderColor: 'purple.200', shadow: 'sm' }}>
+                            <Box w="6px" h="6px" borderRadius="full" bg="gray.200" ml={5} />
+                            <TypeBadge type="string" />
+                            <Text fontSize="sm" fontWeight="medium" color="gray.600" minW={{ base: "100px", lg: "140px" }}>cutoff_time</Text>
+                          </HStack>
+                          <HStack w="full" pl={12} spacing={2} flexWrap="wrap">
+                            <Select w={{ base: "70px", lg: "80px" }} size="xs" value={timeSymbol} onChange={(e: any) => setTimeSymbol(e.target.value)}>
+                              <option value="">=</option>
+                              <option value=">=">{'>='}</option>
+                              <option value="<=">{'<='}</option>
+                            </Select>
+                            <Input
+                              w={{ base: "120px", lg: "auto" }}
+                              variant="filled"
+                              size="sm"
+                              type="time"
+                              step="1"
+                              value={startCutoffTime}
+                              onChange={(e) => setStartCutoffTime(e.target.value)}
+                            />
+                            {(timeSymbol === '>=' || !timeSymbol) && (
+                              <>
+                                <Text fontSize="xs">to</Text>
+                                <Input
+                                  w={{ base: "120px", lg: "auto" }}
+                                  variant="filled"
+                                  size="sm"
+                                  type="time"
+                                  step="1"
+                                  value={endCutoffTime}
+                                  onChange={(e) => setEndCutoffTime(e.target.value)}
+                                />
+                              </>
+                            )}
+                          </HStack>
+                        </VStack>
 
                         {/* Dynamic Day List */}
                         {scheduledDayOptions.map((opt, idx) => (
-                          <HStack key={idx} w="full" bg="white" p={2} pl={4} spacing={3} borderRadius="md" mb={2} ml={0}>
-                            <Box w="6px" h="6px" borderRadius="full" bg="gray.200" ml={5} />
-                            <TypeBadge type="object" />
-                            <Text fontSize="sm" fontWeight="medium" color="gray.600" minW="140px">day_config_{idx+1}</Text>
-                            <Select size="xs" variant="filled" w="100px" placeholder="Day" value={opt.day} onChange={(e) => {
-                              const newOpts = [...scheduledDayOptions];
-                              newOpts[idx].day = e.target.value;
-                              setScheduledDayOptions(newOpts);
-                              const str = newOpts.filter(o=>o.day).map(o => o.week ? `${o.day}-${o.week}` : o.day).join(',');
-                              setConfigData(prev => ({...prev, scheduled_day: str}));
-                            }}>
-                              <option value="Monday">Monday</option>
-                              <option value="Friday">Friday</option>
-                            </Select>
-                            <Select size="xs" variant="filled" w="80px" placeholder="Week" value={opt.week} onChange={(e) => {
-                              const newOpts = [...scheduledDayOptions];
-                              newOpts[idx].week = e.target.value;
-                              setScheduledDayOptions(newOpts);
-                              const str = newOpts.filter(o=>o.day).map(o => o.week ? `${o.day}-${o.week}` : o.day).join(',');
-                              setConfigData(prev => ({...prev, scheduled_day: str}));
-                            }}>
-                              <option value="01">1st</option>
-                              <option value="EOM">Last</option>
-                            </Select>
-                            <IconButton aria-label="add" icon={<CopyIcon/>} size="xs" onClick={() => setScheduledDayOptions([...scheduledDayOptions, {day:'', week:''}])} />
-                          </HStack>
+                          <VStack key={idx} w="full" spacing={2} align="stretch" mb={2}>
+                            <HStack w="full" bg="white" p={2} pl={4} spacing={3} borderRadius="md">
+                              <Box w="6px" h="6px" borderRadius="full" bg="gray.200" ml={5} />
+                              <TypeBadge type="object" />
+                              <Text fontSize="sm" fontWeight="medium" color="gray.600" minW="140px">day_config_{idx+1}</Text>
+                            </HStack>
+                            <HStack w="full" pl={12} spacing={2} flexWrap="wrap">
+                              <Select size="xs" variant="filled" w={{ base: "120px", lg: "100px" }} placeholder="Day" value={opt.day} onChange={(e) => {
+                                const newOpts = [...scheduledDayOptions];
+                                newOpts[idx].day = e.target.value;
+                                setScheduledDayOptions(newOpts);
+                                const str = newOpts.filter(o=>o.day).map(o => o.week ? `${o.day}-${o.week}` : o.day).join(',');
+                                setConfigData(prev => ({...prev, scheduled_day: str}));
+                              }}>
+                                <option value="Monday">Monday</option>
+                                <option value="Friday">Friday</option>
+                              </Select>
+                              <Select size="xs" variant="filled" w={{ base: "100px", lg: "80px" }} placeholder="Week" value={opt.week} onChange={(e) => {
+                                const newOpts = [...scheduledDayOptions];
+                                newOpts[idx].week = e.target.value;
+                                setScheduledDayOptions(newOpts);
+                                const str = newOpts.filter(o=>o.day).map(o => o.week ? `${o.day}-${o.week}` : o.day).join(',');
+                                setConfigData(prev => ({...prev, scheduled_day: str}));
+                              }}>
+                                <option value="01">1st</option>
+                                <option value="EOM">Last</option>
+                              </Select>
+                              <IconButton aria-label="add" icon={<CopyIcon/>} size="xs" onClick={() => setScheduledDayOptions([...scheduledDayOptions, {day:'', week:''}])} />
+                            </HStack>
+                          </VStack>
                         ))}
                       </Box>
                     )}
@@ -661,7 +799,9 @@ const VisualJsonEditor: React.FC<VisualJsonEditorProps> = ({
                       >
                         system_config
                       </Text>
-                      <Text fontSize="xs" color="gray.400" fontStyle="italic">Object container</Text>
+                      <Text fontSize="xs" color="gray.400" fontStyle="italic" display={{ base: 'none', md: 'block' }}>
+                        Object container
+                      </Text>
                     </HStack>
 
                     {expandedNodes.system && (
