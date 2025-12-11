@@ -1,5 +1,5 @@
 // UniversalFormField.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import {
   FormControl,
   FormLabel,
@@ -13,7 +13,13 @@ import {
   NumberInputStepper,
   NumberIncrementStepper,
   NumberDecrementStepper,
+  Button,
+  HStack,
+  Text,
+  Box,
 } from '@chakra-ui/react';
+import { EditIcon } from '@chakra-ui/icons';
+import OrchConfigJsonEditor from './OrchConfigJsonEditor';
 import { DynamicField, FormConfig } from './dynamicFormTypes';
 import { evaluateCondition } from './formLogic';
 import { ApiService, JobParametersResponse } from '../../apiService';
@@ -33,6 +39,7 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
   apiData = null,
   config
 }) => {
+  const [isJsonEditorOpen, setIsJsonEditorOpen] = useState(false);
   const {
     key,
     label,
@@ -105,6 +112,63 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
             {renderSelectOptions()}
           </Select>
         );
+
+      case 'jsonorch':
+        // Special handling for Orchestrator JSON configuration
+        return (
+            <Box>
+              <HStack spacing={3} mb={2}>
+                <Button
+                  leftIcon={<EditIcon />}
+                  colorScheme="blue"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsJsonEditorOpen(true)}
+                >
+                  Open JSON Editor
+                </Button>
+                {value && (
+                  <Text fontSize="sm" color="gray.600">
+                    Configuration loaded
+                  </Text>
+                )}
+              </HStack>
+              <Textarea
+                value={typeof value === 'string' ? value : JSON.stringify(value || {}, null, 2)}
+                onChange={(e) => {
+                  try {
+                    const parsed = JSON.parse(e.target.value);
+                    handleChange(parsed);
+                  } catch {
+                    handleChange(e.target.value);
+                  }
+                }}
+                placeholder={placeholder || 'Enter JSON configuration or use the editor above'}
+                rows={rows || 6}
+                fontFamily="mono"
+                fontSize="sm"
+              />
+              <OrchConfigJsonEditor
+                isOpen={isJsonEditorOpen}
+                onClose={(data) => {
+                  setIsJsonEditorOpen(false);
+                  if (data) {
+                    handleChange(data);
+                  }
+                }}
+                initialData={typeof value === 'string' ? 
+                  (() => {
+                    try {
+                      return JSON.parse(value);
+                    } catch {
+                      return {};
+                    }
+                  })() : 
+                  value || {}
+                }
+              />
+            </Box>
+          );
 
       case 'textarea':
         return (

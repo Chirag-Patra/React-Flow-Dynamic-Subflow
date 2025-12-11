@@ -1,6 +1,6 @@
 // dynamicFormTypes.ts
 
-export type FieldType = 'input' | 'select' | 'textarea' | 'switch' | 'number';
+export type FieldType = 'input' | 'select' | 'textarea' | 'textJson' | 'jsonorch' | 'switch' | 'number';
 
 export interface FieldVisibility {
   type: 'always' | 'conditional';

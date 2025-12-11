@@ -120,7 +120,7 @@
         {
           "key": "orchstrtr_config_json",
           "label": "Orchestrator Config JSON",
-          "type": "textarea",
+          "type": "jsonorch",
           "required": false,
           "placeholder": "Enter orchestrator configuration in JSON format",
           "helperText": "JSON configuration for the orchestrator (read-only in most cases)",

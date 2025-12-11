@@ -53,7 +53,7 @@ const evaluateCustomLogic = (
   logicId: string
 ): boolean => {
   switch (logicId) {
-    case 'src_file_type_and_conditional_keys':
+    case 'src_file_type_and_conditional_keys': {
       const srcFileValid = !!config.src_file_type?.trim();
       const keyListValid = ['merge', 'distinct_merge'].includes(config.load_type)
         ? !!config.key_list?.trim()
@@ -62,6 +62,7 @@ const evaluateCustomLogic = (
         ? !!config.del_key_list?.trim()
         : true;
       return srcFileValid && keyListValid && delKeyValid;
+    }
 
     case 'unload_conditional':
       if (!config.need_unload_question) return true;
