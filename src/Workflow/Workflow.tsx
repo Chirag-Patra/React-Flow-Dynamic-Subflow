@@ -19,16 +19,18 @@ import {
   useStore,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Box, Center, Flex, IconButton, Spinner, Text } from "@chakra-ui/react";
+import { Box, Center, Flex, IconButton, Spinner, Text, useToast } from "@chakra-ui/react";
 import { COMPONENTS, initialEdges, initialNodes } from "../constants";
 import { v4 as uuid } from "uuid";
 import { useCallback, useEffect, useRef, useState } from "react";
 import MajorComponent from "../Components/MajorComponent";
 import customEdge from "../Components/customEdge";
+import ETLOEdge from "../Components/ETLOEdge";
 import ConnectionLine from "../Components/ConnectionLine";
 import { MajorComponentsState, MajorComponents } from "../types";
 import Board from "../Components/Board";
 import Map from "../Components/Map";
+import ETLO from "../Components/ETLO";
 import { isPointInBox, zoomSelector } from "../utils";
 import useKeyBindings from "../hooks/useKeyBindings";
 import { useData, useUpdateData } from "../api";
@@ -41,11 +43,13 @@ import { Sun, Moon } from "react-bootstrap-icons";
 const nodeTypes = {
   MajorComponent: MajorComponent,
   Job: Board,
+  ETLO: ETLO,
   Map: Map,
 };
 
 const edgeTypes = {
   customEdge: customEdge,
+  ETLOEdge: ETLOEdge,
 };
 
 interface WorkflowProps {
@@ -59,6 +63,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
   const [nodes, setNodes, onNodesChange] = useNodesState(propsNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(propsEdges);
   const [isDragging, setIsDragging] = useState(false); // Add this line
+  const toast = useToast();
 
   // Keep track of the last props to detect external changes
   const lastPropsNodes = useRef(propsNodes);
@@ -122,20 +127,24 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
 
   const onConnect = useCallback(
     (connection: Connection) => {
+      // Check if the source node is an ETLO to determine edge type
+      const sourceNode = nodes.find(node => node.id === connection.source);
+      const isETLOConnection = sourceNode?.type === "ETLO";
+      
       const edge = {
         ...connection,
-        type: "customEdge",
+        type: isETLOConnection ? "ETLOEdge" : "customEdge",
         id: uuid(),
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          width: 20,
+          width:  20,
           height: 20,
-          color: "#11b3cfff",
+          color: isETLOConnection ? "#48BB78" : "#11b3cfff", // Green glass for ETLO, blue for others
         },
       };
       addEdge(edge);
     },
-    [addEdge]
+    [addEdge, nodes]
   );
 
  // Extract of the updated handleProcessingNodeManagement function
@@ -258,9 +267,23 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
     return; // Exit early
   }
 
-  // Map can be dropped anywhere on the background or inside Job
+  // ETLO can be dropped anywhere on the background
+  if (type === MajorComponents.ETLO) {
+    console.log("Creating ETLO");
+    const node: Node = {
+      id: uuid(),
+      type: "ETLO",
+      position,
+      data: {},
+      style: { height: 200, width: 200 },
+    };
+    addNode(node);
+    return; // Exit early
+  }
+
+  // Map can ONLY be dropped inside Job components
   if (type === MajorComponents.Map) {
-    console.log("Creating Map");
+    console.log("Creating Map - checking for Job container");
     
     // Check if dropping inside a Job
     const boards = nodes?.filter((node) => node.type === "Job");
@@ -276,16 +299,23 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       );
     });
 
-    let mapPosition = position;
-    let parentId = undefined;
-
-    if (Job) {
-      // Calculate relative position inside the Job
-      const { x, y } = Job?.position || { x: 0, y: 0 };
-      const { x: dragX, y: dragY } = position || { x: 0, y: 0 };
-      mapPosition = { x: dragX - x, y: dragY - y };
-      parentId = Job.id;
+    // If no Job container found, don't allow the drop
+    if (!Job) {
+      console.log("Map can only be dropped inside Job components");
+      toast({
+        title: "Invalid Drop Location",
+        description: "Map components can only be dropped inside Job components",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return; // Exit early - prevent Map creation outside of Job
     }
+
+    // Calculate relative position inside the Job
+    const { x, y } = Job?.position || { x: 0, y: 0 };
+    const { x: dragX, y: dragY } = position || { x: 0, y: 0 };
+    const mapPosition = { x: dragX - x, y: dragY - y };
 
     const node: Node = {
       id: uuid(),
@@ -293,21 +323,20 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       position: mapPosition,
       data: { type, value: '' },
       style: { height: 100, width: 200 },
-      ...(parentId && { 
-        parentId,
-        extent: "parent",
-        expandParent: true 
-      }),
+      parentId: Job.id,
+      extent: "parent",
+      expandParent: true
     };
     addNode(node);
     return; // Exit early
   }
 
-  // Check if dropping inside any container (Job or Map)
-  // Priority: Map containers first, then Job containers
+  // Check if dropping inside any container (Job, ETLO, or Map)
+  // Priority: Map containers first, then Job and ETLO containers
   const allContainers = [
     ...nodes.filter((node) => node.type === "Map"),
-    ...nodes.filter((node) => node.type === "Job")
+    ...nodes.filter((node) => node.type === "Job"),
+    ...nodes.filter((node) => node.type === "ETLO")
   ];
 
   console.log("Found containers:", allContainers);
@@ -332,8 +361,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
     let isInside = false;
     
     if (containerNode.type === "Map") {
-      // For Map components, only allow drops in the inner rectangular drop zone
-      // The drop zone has minimal margins of 2px to fit 180px component in 200px Map
+
       const dropZoneMargin = 2;
       const headerHeight = 20;
       const containerHeight = containerNode?.measured?.height || (containerNode.type === "Map" ? 100 : 200);
@@ -349,7 +377,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         }
       );
     } else {
-      // For Job components, use the entire container area
+      // For Job and ETLO components, use the entire container area
       isInside = isPointInBox(
         { x: position.x, y: position.y },
         {
@@ -452,7 +480,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       finalPosition = { x: xPos, y: yPos };
       console.log("Map centering - Final position:", finalPosition);
     } else {
-      // For Job components, use standard relative positioning
+      // For Job and ETLO components, use standard relative positioning
       finalPosition = { 
         x: position.x - containerAbsX, 
         y: position.y - containerAbsY 
@@ -570,11 +598,12 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
                     ].includes(overlappingNode?.data?.type as MajorComponents) ||
                     // Handle dropping on containers
                     overlappingNode?.type === 'Job' ||
+                    overlappingNode?.type === 'ETLO' ||
                     overlappingNode?.type === 'Map'
                   )
                   ? (
                       // If overlapping with containers, no state change needed
-                      overlappingNode?.type === 'Job' || overlappingNode?.type === 'Map' ? undefined :
+                      overlappingNode?.type === 'Job' || overlappingNode?.type === 'ETLO' || overlappingNode?.type === 'Map' ? undefined :
                       // If overlapping with same component type, show Add state
                       overlappingNode?.data?.type === dragNode?.data?.type
                         ? MajorComponentsState.Add
@@ -590,12 +619,13 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
   };
 
   const onNodeDragStop: OnNodeDrag = (evt, dragNode) => {
-    if (dragNode.type === 'Job' || dragNode.type === 'Map') {
+    if (dragNode.type === 'Job' || dragNode.type === 'ETLO' || dragNode.type === 'Map') {
       return;
     }
     if (
       !overlappingNodeRef.current ||
       (overlappingNodeRef?.current?.type !== MajorComponents.Board &&
+        overlappingNodeRef?.current?.type !== 'ETLO' &&
         overlappingNodeRef?.current?.type !== 'Map' &&
         dragNode?.parentId)
     ) {

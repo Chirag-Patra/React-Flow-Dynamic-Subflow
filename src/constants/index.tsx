@@ -67,6 +67,26 @@ export const PARENT = [
   {
     icon: (
       <Box
+        height="30px"
+        width="30px"
+        borderRadius="4px"
+        border="2px solid green"
+        bg="rgba(50, 200, 50, 0.2)"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        fontSize="8px"
+        fontWeight="bold"
+      >
+        ETLO
+      </Box>
+    ),
+    type: MajorComponents.ETLO,
+    label: "ETLO",
+  },
+  {
+    icon: (
+      <Box
         height="25px"
         width="25px"
         borderRadius="4px"

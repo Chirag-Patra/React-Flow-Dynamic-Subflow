@@ -27,8 +27,9 @@ import React, { useEffect, useState, useRef, useMemo, useCallback } from "react"
 import { Node, useReactFlow, Edge, MarkerType } from "@xyflow/react";
 import { useDarkMode } from "../store";
 import UniversalWizard from "../Components/Configuration/Universal/UniversalWizard";
+import MapFormWizard from "../Components/Configuration/MapFormWizard";
 import { getSchemaForComponent } from "../Components/Configuration/Universal/schemas";
-import { MajorComponentsData, MajorComponents, ComponentConfig } from "../types";
+import { MajorComponentsData, MajorComponents, ComponentConfig, MapStepConfig } from "../types";
 
 interface RightSidebarProps {
   selectedNode: Node<MajorComponentsData> | undefined;
@@ -61,6 +62,7 @@ export const RightSidebar = ({
   const [width, setWidth] = useState(318);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [currentWizardType, setCurrentWizardType] = useState<string | null>(null);
+  const [isMapWizardOpen, setIsMapWizardOpen] = useState(false);
   const isDragging = useRef(false);
 
   // Memoized computed values
@@ -151,6 +153,32 @@ export const RightSidebar = ({
     setCurrentWizardType(null);
   }, []);
 
+  const handleOpenMapWizard = useCallback(() => {
+    setIsMapWizardOpen(true);
+  }, []);
+
+  const handleCloseMapWizard = useCallback(() => {
+    setIsMapWizardOpen(false);
+  }, []);
+
+  const handleSaveMapSteps = useCallback((steps: MapStepConfig[]) => {
+    if (!selectedNode) return;
+
+    console.log('Saved Map Steps:', steps);
+
+    // Update node data with map steps
+    const updatedData = {
+      ...selectedNode.data,
+      config: {
+        ...selectedNode.data?.config,
+        mapSteps: steps
+      }
+    };
+
+    updateNodeData(selectedNode.id, updatedData);
+    handleCloseMapWizard();
+  }, [selectedNode, updateNodeData, handleCloseMapWizard]);
+
   const handleSaveConfig = useCallback((config: any) => {
     if (!selectedNode) return;
 
@@ -229,7 +257,8 @@ export const RightSidebar = ({
   // Get button text and color based on configuration state
   const getWizardButtonConfig = () => {
     const isJobNode = nodeData.type === 'Job';
-  const config: ComponentConfig = isJobNode ? nodeData.jobConfig : nodeData.etlConfig;
+    const isMapNode = nodeData.type === 'Map';
+    const config: ComponentConfig = isJobNode ? nodeData.jobConfig : nodeData.etlConfig;
 
     let buttonText = 'Configure';
     let colorScheme = 'blue';
@@ -245,8 +274,19 @@ export const RightSidebar = ({
         buttonText = 'Configure Job';
       }
       colorScheme = 'blue';
+    } else if (isMapNode) {
+      // Map nodes - check for map steps
+      const mapSteps = nodeData.config?.mapSteps;
+      if (mapSteps && mapSteps.length > 0) {
+        buttonText = `${mapSteps.length} ETL Step${mapSteps.length > 1 ? 's' : ''}`;
+        isConfigured = true;
+        configSummary = `${mapSteps.length} steps`;
+      } else {
+        buttonText = 'Configure Map Steps';
+      }
+      colorScheme = 'purple';
     } else {
-      // ETL nodes
+      // Other ETL nodes
       if (config?.etl_stp_job_nm) {
         const componentType = config?.componentType || nodeData.type;
         buttonText = `${componentType}: ${config.etl_stp_job_nm}`;
@@ -414,47 +454,65 @@ export const RightSidebar = ({
           </PopoverContent>
         </Popover>
 
-        {/* Universal Configuration Button */}
-        {shouldShowWizardButton && wizardSchema && (
-          <>
-            <Divider borderColor="gray.700" />
-            <Box>
-              <Button
-                colorScheme={wizardButtonConfig.colorScheme}
-                variant={wizardButtonConfig.isConfigured ? "solid" : "outline"}
-                size="sm"
-                width="100%"
-                onClick={handleOpenWizard}
-                bg={wizardButtonConfig.isConfigured ? `${wizardButtonConfig.colorScheme}.500` : "transparent"}
-                color="white"
-                borderColor={`${wizardButtonConfig.colorScheme}.400`}
-                _hover={{
-                  bg: wizardButtonConfig.isConfigured
-                    ? `${wizardButtonConfig.colorScheme}.600`
-                    : "whiteAlpha.100"
-                }}
-              >
-                {wizardButtonConfig.buttonText}
-              </Button>
+        {/* Configuration Section */}
+        <Divider borderColor="gray.700" />
+        <Box>
+          {nodeData.type === 'Map' ? (
+            // Map Configuration Button
+            <Button
+              colorScheme={wizardButtonConfig.colorScheme}
+              variant={wizardButtonConfig.isConfigured ? "solid" : "outline"}
+              size="sm"
+              width="100%"
+              onClick={handleOpenMapWizard}
+              bg={wizardButtonConfig.isConfigured ? `${wizardButtonConfig.colorScheme}.500` : "transparent"}
+              color="white"
+              borderColor={`${wizardButtonConfig.colorScheme}.400`}
+              _hover={{
+                bg: wizardButtonConfig.isConfigured
+                  ? `${wizardButtonConfig.colorScheme}.600`
+                  : "whiteAlpha.100"
+              }}
+            >
+              {wizardButtonConfig.buttonText}
+            </Button>
+          ) : shouldShowWizardButton && wizardSchema ? (
+            // Universal Configuration Button for other components
+            <Button
+              colorScheme={wizardButtonConfig.colorScheme}
+              variant={wizardButtonConfig.isConfigured ? "solid" : "outline"}
+              size="sm"
+              width="100%"
+              onClick={handleOpenWizard}
+              bg={wizardButtonConfig.isConfigured ? `${wizardButtonConfig.colorScheme}.500` : "transparent"}
+              color="white"
+              borderColor={`${wizardButtonConfig.colorScheme}.400`}
+              _hover={{
+                bg: wizardButtonConfig.isConfigured
+                  ? `${wizardButtonConfig.colorScheme}.600`
+                  : "whiteAlpha.100"
+              }}
+            >
+              {wizardButtonConfig.buttonText}
+            </Button>
+          ) : null}
 
-              {/* Configuration Status Badge */}
-              {wizardButtonConfig.isConfigured && (
-                <Flex mt={2} align="center" justify="center">
-                  <Badge colorScheme="green" fontSize="xs">
-                    Configured
-                  </Badge>
-                </Flex>
-              )}
+          {/* Configuration Status Badge */}
+          {wizardButtonConfig.isConfigured && (
+            <Flex mt={2} align="center" justify="center">
+              <Badge colorScheme="green" fontSize="xs">
+                Configured
+              </Badge>
+            </Flex>
+          )}
 
-              {/* Component Type Info */}
-              {nodeData.componentType && (
-                <Text mt={1} fontSize="xs" color="whiteAlpha.600" textAlign="center">
-                  Type: {nodeData.componentType}
-                </Text>
-              )}
-            </Box>
-          </>
-        )}
+          {/* Component Type Info */}
+          {nodeData.componentType && (
+            <Text mt={1} fontSize="xs" color="whiteAlpha.600" textAlign="center">
+              Type: {nodeData.componentType}
+            </Text>
+          )}
+        </Box>
       </VStack>
 
       {/* Universal Wizard Modal */}
@@ -467,6 +525,14 @@ export const RightSidebar = ({
           schema={wizardSchema}
         />
       )}
+
+      {/* Map Wizard Modal */}
+      <MapFormWizard
+        isOpen={isMapWizardOpen}
+        onClose={handleCloseMapWizard}
+        onSave={handleSaveMapSteps}
+        initialSteps={nodeData.config?.mapSteps || []}
+      />
     </Box>
   );
 };

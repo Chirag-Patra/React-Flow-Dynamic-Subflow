@@ -1,6 +1,7 @@
 export enum MajorComponents {
 
   Board = "Job",
+  ETLO = "ETLO",
   Map = "Map",
   Js = "Js",
   Aws = "Aws",
@@ -42,7 +43,28 @@ export interface ComponentConfig {
   processingType?: string;
   etl_stp_job_nm?: string;
   componentType?: string;
+  mapSteps?: MapStepConfig[];
   [key: string]: any;
+}
+
+// Map step configuration interface
+export interface MapStepConfig {
+  id: string;
+  etl_stp_job_nm: string;
+  etl_stp_desc: string;
+  etl_stp_sqnc_nbr: number;
+  etl_stp_src_platfrm: string;
+  etl_stp_src_schma: string;
+  etl_stp_src_stg_schma: string;
+  etl_stp_trgt_tbl_nm: string;
+  etl_stp_trgt_platfrm: string;
+  etl_stp_trgt_schma: string;
+  etl_stp_trgt_stg_schma: string;
+  etl_stp_parms: string;
+  etl_stp_s3_code_bkt: string;
+  etl_stp_s3_code_key: string;
+  etl_stp_s3_log_bkt: string;
+  actv_flag: boolean;
 }
 
 export enum HistoryAction {
