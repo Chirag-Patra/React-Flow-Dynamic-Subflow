@@ -39,6 +39,7 @@ import { LeftSidebar } from "./LeftSideBar";
 import { RightSidebar } from "./RightSideBar";
 import { useDarkMode } from "../store";
 import { Sun, Moon } from "react-bootstrap-icons";
+import { BottomStatusBar } from "../Workflow/BottomStatusBar";
 
 const nodeTypes = {
   MajorComponent: MajorComponent,
@@ -130,7 +131,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
       // Check if the source node is an ETLO to determine edge type
       const sourceNode = nodes.find(node => node.id === connection.source);
       const isETLOConnection = sourceNode?.type === "ETLO";
-      
+
       const edge = {
         ...connection,
         type: isETLOConnection ? "ETLOEdge" : "customEdge",
@@ -284,7 +285,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
   // Map can ONLY be dropped inside Job components
   if (type === MajorComponents.Map) {
     console.log("Creating Map - checking for Job container");
-    
+
     // Check if dropping inside a Job
     const boards = nodes?.filter((node) => node.type === "Job");
     const Job = boards.find((Job) => {
@@ -348,7 +349,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
   const container = allContainers.find((containerNode) => {
     let containerAbsX = containerNode.position?.x || 0;
     let containerAbsY = containerNode.position?.y || 0;
-    
+
     // If container has a parent, add parent's position
     if (containerNode.parentId) {
       const parent = nodes.find(n => n.id === containerNode.parentId);
@@ -357,16 +358,16 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         containerAbsY += parent.position?.y || 0;
       }
     }
-      
+
     let isInside = false;
-    
+
     if (containerNode.type === "Map") {
 
       const dropZoneMargin = 2;
       const headerHeight = 20;
       const containerHeight = containerNode?.measured?.height || (containerNode.type === "Map" ? 100 : 200);
       const containerWidth = containerNode?.measured?.width || (containerNode.type === "Map" ? 200 : 200);
-      
+
       isInside = isPointInBox(
         { x: position.x, y: position.y },
         {
@@ -388,7 +389,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         }
       );
     }
-    
+
     console.log(`Checking ${containerNode.type}:`, containerNode.id, "isInside:", isInside);
     return isInside;
   });
@@ -396,11 +397,11 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
   if (container) {
     console.log("Dropping inside container:", container.type, container.id);
     finalParentId = container.id;
-    
+
     // Calculate position relative to the container
     let containerAbsX = container.position?.x || 0;
     let containerAbsY = container.position?.y || 0;
-    
+
     if (container.parentId) {
       const parent = nodes.find(n => n.id === container.parentId);
       if (parent) {
@@ -408,30 +409,30 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         containerAbsY += parent.position?.y || 0;
       }
     }
-    
+
     if (container.type === "Map") {
       // For Map components, center components with smart positioning for multiple components
       const dropZoneMargin = 4;  // Minimal margin to fit 180px component in 200px Map
       const headerHeight = 30;   // Reduced header height for smaller Map
       const containerHeight = container?.measured?.height || 100;
       const containerWidth = container?.measured?.width || 200;
-      
+
       // Calculate the drop zone dimensions
       const dropZoneWidth = containerWidth - (dropZoneMargin * 2);
       const dropZoneHeight = containerHeight - headerHeight - (dropZoneMargin * 2);
-      
+
       // Component dimensions (matching actual MajorComponent size)
       const componentWidth = 180;  // Actual component width
       const componentHeight = 55;  // Actual component height
       const componentSpacing = 10; // Spacing between components
-      
+
       // Count existing components in this Map
       const existingComponents = nodes.filter(n => n.parentId === container.id);
       const componentCount = existingComponents.length;
-      
+
       // Calculate position based on component count
       let xPos, yPos;
-      
+
       if (componentCount === 0) {
         // First component - center it perfectly with equal margins on all sides
         const availableWidth = dropZoneWidth - componentWidth;
@@ -445,25 +446,25 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         const componentsPerRow = Math.max(1, Math.floor(availableGridWidth / (componentWidth + componentSpacing)));
         const totalComponents = componentCount + 1; // Include the new component being added
         const totalRows = Math.ceil(totalComponents / componentsPerRow);
-        
+
         // Current component position in grid
         const row = Math.floor(componentCount / componentsPerRow);
         const col = componentCount % componentsPerRow;
-        
+
         // Calculate grid dimensions
         const componentsInCurrentRow = Math.min(componentsPerRow, totalComponents - (row * componentsPerRow));
         const currentRowWidth = (componentsInCurrentRow * componentWidth) + ((componentsInCurrentRow - 1) * componentSpacing);
-        
+
         // Center the current row with minimum margins
         const rowStartX = dropZoneMargin + minMargin + (availableGridWidth - currentRowWidth) / 2;
-        
+
         // Calculate total grid height
         const totalGridHeight = (totalRows * componentHeight) + ((totalRows - 1) * componentSpacing);
         const gridStartY = headerHeight + dropZoneMargin + (dropZoneHeight - totalGridHeight) / 2;
-        
+
         xPos = rowStartX + col * (componentWidth + componentSpacing);
         yPos = gridStartY + row * (componentHeight + componentSpacing);
-        
+
         console.log("Grid positioning:", {
           componentCount,
           totalComponents,
@@ -476,14 +477,14 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
           yPos
         });
       }
-      
+
       finalPosition = { x: xPos, y: yPos };
       console.log("Map centering - Final position:", finalPosition);
     } else {
       // For Job and ETLO components, use standard relative positioning
-      finalPosition = { 
-        x: position.x - containerAbsX, 
-        y: position.y - containerAbsY 
+      finalPosition = {
+        x: position.x - containerAbsX,
+        y: position.y - containerAbsY
       };
     }
   } else {
@@ -513,7 +514,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
     // Check if parent is a Map component to determine draggable state
     const parentContainer = container;
     const isParentMap = parentContainer?.type === "Map";
-    
+
     node = {
       id: uuid(),
       type: "MajorComponent",
@@ -686,7 +687,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
     }
 
     // Handle dynamic subgrouping for Board and Map components
-    if (overlappingNodeRef?.current?.type === MajorComponents.Board || 
+    if (overlappingNodeRef?.current?.type === MajorComponents.Board ||
         overlappingNodeRef?.current?.type === 'Map') {
       setNodes((prevNodes) => [
         overlappingNodeRef?.current as Node,
@@ -705,30 +706,30 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
 
               // Check if the new parent is a Map to set draggable state and position
               const isNewParentMap = overlappingNodeRef?.current?.type === 'Map';
-              
+
               let position;
-              
+
               if (isNewParentMap) {
                 // For Map containers, center the component automatically
                 const dropZoneMargin = 2;
                 const headerHeight = 20;
                 const containerHeight = overlappingNodeRef?.current?.measured?.height || 100;
                 const containerWidth = overlappingNodeRef?.current?.measured?.width || 200;
-                
+
                 const dropZoneWidth = containerWidth - (dropZoneMargin * 2);
                 const dropZoneHeight = containerHeight - headerHeight - (dropZoneMargin * 2);
-                
+
                 const componentWidth = 180;
                 const componentHeight = 55;
                 const componentSpacing = 10;
-                
+
                 // Count existing components in this Map
                 const existingComponents = prevNodes.filter(n => n.parentId === overlappingNodeRef?.current?.id);
                 const componentCount = existingComponents.length;
-                
+
                 // Calculate centered position
                 let xPos, yPos;
-                
+
                 if (componentCount === 0) {
                   // First component - center it perfectly with equal margins on all sides
                   const availableWidth = dropZoneWidth - componentWidth;
@@ -742,26 +743,26 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
                   const componentsPerRow = Math.max(1, Math.floor(availableGridWidth / (componentWidth + componentSpacing)));
                   const totalComponents = componentCount + 1; // Include the new component being moved
                   const totalRows = Math.ceil(totalComponents / componentsPerRow);
-                  
+
                   // Current component position in grid
                   const row = Math.floor(componentCount / componentsPerRow);
                   const col = componentCount % componentsPerRow;
-                  
+
                   // Calculate grid dimensions
                   const componentsInCurrentRow = Math.min(componentsPerRow, totalComponents - (row * componentsPerRow));
                   const currentRowWidth = (componentsInCurrentRow * componentWidth) + ((componentsInCurrentRow - 1) * componentSpacing);
-                  
+
                   // Center the current row with minimum margins
                   const rowStartX = dropZoneMargin + minMargin + (availableGridWidth - currentRowWidth) / 2;
-                  
+
                   // Calculate total grid height
                   const totalGridHeight = (totalRows * componentHeight) + ((totalRows - 1) * componentSpacing);
                   const gridStartY = headerHeight + dropZoneMargin + (dropZoneHeight - totalGridHeight) / 2;
-                  
+
                   xPos = rowStartX + col * (componentWidth + componentSpacing);
                   yPos = gridStartY + row * (componentHeight + componentSpacing);
                 }
-                
+
                 position = { x: xPos, y: yPos };
               } else {
                 // For non-Map containers, use standard positioning
@@ -785,7 +786,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
                   };
                 }
               }
-              
+
               return {
                 ...node,
                 parentId: overlappingNodeRef?.current?.id,
@@ -817,7 +818,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
           // Find the parent node to check if it's a Map
           const parentNode = prevNodes.find(n => n.id === node.parentId);
           const isParentMap = parentNode?.type === "Map";
-          
+
           return {
             ...node,
             draggable: isParentMap ? false : showContent, // Components in Map are not draggable
@@ -877,6 +878,11 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         onProcessingTypeChange={handleProcessingNodeManagement}
         nodes={nodes}
         showContent={showContent}
+      />
+       <BottomStatusBar
+        logs={[]}
+        onClearLogs={() => {}}
+        onExportLogs={() => {}}
       />
 
       {/* Main Canvas */}
