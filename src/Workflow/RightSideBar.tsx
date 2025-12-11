@@ -28,7 +28,7 @@ import { Node, useReactFlow, Edge, MarkerType } from "@xyflow/react";
 import { useDarkMode } from "../store";
 import UniversalWizard from "../Components/Configuration/Universal/UniversalWizard";
 import MapFormWizard from "../Components/Configuration/MapFormWizard";
-import { getSchemaForComponent } from "../Components/Configuration/Universal/schemas";
+import { getConfigKeyForComponent, isConfigurableComponent } from "../Components/Configuration/Universal/configKeyMapper";
 import { MajorComponentsData, MajorComponents, ComponentConfig, MapStepConfig } from "../types";
 
 interface RightSidebarProps {
@@ -79,23 +79,25 @@ export const RightSidebar = ({
       componentType: selectedNode.data?.componentType || "",
       config: (selectedNode.data?.config || {}) as ComponentConfig, // Universal config storage
     };
-  }, [selectedNode?.id, selectedNode?.data, selectedNode?.type]);
+  }, [selectedNode]);
 
-  // Determine which wizard schema to use
-  const wizardSchema = useMemo(() => {
+  // Get config key for the component type
+  const configKey = useMemo(() => {
     if (!nodeData?.type) return null;
-    return getSchemaForComponent(nodeData.type as string);
+    return getConfigKeyForComponent(nodeData.type as string);
   }, [nodeData?.type]);
+
+
 
   // Determine if wizard button should be shown
   const shouldShowWizardButton = useMemo(() => {
-    return wizardSchema !== null;
-  }, [wizardSchema]);
+    return isConfigurableComponent(nodeData?.type as string);
+  }, [nodeData?.type]);
 
   const allNodes = useMemo(() => {
     if (!selectedNode) return [];
     return getNodes().filter((n) => n.id !== selectedNode.id);
-  }, [selectedNode?.id, nodes]);
+  }, [selectedNode, nodes, getNodes]);
 
   // Sync local state with selected node
   useEffect(() => {
@@ -104,7 +106,7 @@ export const RightSidebar = ({
     } else {
       setValue("");
     }
-  }, [nodeData?.id, nodeData?.value]);
+  }, [nodeData]);
 
   // Sync connections
   useEffect(() => {
@@ -185,7 +187,10 @@ export const RightSidebar = ({
     console.log('Saved Config:', config);
 
     // Determine which config key to use based on node type
-  const configKey = nodeData?.type === 'Job' ? 'jobConfig' : nodeData?.type === 'lamda' ? 'etlConfig' : 'etlConfig';
+  const configKey = nodeData?.type === 'Job' ? 'jobConfig' : 
+                    nodeData?.type === 'lamda' ? 'etlConfig' : 
+                    nodeData?.type === 'ETLO' || nodeData?.type === 'etlo' ? 'etlConfig' : 
+                    'etlConfig';
 
     // Update node data with configuration
     const updatedData = {
@@ -476,7 +481,7 @@ export const RightSidebar = ({
             >
               {wizardButtonConfig.buttonText}
             </Button>
-          ) : shouldShowWizardButton && wizardSchema ? (
+          ) : shouldShowWizardButton && configKey ? (
             // Universal Configuration Button for other components
             <Button
               colorScheme={wizardButtonConfig.colorScheme}
@@ -516,13 +521,18 @@ export const RightSidebar = ({
       </VStack>
 
       {/* Universal Wizard Modal */}
-      {wizardSchema && (
+      {configKey && (
         <UniversalWizard
           isOpen={isWizardOpen}
           onClose={handleCloseWizard}
           onSave={handleSaveConfig}
-          initialConfig={nodeData.type === 'Job' ? nodeData.jobConfig : nodeData.type=== "lamda" ? nodeData.etlConfig : {}}
-          schema={wizardSchema}
+          initialConfig={
+            nodeData.type === 'Job' ? nodeData.jobConfig : 
+            nodeData.type === "lamda" ? nodeData.etlConfig : 
+            nodeData.type === "ETLO" || nodeData.type === "etlo" ? nodeData.etlConfig : 
+            {}
+          }
+          configKey={configKey}
         />
       )}
 

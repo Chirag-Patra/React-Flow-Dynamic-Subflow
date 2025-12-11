@@ -1,0 +1,220 @@
+{
+  "formType": "etlo_wizard",
+  "title": "ETL Orchestrator Configuration Wizard",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Basic Configuration",
+      "description": "Configure basic application and job settings",
+      "fields": [
+        {
+          "key": "aplctn_cd",
+          "label": "Application",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select application",
+          "options": ["app1", "app2", "app3", "data_pipeline", "etl_service"],
+          "helperText": "Select the application for this ETL orchestrator",
+          "validation": {
+            "required": true
+          },
+          "permissions": {
+            "updateDisabled": false,
+            "cloneDisabled": false,
+            "insertDisabled": false
+          }
+        },
+        {
+          "key": "trgt_job_id",
+          "label": "Target Job ID",
+          "type": "input",
+          "required": true,
+          "placeholder": "Enter target job ID",
+          "validation": {
+            "required": true,
+            "pattern": "^[a-zA-Z0-9_-]+$"
+          },
+          "permissions": {
+            "updateDisabled": true,
+            "cloneDisabled": false,
+            "insertDisabled": false
+          }
+        },
+        {
+          "key": "rqstr_id",
+          "label": "Anthem ID",
+          "type": "input",
+          "required": true,
+          "placeholder": "Enter Anthem ID",
+          "validation": {
+            "required": true
+          },
+          "permissions": {
+            "updateDisabled": false,
+            "cloneDisabled": false,
+            "insertDisabled": false
+          }
+        }
+      ],
+      "completionLogic": {
+        "type": "all_required_filled",
+        "requiredFields": ["aplctn_cd", "trgt_job_id", "rqstr_id"]
+      },
+      "visibility": {
+        "type": "always"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Scheduling Configuration",
+      "description": "Configure scheduler frequency and calendar settings",
+      "fields": [
+        {
+          "key": "schdlr_frqncy",
+          "label": "Scheduler Frequency",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select scheduler frequency",
+          "options": ["daily", "weekly", "monthly", "hourly", "custom"],
+          "helperText": "Select how often the ETL job should run",
+          "validation": {
+            "required": true
+          },
+          "permissions": {
+            "updateDisabled": false,
+            "cloneDisabled": false,
+            "insertDisabled": false
+          }
+        },
+        {
+          "key": "calendar_id",
+          "label": "Calendar",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select calendar",
+          "options": ["business_calendar", "standard_calendar", "holiday_calendar", "custom_calendar"],
+          "helperText": "Select the calendar to use for scheduling",
+          "validation": {
+            "required": true
+          },
+          "permissions": {
+            "updateDisabled": false,
+            "cloneDisabled": false,
+            "insertDisabled": false
+          }
+        }
+      ],
+      "completionLogic": {
+        "type": "all_required_filled",
+        "requiredFields": ["schdlr_frqncy", "calendar_id"]
+      },
+      "visibility": {
+        "type": "always"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Advanced Configuration",
+      "description": "Configure orchestrator settings and permissions",
+      "fields": [
+        {
+          "key": "orchstrtr_config_json",
+          "label": "Orchestrator Config JSON",
+          "type": "textarea",
+          "required": false,
+          "placeholder": "Enter orchestrator configuration in JSON format",
+          "helperText": "JSON configuration for the orchestrator (read-only in most cases)",
+          "rows": 6,
+          "validation": {
+            "pattern": "^\\{.*\\}$"
+          },
+          "permissions": {
+            "updateDisabled": true,
+            "cloneDisabled": true,
+            "insertDisabled": true
+          }
+        },
+        {
+          "key": "prmotn_flag",
+          "label": "Promotion Flag",
+          "type": "select",
+          "required": false,
+          "placeholder": "Select promotion flag",
+          "options": ["Y", "N"],
+          "defaultValue": "N",
+          "helperText": "Indicates if this job is promoted to production",
+          "permissions": {
+            "updateDisabled": true,
+            "cloneDisabled": true,
+            "insertDisabled": true
+          }
+        }
+      ],
+      "completionLogic": {
+        "type": "all_required_filled",
+        "requiredFields": []
+      },
+      "visibility": {
+        "type": "always"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Team & Status Configuration",
+      "description": "Configure ownership and activation settings",
+      "fields": [
+        {
+          "key": "ownrshp_team",
+          "label": "Ownership Team",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select ownership team",
+          "options": ["data_engineering", "analytics", "platform", "devops", "business_intelligence"],
+          "helperText": "Select the team responsible for this ETL job",
+          "validation": {
+            "required": true
+          },
+          "permissions": {
+            "updateDisabled": false,
+            "cloneDisabled": false,
+            "insertDisabled": false
+          }
+        },
+        {
+          "key": "actv_flag",
+          "label": "Active Flag",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select active status",
+          "options": ["Y", "N"],
+          "defaultValue": "Y",
+          "helperText": "Indicates if this ETL job is active",
+          "validation": {
+            "required": true
+          },
+          "permissions": {
+            "updateDisabled": false,
+            "cloneDisabled": false,
+            "insertDisabled": false
+          }
+        }
+      ],
+      "completionLogic": {
+        "type": "all_required_filled",
+        "requiredFields": ["ownrshp_team", "actv_flag"]
+      },
+      "visibility": {
+        "type": "always"
+      }
+    }
+  ],
+  "submitEndpoint": {
+    "url": "https://api.example.com/etlo-config",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer token"
+    },
+    "payloadMapping": "etlo_wizard_payload"
+  }
+}

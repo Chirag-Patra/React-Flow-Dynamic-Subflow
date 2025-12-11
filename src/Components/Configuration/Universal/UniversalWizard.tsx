@@ -22,13 +22,15 @@ import { DynamicFormSchema, FormConfig, DynamicStep } from './dynamicFormTypes';
 import { evaluateCondition, evaluateStepCompletion } from './formLogic';
 import UniversalFormField from './UniversalFormField';
 import { ApiService, JobParametersResponse } from '../../apiService';
+import ConfigApiService from './configApiService';
 
 interface UniversalWizardProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (config: FormConfig) => void;
   initialConfig?: FormConfig;
-  schema: DynamicFormSchema;
+  configKey: string; // Changed from schema to configKey (e.g., 'job', 'map')
+  schema?: DynamicFormSchema; // Optional fallback schema
 }
 
 const UniversalWizard: React.FC<UniversalWizardProps> = ({
@@ -36,6 +38,7 @@ const UniversalWizard: React.FC<UniversalWizardProps> = ({
   onClose,
   onSave,
   initialConfig = {},
+  configKey,
   schema
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -44,51 +47,68 @@ const UniversalWizard: React.FC<UniversalWizardProps> = ({
   const [isLoadingApi, setIsLoadingApi] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dynamicSchema, setDynamicSchema] = useState<DynamicFormSchema>(schema);
+  const [dynamicSchema, setDynamicSchema] = useState<DynamicFormSchema | null>(null);
   const [isLoadingSchema, setIsLoadingSchema] = useState(false);
   const toast = useToast();
 
-  // Fetch schema from backend (COMMENTED OUT - Ready for backend integration)
-  // useEffect(() => {
-  //   if (isOpen && schema.formType) {
-  //     setIsLoadingSchema(true);
-  //
-  //     fetch(`/api/wizard-schemas/${schema.formType}`)
-  //       .then(res => {
-  //         if (!res.ok) {
-  //           throw new Error(`Failed to fetch schema: ${res.status}`);
-  //         }
-  //         return res.json();
-  //       })
-  //       .then(backendSchema => {
-  //         // Replace with backend schema
-  //         setDynamicSchema(backendSchema);
-  //         console.log('Loaded schema from backend:', backendSchema);
-  //       })
-  //       .catch(error => {
-  //         console.error('Error fetching schema from backend:', error);
-  //         // Fall back to hardcoded schema
-  //         setDynamicSchema(schema);
-  //         toast({
-  //           title: "Schema Load Warning",
-  //           description: "Using local schema. Backend schema unavailable.",
-  //           status: "warning",
-  //           duration: 3000,
-  //           isClosable: true,
-  //         });
-  //       })
-  //       .finally(() => {
-  //         setIsLoadingSchema(false);
-  //       });
-  //   }
-  // }, [isOpen, schema.formType]);
-
-  // For now, use the hardcoded schema passed as prop
+  // Fetch schema from API with fallback to local JSON files
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && configKey) {
+      setIsLoadingSchema(true);
+      setDynamicSchema(null);
+
+      ConfigApiService.fetchConfig(configKey)
+        .then(response => {
+          if (response.success && response.data) {
+            setDynamicSchema(response.data);
+            console.log(`Loaded schema for config key '${configKey}':`, response.data);
+          } else {
+            // If API and fallback both fail, use provided schema as last resort
+            if (schema) {
+              setDynamicSchema(schema);
+              console.warn('Using provided fallback schema as last resort');
+            }
+            
+            toast({
+              title: "Configuration Load Error",
+              description: response.error || `Failed to load configuration for ${configKey}`,
+              status: "error",
+              duration: 5000,
+              isClosable: true,
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching configuration:', error);
+          
+          // Use provided schema as fallback
+          if (schema) {
+            setDynamicSchema(schema);
+            toast({
+              title: "Configuration Load Warning",
+              description: "Using provided schema. Configuration service unavailable.",
+              status: "warning",
+              duration: 3000,
+              isClosable: true,
+            });
+          } else {
+            toast({
+              title: "Configuration Load Error",
+              description: "No configuration available for this component type.",
+              status: "error",
+              duration: 5000,
+              isClosable: true,
+            });
+          }
+        })
+        .finally(() => {
+          setIsLoadingSchema(false);
+        });
+    } else if (isOpen && !configKey && schema) {
+      // Fallback to provided schema if no configKey
       setDynamicSchema(schema);
     }
-  }, [isOpen, schema]);
+  }, [isOpen, configKey, schema, toast]);
 
   // Fetch API data for dropdown options when modal opens
 //   useEffect(() => {
@@ -115,6 +135,7 @@ const UniversalWizard: React.FC<UniversalWizardProps> = ({
 
   // Filter visible steps based on current config
   const visibleSteps = useMemo(() => {
+    if (!dynamicSchema) return [];
     return dynamicSchema.steps.filter(step => {
       if (step.visibility.type === 'always') return true;
       if (step.visibility.condition) {
@@ -122,7 +143,7 @@ const UniversalWizard: React.FC<UniversalWizardProps> = ({
       }
       return true;
     });
-  }, [dynamicSchema.steps, config]);
+  }, [dynamicSchema, config]);
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -167,6 +188,11 @@ const UniversalWizard: React.FC<UniversalWizardProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (!dynamicSchema) {
+      console.error('Cannot submit: No schema loaded');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -240,6 +266,33 @@ const UniversalWizard: React.FC<UniversalWizardProps> = ({
     );
   }
 
+  // Show error state if no schema could be loaded
+  if (!isLoadingSchema && !dynamicSchema) {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Configuration Error</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} py={8}>
+              <Text color="red.500" textAlign="center">
+                Failed to load configuration schema
+              </Text>
+              <Text fontSize="sm" color="gray.600" textAlign="center">
+                The configuration for this component type could not be loaded.
+                Please try again or contact support.
+              </Text>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={onClose}>Close</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    );
+  }
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} closeOnOverlayClick={false}>
       <ModalOverlay />
@@ -253,7 +306,7 @@ const UniversalWizard: React.FC<UniversalWizardProps> = ({
       >
         <ModalHeader flexShrink={0} pb={2}>
           <VStack align="stretch" spacing={2}>
-            <Text>{dynamicSchema.title}</Text>
+            <Text>{dynamicSchema?.title || 'Configuration Wizard'}</Text>
             <Box>
               <Text fontSize="sm" color="gray.600" mb={2}>
                 Step {currentStep} of {visibleSteps.length}: {currentStepConfig?.title}

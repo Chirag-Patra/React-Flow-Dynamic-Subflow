@@ -1,0 +1,198 @@
+{
+  "formType": "job_wizard",
+  "title": "Job Configuration Wizard",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Processing Type Selection",
+      "description": "Select the processing type for this job",
+      "fields": [
+        {
+          "key": "processingType",
+          "label": "Processing Type",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select processing type",
+          "options": ["ingest", "etl", "ingest_etl", "stream", "stream_etl"],
+          "helperText": "Select the processing type for this job",
+          "validation": {
+            "required": true
+          }
+        }
+      ],
+      "completionLogic": {
+        "type": "all_required_filled",
+        "requiredFields": ["processingType"]
+      },
+      "visibility": {
+        "type": "always"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Client & Domain Information",
+      "fields": [
+        {
+          "key": "clnt_id",
+          "label": "Client ID",
+          "type": "input",
+          "required": true,
+          "placeholder": "Enter client ID",
+          "validation": {
+            "required": true,
+            "pattern": "^[a-zA-Z0-9]+$"
+          }
+        },
+        {
+          "key": "domain_cd",
+          "label": "Domain Code",
+          "type": "input",
+          "required": true,
+          "placeholder": "Enter domain code"
+        },
+        {
+          "key": "sor_cd",
+          "label": "SOR Code",
+          "type": "input",
+          "required": true,
+          "placeholder": "Enter SOR code"
+        }
+      ],
+      "completionLogic": {
+        "type": "all_required_filled",
+        "requiredFields": ["clnt_id", "domain_cd", "sor_cd"]
+      },
+      "visibility": {
+        "type": "conditional",
+        "condition": {
+          "field": "processingType",
+          "operator": "in",
+          "value": ["ingest", "ingest_etl"]
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Target Platform",
+      "fields": [
+        {
+          "key": "trgt_pltfrm",
+          "label": "Target Platform",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select target platform",
+          "options": ["s3", "stream", "redshift", "snowflake", "rds"],
+          "apiField": "trgt_pltfrm"
+        }
+      ],
+      "completionLogic": {
+        "type": "all_required_filled",
+        "requiredFields": ["trgt_pltfrm"]
+      },
+      "visibility": {
+        "type": "conditional",
+        "condition": {
+          "field": "processingType",
+          "operator": "in",
+          "value": ["ingest", "ingest_etl"]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Load Configuration",
+      "fields": [
+        {
+          "key": "load_type",
+          "label": "Load Type",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select load type",
+          "options": ["full", "incremental", "upsert"],
+          "apiField": "load_type"
+        },
+        {
+          "key": "src_file_type",
+          "label": "Source File Type",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select source file type",
+          "options": ["csv", "json", "parquet", "avro", "xml"],
+          "apiField": "src_file_type"
+        },
+        {
+          "key": "load_frqncy",
+          "label": "Load Frequency",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select load frequency",
+          "options": ["daily", "weekly", "monthly", "hourly", "real-time"],
+          "apiField": "load_frqncy"
+        }
+      ],
+      "completionLogic": {
+        "type": "all_required_filled",
+        "requiredFields": ["load_type", "src_file_type", "load_frqncy"]
+      },
+      "visibility": {
+        "type": "conditional",
+        "condition": {
+          "field": "processingType",
+          "operator": "in",
+          "value": ["ingest", "ingest_etl"]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Advanced Settings",
+      "fields": [
+        {
+          "key": "job_type",
+          "label": "Job Type",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select job type",
+          "options": ["batch", "streaming", "micro-batch"],
+          "apiField": "job_type"
+        },
+        {
+          "key": "actv_flag",
+          "label": "Active Flag",
+          "type": "select",
+          "required": true,
+          "placeholder": "Select active status",
+          "options": ["Y", "N"],
+          "apiField": "actv_flag",
+          "defaultValue": "Y"
+        },
+        {
+          "key": "ownrshp_team",
+          "label": "Ownership Team",
+          "type": "input",
+          "required": true,
+          "placeholder": "Enter ownership team",
+          "validation": {
+            "required": true
+          }
+        }
+      ],
+      "completionLogic": {
+        "type": "all_required_filled",
+        "requiredFields": ["job_type", "actv_flag", "ownrshp_team"]
+      },
+      "visibility": {
+        "type": "always"
+      }
+    }
+  ],
+  "submitEndpoint": {
+    "url": "https://api.example.com/job-config",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer token"
+    },
+    "payloadMapping": "job_wizard_payload"
+  }
+}
