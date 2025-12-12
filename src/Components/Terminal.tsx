@@ -10,6 +10,10 @@ export default function Terminal(props: HandleProps) {
         height: 8,
         background: "white",
         border: "1px solid black",
+        borderRadius: "50%",
+        boxShadow: "0 0 2px rgba(0,0,0,0.3)",
+        zIndex: 10,
+        pointerEvents: "auto",
       })}
       {...props}
     />

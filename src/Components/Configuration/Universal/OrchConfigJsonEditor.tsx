@@ -283,7 +283,7 @@ const VisualJsonEditor: React.FC<VisualJsonEditorProps> = ({
         mx={{ base: 2, lg: 4 }}
         my={{ base: 2, lg: "auto" }}
       >
-        <ModalBody p={0} display="flex" flexDirection={{ base: "column", lg: "row" }} h="full">
+        <ModalBody p={0} display="flex"  borderRadius="lg" flexDirection={{ base: "column", lg: "row" }} h="full">
 
           {/* Mobile View Toggle */}
           {isMobile && (

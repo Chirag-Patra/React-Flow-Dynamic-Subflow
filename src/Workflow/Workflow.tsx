@@ -17,6 +17,10 @@ import {
   useNodesState,
   useReactFlow,
   useStore,
+  applyNodeChanges,
+  applyEdgeChanges,
+  type NodeChange,
+  type EdgeChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { Box, Center, Flex, IconButton, Spinner, Text, useToast } from "@chakra-ui/react";
@@ -85,44 +89,28 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
     }
   }, [propsEdges, setEdges]);
 
-  // Debounced update to parent - only sync back to parent occasionally
-  const updateParentTimeout = useRef<number | undefined>();
+  // Forward changes upstream without extra effects to avoid re-render loops
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      setNodes((prev) => {
+        const next = applyNodeChanges(changes, prev);
+        setPropsNodes(next);
+        return next;
+      });
+    },
+    [setNodes, setPropsNodes]
+  );
 
-  useEffect(() => {
-    // Clear existing timeout
-    if (updateParentTimeout.current) {
-      clearTimeout(updateParentTimeout.current);
-    }
-
-    // Set new timeout to update parent after changes settle
-    updateParentTimeout.current = setTimeout(() => {
-      setPropsNodes(nodes);
-    }, 100);
-
-    return () => {
-      if (updateParentTimeout.current) {
-        clearTimeout(updateParentTimeout.current);
-      }
-    };
-  }, [nodes, setPropsNodes]);
-
-  useEffect(() => {
-    // Clear existing timeout
-    if (updateParentTimeout.current) {
-      clearTimeout(updateParentTimeout.current);
-    }
-
-    // Set new timeout to update parent after changes settle
-    updateParentTimeout.current = setTimeout(() => {
-      setPropsEdges(edges);
-    }, 100);
-
-    return () => {
-      if (updateParentTimeout.current) {
-        clearTimeout(updateParentTimeout.current);
-      }
-    };
-  }, [edges, setPropsEdges]);
+  const handleEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      setEdges((prev) => {
+        const next = applyEdgeChanges(changes, prev);
+        setPropsEdges(next);
+        return next;
+      });
+    },
+    [setEdges, setPropsEdges]
+  );
 
   const { addNode, removeNode, addEdge, removeEdge, undo, redo } = useHistory();
 
@@ -220,43 +208,44 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
 
   const { screenToFlowPosition, getIntersectingNodes, setViewport } =
     useReactFlow();
+  const showContent = useStore(zoomSelector);
 
-  const onDragStart = (
+  const onDragStart = useCallback((
     event: React.DragEvent<HTMLDivElement>,
     type: MajorComponents
   ) => {
     dragOutsideRef.current = type;
     event.dataTransfer.effectAllowed = "move";
-  };
+  }, []);
 
-  const onDragOver: React.DragEventHandler<HTMLDivElement> = (event) => {
+  const onDragOver: React.DragEventHandler<HTMLDivElement> = useCallback((event) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
-  };
+  }, []);
 
-  const onDrop: React.DragEventHandler<HTMLDivElement> = (event) => {
+  const onDrop: React.DragEventHandler<HTMLDivElement> = useCallback((event) => {
   event.preventDefault();
   setIsDragging(false);
   const type = dragOutsideRef.current;
 
-  console.log("onDrop triggered, type:", type);
+  // console.debug("onDrop triggered, type:", type);
 
   if (!type) {
-    console.log("No type found");
+    // console.debug("No type found");
     return;
   }
 
-  let position = screenToFlowPosition({
+  const position = screenToFlowPosition({
     x: event.clientX,
     y: event.clientY,
   });
 
-  console.log("Drop position:", position);
-  console.log("All nodes:", nodes);
+  // console.debug("Drop position:", position);
+  // console.debug("All nodes:", nodes);
 
   // Board/Job can be dropped anywhere on the background
   if (type === MajorComponents.Board) {
-    console.log("Creating Board/Job");
+    // console.debug("Creating Board/Job");
     const node: Node = {
       id: uuid(),
       type: "Job",
@@ -270,7 +259,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
 
   // ETLO can be dropped anywhere on the background
   if (type === MajorComponents.ETLO) {
-    console.log("Creating ETLO");
+    // console.debug("Creating ETLO");
     const node: Node = {
       id: uuid(),
       type: "ETLO",
@@ -284,7 +273,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
 
   // Map can ONLY be dropped inside Job components
   if (type === MajorComponents.Map) {
-    console.log("Creating Map - checking for Job container");
+    // console.debug("Creating Map - checking for Job container");
 
     // Check if dropping inside a Job
     const boards = nodes?.filter((node) => node.type === "Job");
@@ -302,7 +291,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
 
     // If no Job container found, don't allow the drop
     if (!Job) {
-      console.log("Map can only be dropped inside Job components");
+      // console.debug("Map can only be dropped inside Job components");
       toast({
         title: "Invalid Drop Location",
         description: "Map components can only be dropped inside Job components",
@@ -332,15 +321,14 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
     return; // Exit early
   }
 
-  // Check if dropping inside any container (Job, ETLO, or Map)
-  // Priority: Map containers first, then Job and ETLO containers
+  // Check if dropping inside any container (Job or Map)
+  // ETLO is a root-only parent and cannot contain children
   const allContainers = [
     ...nodes.filter((node) => node.type === "Map"),
     ...nodes.filter((node) => node.type === "Job"),
-    ...nodes.filter((node) => node.type === "ETLO")
   ];
 
-  console.log("Found containers:", allContainers);
+  // console.debug("Found containers:", allContainers);
 
   let finalParentId: string | undefined;
   let finalPosition = position;
@@ -390,12 +378,12 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       );
     }
 
-    console.log(`Checking ${containerNode.type}:`, containerNode.id, "isInside:", isInside);
+    // console.debug(`Checking ${containerNode.type}:`, containerNode.id, "isInside:", isInside);
     return isInside;
   });
 
   if (container) {
-    console.log("Dropping inside container:", container.type, container.id);
+    // console.debug("Dropping inside container:", container.type, container.id);
     finalParentId = container.id;
 
     // Calculate position relative to the container
@@ -465,21 +453,11 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         xPos = rowStartX + col * (componentWidth + componentSpacing);
         yPos = gridStartY + row * (componentHeight + componentSpacing);
 
-        console.log("Grid positioning:", {
-          componentCount,
-          totalComponents,
-          row,
-          col,
-          componentsPerRow,
-          currentRowWidth,
-          dropZoneWidth,
-          xPos,
-          yPos
-        });
+        // debug: grid positioning variables available here if needed
       }
 
       finalPosition = { x: xPos, y: yPos };
-      console.log("Map centering - Final position:", finalPosition);
+      // console.debug("Map centering - Final position:", finalPosition);
     } else {
       // For Job and ETLO components, use standard relative positioning
       finalPosition = {
@@ -488,12 +466,12 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       };
     }
   } else {
-    console.log("No container found - cannot drop component");
+    // console.debug("No container found - cannot drop component");
     return;
   }
 
-  console.log("Final parent ID:", finalParentId);
-  console.log("Final position:", finalPosition);
+  // console.debug("Final parent ID:", finalParentId);
+  // console.debug("Final position:", finalPosition);
 
   // Create node inside the Job or Map
   let node: Node | undefined;
@@ -526,108 +504,55 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       draggable: !isParentMap, // Components in Map are not draggable
       selectable: showContent,
     };
-    console.log("Node to be created:", node, "isParentMap:", isParentMap);
+    // console.debug("Node to be created:", node, "isParentMap:", isParentMap);
   } else {
-    console.log("Type not in allowed list:", type);
+    // console.debug("Type not in allowed list:", type);
   }
 
   if (node) {
-    console.log("Adding node");
+    // console.debug("Adding node");
     addNode(node);
   } else {
-    console.log("No node created");
+    // console.debug("No node created");
   }
-};
+}, [addNode, nodes, screenToFlowPosition, toast, showContent]);
   const [selectedNode, setSelectedNode] = useState<Node | undefined>();
 
-  const onNodeClick = (event: React.MouseEvent<Element>, node: Node) => {
+  const onNodeClick = useCallback((event: React.MouseEvent<Element>, node: Node) => {
     setSelectedNode(node);
-  };
+  }, []);
 
-  const onPaneClick = () => {
+  const onPaneClick = useCallback(() => {
     setSelectedNode(undefined);
-  };
+  }, []);
 
   const edgeReconnectSuccessful = useRef(false);
 
-  const onReconnectStart = () => {
+  const onReconnectStart = useCallback(() => {
     edgeReconnectSuccessful.current = false;
-  };
+  }, []);
 
-  const onReconnect: OnReconnect = (oldEdge, newConnection) => {
+  const onReconnect: OnReconnect = useCallback((oldEdge, newConnection) => {
     edgeReconnectSuccessful.current = true;
     setEdges((prevEdges) => reconnectEdge(oldEdge, newConnection, prevEdges));
-  };
+  }, [setEdges]);
 
-  const onReconnectEnd = (_: MouseEvent | TouchEvent, edge: Edge) => {
+  const onReconnectEnd = useCallback((_: MouseEvent | TouchEvent, edge: Edge) => {
     if (!edgeReconnectSuccessful.current) {
       removeEdge(edge);
     }
-  };
+  }, [removeEdge]);
 
-  const overlappingNodeRef = useRef<Node | null>(null);
-
-  const showContent = useStore(zoomSelector);
-
-  const onNodeDrag: OnNodeDrag = (evt, dragNode) => {
+  const onNodeDragStop: OnNodeDrag = useCallback((evt, dragNode) => {
     const overlappingNode = getIntersectingNodes(dragNode)?.[0];
-    overlappingNodeRef.current = overlappingNode;
-
-    setNodes((prevNodes) =>
-      prevNodes.map((node) => {
-
-        if (node.id === dragNode.id) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              state:
-                overlappingNode &&
-                  (
-                    // Handle component-to-component merging
-                    [
-                      MajorComponents.Js,
-                      MajorComponents.Aws,
-                      MajorComponents.Db,
-                      MajorComponents.Email_notification,
-                      MajorComponents.Execute_Py,
-                      MajorComponents.Run_Lamda,
-                      MajorComponents.Run_GlueJob,
-                      MajorComponents.Run_Eks,
-                      MajorComponents.Run_StepFunction,
-                      MajorComponents.Ingestion,
-                    ].includes(overlappingNode?.data?.type as MajorComponents) ||
-                    // Handle dropping on containers
-                    overlappingNode?.type === 'Job' ||
-                    overlappingNode?.type === 'ETLO' ||
-                    overlappingNode?.type === 'Map'
-                  )
-                  ? (
-                      // If overlapping with containers, no state change needed
-                      overlappingNode?.type === 'Job' || overlappingNode?.type === 'ETLO' || overlappingNode?.type === 'Map' ? undefined :
-                      // If overlapping with same component type, show Add state
-                      overlappingNode?.data?.type === dragNode?.data?.type
-                        ? MajorComponentsState.Add
-                        : MajorComponentsState.NotAdd
-                    )
-                  : undefined,
-            },
-          };
-        }
-        return node;
-      })
-    );
-  };
-
-  const onNodeDragStop: OnNodeDrag = (evt, dragNode) => {
     if (dragNode.type === 'Job' || dragNode.type === 'ETLO' || dragNode.type === 'Map') {
       return;
     }
     if (
-      !overlappingNodeRef.current ||
-      (overlappingNodeRef?.current?.type !== MajorComponents.Board &&
-        overlappingNodeRef?.current?.type !== 'ETLO' &&
-        overlappingNodeRef?.current?.type !== 'Map' &&
+      !overlappingNode ||
+      (overlappingNode?.type !== MajorComponents.Board &&
+        overlappingNode?.type !== 'ETLO' &&
+        overlappingNode?.type !== 'Map' &&
         dragNode?.parentId)
     ) {
       setNodes((prevNodes) => {
@@ -662,14 +587,14 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         MajorComponents.Run_StepFunction,
         MajorComponents.Ingestion,
       ].includes(
-        overlappingNodeRef?.current?.data?.type as MajorComponents
+        overlappingNode?.data?.type as MajorComponents
       ) &&
-      dragNode?.data?.type === overlappingNodeRef?.current?.data?.type
+      dragNode?.data?.type === overlappingNode?.data?.type
     ) {
       setNodes((prevNodes) =>
         prevNodes
           .map((node) => {
-            if (node.id === overlappingNodeRef?.current?.id) {
+            if (node.id === overlappingNode?.id) {
               return {
                 ...node,
                 data: {
@@ -686,16 +611,16 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       );
     }
 
-    // Handle dynamic subgrouping for Board and Map components
-    if (overlappingNodeRef?.current?.type === MajorComponents.Board ||
-        overlappingNodeRef?.current?.type === 'Map') {
+    // Handle dynamic subgrouping for Board and Map components (ETLO excluded)
+    if (overlappingNode?.type === MajorComponents.Board ||
+        overlappingNode?.type === 'Map') {
       setNodes((prevNodes) => [
-        overlappingNodeRef?.current as Node,
+        overlappingNode as Node,
         ...prevNodes
-          .filter((node) => node.id !== overlappingNodeRef?.current?.id)
+          .filter((node) => node.id !== overlappingNode?.id)
           .map((node) => {
             if (node.id === dragNode?.id) {
-              const { x, y } = overlappingNodeRef?.current?.position || {
+              const { x, y } = overlappingNode?.position || {
                 x: 0,
                 y: 0,
               };
@@ -705,7 +630,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
               };
 
               // Check if the new parent is a Map to set draggable state and position
-              const isNewParentMap = overlappingNodeRef?.current?.type === 'Map';
+              const isNewParentMap = overlappingNode?.type === 'Map';
 
               let position;
 
@@ -713,8 +638,8 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
                 // For Map containers, center the component automatically
                 const dropZoneMargin = 2;
                 const headerHeight = 20;
-                const containerHeight = overlappingNodeRef?.current?.measured?.height || 100;
-                const containerWidth = overlappingNodeRef?.current?.measured?.width || 200;
+                const containerHeight = overlappingNode?.measured?.height || 100;
+                const containerWidth = overlappingNode?.measured?.width || 200;
 
                 const dropZoneWidth = containerWidth - (dropZoneMargin * 2);
                 const dropZoneHeight = containerHeight - headerHeight - (dropZoneMargin * 2);
@@ -724,7 +649,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
                 const componentSpacing = 10;
 
                 // Count existing components in this Map
-                const existingComponents = prevNodes.filter(n => n.parentId === overlappingNodeRef?.current?.id);
+                const existingComponents = prevNodes.filter(n => n.parentId === overlappingNode?.id);
                 const componentCount = existingComponents.length;
 
                 // Calculate centered position
@@ -770,7 +695,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
                   position = { x: dragX - x, y: dragY - y };
                 } else if (
                   node.parentId &&
-                  node?.parentId !== overlappingNodeRef?.current?.id
+                  node?.parentId !== overlappingNode?.id
                 ) {
                   const prevParent = prevNodes?.find(
                     (node) => node?.id === dragNode?.parentId
@@ -789,9 +714,9 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
 
               return {
                 ...node,
-                parentId: overlappingNodeRef?.current?.id,
+                parentId: overlappingNode?.id,
                 ...((!dragNode?.parentId ||
-                  dragNode?.parentId !== overlappingNodeRef?.current?.id) && {
+                  dragNode?.parentId !== overlappingNode?.id) && {
                   position,
                 }),
                 draggable: isNewParentMap ? false : showContent, // Components in Map are not draggable
@@ -807,7 +732,11 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
           }),
       ]);
     }
-  };
+    // Do not allow parenting into ETLO
+    if (overlappingNode?.type === 'ETLO') {
+      return;
+    }
+  }, [getIntersectingNodes, setNodes, showContent]);
 
   useKeyBindings({ removeNode, undo, redo });
 
@@ -842,7 +771,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         };
       })
     );
-  }, [showContent]);
+  }, [showContent, setNodes]);
 
   const { mutateAsync: saveFlow, isPending } = useUpdateData();
   const { data: reactFlowState } = useData();
@@ -854,7 +783,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       setEdges(reactFlowState.edges || []);
       setViewport({ x, y, zoom });
     }
-  }, [reactFlowState]);
+  }, [reactFlowState, setNodes, setEdges, setViewport]);
 
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance<
     Node,
@@ -879,11 +808,11 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         nodes={nodes}
         showContent={showContent}
       />
-       <BottomStatusBar
+       {/* <BottomStatusBar
         logs={[]}
         onClearLogs={() => {}}
         onExportLogs={() => {}}
-      />
+      /> */}
 
       {/* Main Canvas */}
       <Box
@@ -919,9 +848,10 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
           onInit={setRfInstance}
           nodes={nodes}
           edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
           onConnect={onConnect}
+          connectionMode={ConnectionMode.Strict}
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           connectionLineComponent={ConnectionLine}
@@ -933,7 +863,6 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
           onReconnectStart={onReconnectStart}
           onReconnect={onReconnect}
           onReconnectEnd={onReconnectEnd}
-          onNodeDrag={onNodeDrag}
           onNodeDragStop={onNodeDragStop}
           colorMode={isDark ? "dark" : "light"}
         >

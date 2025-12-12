@@ -303,15 +303,39 @@ const UniversalWizard: React.FC<UniversalWizardProps> = ({
         maxHeight="600px"
         display="flex"
         flexDirection="column"
+        bg="white"
+        borderRadius="lg"
+        border="1px solid"
+        borderColor="gray.200"
+        shadow="xl"
       >
-        <ModalHeader flexShrink={0} pb={2}>
-          <VStack align="stretch" spacing={2}>
-            <Text>{dynamicSchema?.title || 'Configuration Wizard'}</Text>
+        <ModalHeader 
+          flexShrink={0} 
+          pb={2}
+          bg="#f4f5f7"
+          borderTopRadius="lg"
+          borderBottom="1px solid"
+          borderColor="gray.200"
+        >
+          <VStack align="stretch" spacing={3}>
+            <Text 
+              fontSize="lg" 
+              fontWeight="bold" 
+              color="gray.800"
+            >
+              {dynamicSchema?.title || 'Configuration Wizard'}
+            </Text>
             <Box>
-              <Text fontSize="sm" color="gray.600" mb={2}>
+              <Text fontSize="sm" color="gray.600" mb={2} fontWeight="medium">
                 Step {currentStep} of {visibleSteps.length}: {currentStepConfig?.title}
               </Text>
-              <Progress value={progress} colorScheme="blue" size="sm" />
+              <Progress 
+                value={progress} 
+                colorScheme="purple" 
+                size="sm" 
+                borderRadius="full"
+                bg="gray.100"
+              />
             </Box>
           </VStack>
         </ModalHeader>
@@ -323,29 +347,31 @@ const UniversalWizard: React.FC<UniversalWizardProps> = ({
           display="flex"
           flexDirection="column"
           py={0}
+          bg="white"
         >
           <Box
             flex="1"
             overflowY="auto"
             pr={2}
+            bg="#f9fafb"
             css={{
               '&::-webkit-scrollbar': {
-                width: '8px',
+                width: '6px',
               },
               '&::-webkit-scrollbar-track': {
                 background: '#f1f1f1',
                 borderRadius: '10px',
               },
               '&::-webkit-scrollbar-thumb': {
-                background: '#c1c1c1',
+                background: '#c69ae6',
                 borderRadius: '10px',
               },
               '&::-webkit-scrollbar-thumb:hover': {
-                background: '#a8a8a8',
+                background: '#b794d9',
               },
             }}
           >
-            <VStack spacing={4} align="stretch" py={4}>
+            <VStack spacing={1} align="stretch" py={4} px={2}>
               {!canProceedToNext() && currentStep > 1 && (
                 <Alert status="warning" size="sm">
                   <AlertIcon />
@@ -380,13 +406,30 @@ const UniversalWizard: React.FC<UniversalWizardProps> = ({
           </Box>
         </ModalBody>
 
-        <ModalFooter flexShrink={0} pt={2}>
+        <ModalFooter 
+          flexShrink={0} 
+          pt={4}
+          pb={4}
+          bg="#f4f5f7"
+          borderBottomRadius="lg"
+          borderTop="1px solid"
+          borderColor="gray.200"
+        >
           <HStack spacing={3}>
             {visibleSteps.length > 1 && (
               <Button
                 variant="outline"
                 onClick={handleBack}
                 isDisabled={currentStep === 1}
+                borderColor="gray.300"
+                color="gray.600"
+                _hover={{ 
+                  bg: 'gray.50',
+                  borderColor: 'gray.400',
+                  transform: 'translateY(-1px)'
+                }}
+                transition="all 0.2s"
+                fontWeight="medium"
               >
                 Back
               </Button>
@@ -394,9 +437,15 @@ const UniversalWizard: React.FC<UniversalWizardProps> = ({
 
             {currentStep < visibleSteps.length ? (
               <Button
-                colorScheme="blue"
+                colorScheme="purple"
                 onClick={handleNext}
                 isDisabled={!canProceedToNext()}
+                _hover={{ 
+                  transform: 'translateY(-1px)',
+                  shadow: 'md'
+                }}
+                transition="all 0.2s"
+                fontWeight="medium"
               >
                 Next
               </Button>
@@ -406,15 +455,29 @@ const UniversalWizard: React.FC<UniversalWizardProps> = ({
                   colorScheme="green"
                   onClick={handleSave}
                   isDisabled={!canSave()}
+                  variant="outline"
+                  _hover={{ 
+                    bg: 'green.50',
+                    transform: 'translateY(-1px)',
+                    shadow: 'md'
+                  }}
+                  transition="all 0.2s"
+                  fontWeight="medium"
                 >
                   Save Configuration
                 </Button>
                 <Button
-                  colorScheme="blue"
+                  colorScheme="purple"
                   onClick={handleSubmit}
                   isDisabled={!canSave()}
                   isLoading={isSubmitting}
                   loadingText="Submitting..."
+                  _hover={{ 
+                    transform: 'translateY(-1px)',
+                    shadow: 'md'
+                  }}
+                  transition="all 0.2s"
+                  fontWeight="medium"
                 >
                   Submit
                 </Button>

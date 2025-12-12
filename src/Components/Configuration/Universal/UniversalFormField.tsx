@@ -15,6 +15,7 @@ import {
   NumberDecrementStepper,
   Button,
   HStack,
+  VStack,
   Text,
   Box,
 } from '@chakra-ui/react';
@@ -84,6 +85,13 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
             value={value || ''}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={placeholder}
+            variant="filled"
+            bg="white"
+            borderColor="gray.200"
+            _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+            _focus={{ borderColor: 'purple.300', shadow: 'md' }}
+            transition="all 0.2s"
+            fontSize="sm"
           />
         );
 
@@ -94,7 +102,15 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
             onChange={(_, num) => handleChange(num || 1)}
             min={1}
           >
-            <NumberInputField placeholder={placeholder} />
+            <NumberInputField 
+              placeholder={placeholder}
+              bg="white"
+              borderColor="gray.200"
+              _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+              _focus={{ borderColor: 'purple.300', shadow: 'md' }}
+              transition="all 0.2s"
+              fontSize="sm"
+            />
             <NumberInputStepper>
               <NumberIncrementStepper />
               <NumberDecrementStepper />
@@ -108,6 +124,13 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
             value={value || ''}
             onChange={(e) => handleChange(e.target.value)}
             placeholder={placeholder}
+            variant="filled"
+            bg="white"
+            borderColor="gray.200"
+            _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+            _focus={{ borderColor: 'purple.300', shadow: 'md' }}
+            transition="all 0.2s"
+            fontSize="sm"
           >
             {renderSelectOptions()}
           </Select>
@@ -116,20 +139,41 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
       case 'jsonorch':
         // Special handling for Orchestrator JSON configuration
         return (
-            <Box>
-              <HStack spacing={3} mb={2}>
+            <VStack spacing={3} align="stretch">
+              <HStack 
+                spacing={3} 
+                p={3} 
+                bg="#f4f5f7" 
+                borderRadius="md" 
+                border="1px solid" 
+                borderColor="gray.200"
+                _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+                transition="all 0.2s"
+              >
                 <Button
                   leftIcon={<EditIcon />}
-                  colorScheme="blue"
+                  colorScheme="purple"
                   variant="outline"
                   size="sm"
                   onClick={() => setIsJsonEditorOpen(true)}
+                  _hover={{ bg: 'purple.50', transform: 'translateY(-1px)' }}
+                  transition="all 0.2s"
+                  fontSize="xs"
+                  fontWeight="medium"
                 >
                   Open JSON Editor
                 </Button>
                 {value && (
-                  <Text fontSize="sm" color="gray.600">
-                    Configuration loaded
+                  <Text 
+                    fontSize="xs" 
+                    color="green.600" 
+                    fontWeight="medium"
+                    bg="green.50"
+                    px={2}
+                    py={1}
+                    borderRadius="sm"
+                  >
+                    ✓ Configuration loaded
                   </Text>
                 )}
               </HStack>
@@ -146,7 +190,13 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
                 placeholder={placeholder || 'Enter JSON configuration or use the editor above'}
                 rows={rows || 6}
                 fontFamily="mono"
-                fontSize="sm"
+                fontSize="xs"
+                variant="filled"
+                bg="white"
+                borderColor="gray.200"
+                _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+                _focus={{ borderColor: 'purple.300', shadow: 'md' }}
+                transition="all 0.2s"
               />
               <OrchConfigJsonEditor
                 isOpen={isJsonEditorOpen}
@@ -167,7 +217,7 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
                   value || {}
                 }
               />
-            </Box>
+            </VStack>
           );
 
       case 'textarea':
@@ -177,6 +227,13 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
             onChange={(e) => handleChange(e.target.value)}
             placeholder={placeholder}
             rows={rows || 3}
+            variant="filled"
+            bg="white"
+            borderColor="gray.200"
+            _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+            _focus={{ borderColor: 'purple.300', shadow: 'md' }}
+            transition="all 0.2s"
+            fontSize="sm"
           />
         );
 
@@ -185,6 +242,8 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
           <Switch
             isChecked={value || false}
             onChange={(e) => handleChange(e.target.checked)}
+            colorScheme="purple"
+            size="md"
           />
         );
 
@@ -199,13 +258,41 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
       isRequired={required}
       display={type === 'switch' ? 'flex' : 'block'}
       alignItems={type === 'switch' ? 'center' : 'initial'}
+      p={4}
+      bg="white"
+      borderRadius="md"
+      border="1px solid"
+      borderColor="gray.200"
+      _hover={{ 
+        borderColor: 'purple.200', 
+        shadow: 'sm',
+        transform: 'translateY(-1px)'
+      }}
+      transition="all 0.2s"
+      mb={3}
     >
-      <FormLabel mb={type === 'switch' ? 0 : undefined}>
+      <FormLabel 
+        mb={type === 'switch' ? 0 : 2}
+        fontSize="sm"
+        fontWeight="semibold"
+        color="gray.700"
+      >
         {label}
+        {required && (
+          <Text as="span" color="red.500" ml={1}>
+            *
+          </Text>
+        )}
       </FormLabel>
       {renderField()}
       {helperText && (
-        <FormHelperText>{helperText}</FormHelperText>
+        <FormHelperText 
+          fontSize="xs" 
+          color="gray.500"
+          mt={2}
+        >
+          {helperText}
+        </FormHelperText>
       )}
     </FormControl>
   );

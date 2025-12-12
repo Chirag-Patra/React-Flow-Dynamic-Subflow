@@ -1,5 +1,5 @@
 import { Box, Text, Badge, Flex, Icon } from "@chakra-ui/react";
-import { Node, NodeProps, NodeResizer, useStore, Handle, Position } from "@xyflow/react";
+import { Node, NodeProps, useStore, Handle, Position } from "@xyflow/react";
 import React from "react";
 import { MajorComponentsData, MajorComponents } from "../types";
 import { getUnit } from "../utils";
@@ -58,7 +58,7 @@ export default function ETLO({ type,
       }}
       overflow="visible"
     >
-      {selected && <NodeResizer minWidth={200} minHeight={200} />}
+      {/* ETLO is constant-size: no resizer */}
 
       {/* Header Section with Gradient */}
       <Box
