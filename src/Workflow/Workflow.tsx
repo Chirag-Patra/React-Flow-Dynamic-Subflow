@@ -26,7 +26,7 @@ import "@xyflow/react/dist/style.css";
 import { Box, Center, Flex, IconButton, Spinner, Text, useToast } from "@chakra-ui/react";
 import { COMPONENTS, initialEdges, initialNodes } from "../constants";
 import { v4 as uuid } from "uuid";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import MajorComponent from "../Components/MajorComponent";
 import customEdge from "../Components/customEdge";
 import ETLOEdge from "../Components/ETLOEdge";
@@ -45,6 +45,7 @@ import { useDarkMode } from "../store";
 import { Sun, Moon } from "react-bootstrap-icons";
 import { BottomStatusBar } from "../Workflow/BottomStatusBar";
 
+// Memoize node and edge types to prevent re-creation on every render
 const nodeTypes = {
   MajorComponent: MajorComponent,
   Job: Board,
@@ -56,6 +57,28 @@ const edgeTypes = {
   customEdge: customEdge,
   ETLOEdge: ETLOEdge,
 };
+
+// Constant arrays for component type checks (prevents re-creation on every render)
+const ALLOWED_COMPONENT_TYPES = [
+  MajorComponents.Js,
+  MajorComponents.Aws,
+  MajorComponents.Db,
+  MajorComponents.Email_notification,
+  MajorComponents.Execute_Py,
+  MajorComponents.Run_Lamda,
+  MajorComponents.Run_GlueJob,
+  MajorComponents.Run_Eks,
+  MajorComponents.Run_StepFunction,
+  MajorComponents.Ingestion,
+];
+
+const PROCESSING_NODE_TYPES = [
+  MajorComponents.Ingestion,
+  MajorComponents.Run_Lamda,
+  MajorComponents.Run_GlueJob,
+  MajorComponents.Run_Eks,
+  MajorComponents.Run_StepFunction,
+];
 
 interface WorkflowProps {
   nodes: Node[];
@@ -114,10 +137,19 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
 
   const { addNode, removeNode, addEdge, removeEdge, undo, redo } = useHistory();
 
+  // Memoize node lookup map for faster access
+  const nodeMap = useMemo(() => {
+    const map: Record<string, Node> = {};
+    nodes.forEach(node => {
+      map[node.id] = node;
+    });
+    return map;
+  }, [nodes]);
+
   const onConnect = useCallback(
     (connection: Connection) => {
       // Check if the source node is an ETLO to determine edge type
-      const sourceNode = nodes.find(node => node.id === connection.source);
+      const sourceNode = nodeMap[connection.source];
       const isETLOConnection = sourceNode?.type === "ETLO";
 
       const edge = {
@@ -128,74 +160,13 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
           type: MarkerType.ArrowClosed,
           width:  20,
           height: 20,
-          color: isETLOConnection ? "#48BB78" : "#11b3cfff", // Green glass for ETLO, blue for others
+          color: isETLOConnection ? "#2c5aa0" : "#516fb4ff", // Green glass for ETLO, blue for others
         },
       };
       addEdge(edge);
     },
-    [addEdge, nodes]
+    [addEdge, nodeMap]
   );
-
- // Extract of the updated handleProcessingNodeManagement function
-// This would replace the existing function in Workflow.tsx
-
-const handleProcessingNodeManagement = (boardId: string, processingType: string) => {
-  // Map processing types to their corresponding component types
-  const processingTypeToComponent: Record<string, MajorComponents | null> = {
-    'ingest': MajorComponents.Ingestion,
-    'ingest_etl': MajorComponents.Ingestion, // Also add Ingestion for ingest_etl
-    'etl': null, // No component for ETL only
-    'stream': null, // No component for stream only
-    'stream_etl': null, // No component for stream_etl
-  };
-
-  // Get the component type for the current processing type
-  const componentType = processingTypeToComponent[processingType];
-
-  // Find the Job node
-  const jobNode = nodes.find(n => n.id === boardId && n.type === 'Job');
-  if (!jobNode) return;
-
-  // Find any existing processing node for this Job
-  const existingProcessingNode = nodes.find(
-    n => n.parentId === boardId &&
-      (n.data?.type === MajorComponents.Ingestion ||
-       n.data?.type === MajorComponents.Run_Lamda ||
-       n.data?.type === MajorComponents.Run_GlueJob ||
-       n.data?.type === MajorComponents.Run_Eks ||
-       n.data?.type === MajorComponents.Run_StepFunction)
-  );
-
-  // Remove any existing processing node if it exists
-  if (existingProcessingNode) {
-    removeNode(existingProcessingNode);
-  }
-
-  // Add new node if there's a valid component type for this processing type
-  if (componentType) {
-    const node: Node = {
-      id: `${processingType}-${boardId}-${uuid()}`,
-      type: "MajorComponent",
-      position: { x: 50, y: 50 }, // Position inside the Job box
-      data: {
-        type: componentType,
-        value: '',
-        visible: showContent,
-        connectable: showContent,
-        isAttachedToGroup: true, // Mark as attached to parent
-
-        // Copy the job configuration to the ingestion node if it's an ingestion type
-        ingestionConfig: jobNode.data?.jobConfig || {}
-      },
-      parentId: boardId,
-       extent: "parent", // Lock the component within its parent bounds
-      draggable: showContent,
-      selectable: showContent,
-    };
-
-    addNode(node);
-  }
-};
 
   const isValidConnection = (connection: Edge | Connection) => {
     const { source, target } = connection;
@@ -210,6 +181,59 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
     useReactFlow();
   const showContent = useStore(zoomSelector);
 
+  // Memoize processing type mapping
+  const processingTypeToComponent: Record<string, MajorComponents | null> = useMemo(() => ({
+    'ingest': MajorComponents.Ingestion,
+    'ingest_etl': MajorComponents.Ingestion,
+    'etl': null,
+    'stream': null,
+    'stream_etl': null,
+  }), []);
+
+  const handleProcessingNodeManagement = useCallback((boardId: string, processingType: string) => {
+    // Get the component type for the current processing type
+    const componentType = processingTypeToComponent[processingType];
+
+    // Find the Job node using memoized map
+    const jobNode = nodeMap[boardId];
+    if (!jobNode || jobNode.type !== 'Job') return;
+
+    // Find any existing processing node for this Job
+    const existingProcessingNode = nodes.find(
+      n => n.parentId === boardId && PROCESSING_NODE_TYPES.includes(n.data?.type as MajorComponents)
+    );
+
+    // Remove any existing processing node if it exists
+    if (existingProcessingNode) {
+      removeNode(existingProcessingNode);
+    }
+
+    // Add new node if there's a valid component type for this processing type
+    if (componentType) {
+      const node: Node = {
+        id: `${processingType}-${boardId}-${uuid()}`,
+        type: "MajorComponent",
+        position: { x: 50, y: 50 }, // Position inside the Job box
+        data: {
+          type: componentType,
+          value: '',
+          visible: showContent,
+          connectable: showContent,
+          isAttachedToGroup: true, // Mark as attached to parent
+
+          // Copy the job configuration to the ingestion node if it's an ingestion type
+          ingestionConfig: jobNode.data?.jobConfig || {}
+        },
+        parentId: boardId,
+         extent: "parent", // Lock the component within its parent bounds
+        draggable: showContent,
+        selectable: showContent,
+      };
+
+      addNode(node);
+    }
+  }, [nodeMap, nodes, removeNode, addNode, showContent, processingTypeToComponent]);
+
   const onDragStart = useCallback((
     event: React.DragEvent<HTMLDivElement>,
     type: MajorComponents
@@ -222,6 +246,14 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
   }, []);
+
+  // Memoize expensive node computations
+  const nodesByType = useMemo(() => {
+    const jobNodes = nodes.filter(n => n.type === "Job");
+    const mapNodes = nodes.filter(n => n.type === "Map");
+    const etloNodes = nodes.filter(n => n.type === "ETLO");
+    return { jobNodes, mapNodes, etloNodes };
+  }, [nodes]);
 
   const onDrop: React.DragEventHandler<HTMLDivElement> = useCallback((event) => {
   event.preventDefault();
@@ -275,9 +307,8 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
   if (type === MajorComponents.Map) {
     // console.debug("Creating Map - checking for Job container");
 
-    // Check if dropping inside a Job
-    const boards = nodes?.filter((node) => node.type === "Job");
-    const Job = boards.find((Job) => {
+    // Check if dropping inside a Job - use memoized value
+    const Job = nodesByType.jobNodes.find((Job) => {
       return isPointInBox(
         { x: position.x, y: position.y },
         {
@@ -323,9 +354,10 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
 
   // Check if dropping inside any container (Job or Map)
   // ETLO is a root-only parent and cannot contain children
+  // Use memoized values to avoid re-filtering
   const allContainers = [
-    ...nodes.filter((node) => node.type === "Map"),
-    ...nodes.filter((node) => node.type === "Job"),
+    ...nodesByType.mapNodes,
+    ...nodesByType.jobNodes,
   ];
 
   // console.debug("Found containers:", allContainers);
@@ -475,20 +507,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
 
   // Create node inside the Job or Map
   let node: Node | undefined;
-  if (
-    [
-      MajorComponents.Js,
-      MajorComponents.Aws,
-      MajorComponents.Db,
-      MajorComponents.Email_notification,
-      MajorComponents.Execute_Py,
-      MajorComponents.Run_Lamda,
-      MajorComponents.Run_GlueJob,
-      MajorComponents.Run_Eks,
-      MajorComponents.Run_StepFunction,
-      MajorComponents.Ingestion,
-    ].includes(type)
-  ) {
+  if (ALLOWED_COMPONENT_TYPES.includes(type)) {
     // Check if parent is a Map component to determine draggable state
     const parentContainer = container;
     const isParentMap = parentContainer?.type === "Map";
@@ -515,7 +534,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
   } else {
     // console.debug("No node created");
   }
-}, [addNode, nodes, screenToFlowPosition, toast, showContent]);
+}, [addNode, nodes, nodesByType, screenToFlowPosition, toast, showContent]);
   const [selectedNode, setSelectedNode] = useState<Node | undefined>();
 
   const onNodeClick = useCallback((event: React.MouseEvent<Element>, node: Node) => {
@@ -535,7 +554,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
   const onReconnect: OnReconnect = useCallback((oldEdge, newConnection) => {
     edgeReconnectSuccessful.current = true;
     setEdges((prevEdges) => reconnectEdge(oldEdge, newConnection, prevEdges));
-  }, [setEdges]);
+  }, []);
 
   const onReconnectEnd = useCallback((_: MouseEvent | TouchEvent, edge: Edge) => {
     if (!edgeReconnectSuccessful.current) {
@@ -575,20 +594,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
     }
 
     if (
-      [
-        MajorComponents.Js,
-        MajorComponents.Aws,
-        MajorComponents.Db,
-        MajorComponents.Email_notification,
-        MajorComponents.Execute_Py,
-        MajorComponents.Run_Lamda,
-        MajorComponents.Run_GlueJob,
-        MajorComponents.Run_Eks,
-        MajorComponents.Run_StepFunction,
-        MajorComponents.Ingestion,
-      ].includes(
-        overlappingNode?.data?.type as MajorComponents
-      ) &&
+      ALLOWED_COMPONENT_TYPES.includes(overlappingNode?.data?.type as MajorComponents) &&
       dragNode?.data?.type === overlappingNode?.data?.type
     ) {
       setNodes((prevNodes) =>
@@ -740,17 +746,27 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
 
   useKeyBindings({ removeNode, undo, redo });
 
+  // Create a map of parent types for quick lookup
+  const parentTypeMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    nodes.forEach(node => {
+      if (node.type) {
+        map[node.id] = node.type;
+      }
+    });
+    return map;
+  }, [nodes]);
+
   useEffect(() => {
     setNodes((prevNodes) =>
       prevNodes.map((node) => {
         if (node.parentId) {
-          // Find the parent node to check if it's a Map
-          const parentNode = prevNodes.find(n => n.id === node.parentId);
-          const isParentMap = parentNode?.type === "Map";
+          // Use memoized parent type map for faster lookup
+          const isParentMap = parentTypeMap[node.parentId] === "Map";
 
           return {
             ...node,
-            draggable: isParentMap ? false : showContent, // Components in Map are not draggable
+            draggable: isParentMap ? false : showContent,
             selectable: showContent,
             data: {
               ...node.data,
@@ -771,7 +787,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
         };
       })
     );
-  }, [showContent, setNodes]);
+  }, [showContent, setNodes, parentTypeMap]);
 
   const { mutateAsync: saveFlow, isPending } = useUpdateData();
   const { data: reactFlowState } = useData();
@@ -792,6 +808,10 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
 
   const { isDark, toggleMode } = useDarkMode();
 
+  // Memoize computed values
+  const rightMargin = useMemo(() => selectedNode ? "320px" : "0", [selectedNode]);
+  const onDeleteNode = useCallback(() => setSelectedNode(undefined), []);
+
   return (
     <Box height="calc(100vh - 60px)" width="100vw" position="relative">
 
@@ -803,7 +823,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       {/* Right Sidebar */}
       <RightSidebar
         selectedNode={selectedNode}
-        onDelete={() => setSelectedNode(undefined)}
+        onDelete={onDeleteNode}
         onProcessingTypeChange={handleProcessingNodeManagement}
         nodes={nodes}
         showContent={showContent}
@@ -817,7 +837,7 @@ const handleProcessingNodeManagement = (boardId: string, processingType: string)
       {/* Main Canvas */}
       <Box
         ml="280px" // Left sidebar width
-        mr={selectedNode ? "320px" : "0"} // Right sidebar width when open
+        mr={rightMargin} // Right sidebar width when open
         height="100%"
         transition="margin-right 0.3s ease"
       >

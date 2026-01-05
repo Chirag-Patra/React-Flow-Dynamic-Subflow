@@ -3,11 +3,16 @@ import React, { useState } from 'react';
 import {
   FormControl,
   FormLabel,
+  Portal,
   Input,
   Select,
   Switch,
   Textarea,
   FormHelperText,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
   NumberInput,
   NumberInputField,
   NumberInputStepper,
@@ -19,7 +24,9 @@ import {
   Text,
   Box,
 } from '@chakra-ui/react';
-import { EditIcon } from '@chakra-ui/icons';
+import { EditIcon, ChevronDownIcon } from '@chakra-ui/icons';
+
+
 import OrchConfigJsonEditor from './OrchConfigJsonEditor';
 import { DynamicField, FormConfig } from './dynamicFormTypes';
 import { evaluateCondition } from './formLogic';
@@ -102,7 +109,7 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
             onChange={(_, num) => handleChange(num || 1)}
             min={1}
           >
-            <NumberInputField 
+            <NumberInputField
               placeholder={placeholder}
               bg="white"
               borderColor="gray.200"
@@ -118,107 +125,155 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
           </NumberInput>
         );
 
+      // case 'select':
+      //   return (
+      //     <Select
+      //       value={value || ''}
+      //       onChange={(e) => handleChange(e.target.value)}
+      //       placeholder={placeholder}
+      //       variant="filled"
+      //       bg="white"
+      //       borderColor="gray.200"
+      //       _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+      //       _focus={{ borderColor: 'purple.300', shadow: 'md' }}
+      //       transition="all 0.2s"
+      //       fontSize="sm"
+      //     >
+      //       {renderSelectOptions()}
+      //     </Select>
+      //   );
+
       case 'select':
         return (
-          <Select
-            value={value || ''}
-            onChange={(e) => handleChange(e.target.value)}
-            placeholder={placeholder}
-            variant="filled"
-            bg="white"
-            borderColor="gray.200"
-            _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
-            _focus={{ borderColor: 'purple.300', shadow: 'md' }}
-            transition="all 0.2s"
-            fontSize="sm"
-          >
-            {renderSelectOptions()}
-          </Select>
+          <Menu matchWidth placement="bottom-start">
+            <MenuButton
+              as={Button}
+              rightIcon={<ChevronDownIcon />}
+              size="sm"
+              textAlign="left"
+              w="100%"
+              justifyContent="space-between"
+              variant="outline"
+              bg="white"
+              borderColor="gray.300"
+              _hover={{ borderColor: 'purple.400' }}
+              _expanded={{ borderColor: 'purple.500', boxShadow: 'outline' }}
+            >
+              {value
+                ? ApiService.formatOptionValue(value)
+                : placeholder || 'Select option'}
+            </MenuButton>
+
+            <Portal>
+              <MenuList
+                zIndex={2000}
+                maxH="220px"
+                overflowY="auto"
+                borderRadius="md"
+                boxShadow="xl"
+                py={1}
+              >
+                {renderSelectOptions().map((option) => (
+                  <MenuItem
+                    key={option.props.value}
+                    onClick={() => handleChange(option.props.value)}
+                    fontSize="sm"
+                    _hover={{ bg: 'purple.50' }}
+                    _focus={{ bg: 'purple.100' }}
+                  >
+                    {ApiService.formatOptionValue(option.props.value)}
+                  </MenuItem>
+                ))}
+              </MenuList>
+            </Portal>
+          </Menu>
+
         );
+
 
       case 'jsonorch':
         // Special handling for Orchestrator JSON configuration
         return (
-            <VStack spacing={3} align="stretch">
-              <HStack 
-                spacing={3} 
-                p={3} 
-                bg="#f4f5f7" 
-                borderRadius="md" 
-                border="1px solid" 
-                borderColor="gray.200"
-                _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+          <VStack spacing={3} align="stretch">
+            <HStack
+              spacing={3}
+              p={3}
+              bg="#f4f5f7"
+              borderRadius="md"
+              border="1px solid"
+              borderColor="gray.200"
+              _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+              transition="all 0.2s"
+            >
+              <Button
+                leftIcon={<EditIcon />}
+                colorScheme="purple"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsJsonEditorOpen(true)}
+                _hover={{ bg: 'purple.50', transform: 'translateY(-1px)' }}
                 transition="all 0.2s"
-              >
-                <Button
-                  leftIcon={<EditIcon />}
-                  colorScheme="purple"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsJsonEditorOpen(true)}
-                  _hover={{ bg: 'purple.50', transform: 'translateY(-1px)' }}
-                  transition="all 0.2s"
-                  fontSize="xs"
-                  fontWeight="medium"
-                >
-                  Open JSON Editor
-                </Button>
-                {value && (
-                  <Text 
-                    fontSize="xs" 
-                    color="green.600" 
-                    fontWeight="medium"
-                    bg="green.50"
-                    px={2}
-                    py={1}
-                    borderRadius="sm"
-                  >
-                    ✓ Configuration loaded
-                  </Text>
-                )}
-              </HStack>
-              <Textarea
-                value={typeof value === 'string' ? value : JSON.stringify(value || {}, null, 2)}
-                onChange={(e) => {
-                  try {
-                    const parsed = JSON.parse(e.target.value);
-                    handleChange(parsed);
-                  } catch {
-                    handleChange(e.target.value);
-                  }
-                }}
-                placeholder={placeholder || 'Enter JSON configuration or use the editor above'}
-                rows={rows || 6}
-                fontFamily="mono"
                 fontSize="xs"
-                variant="filled"
-                bg="white"
-                borderColor="gray.200"
-                _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
-                _focus={{ borderColor: 'purple.300', shadow: 'md' }}
-                transition="all 0.2s"
-              />
-              <OrchConfigJsonEditor
-                isOpen={isJsonEditorOpen}
-                onClose={(data) => {
-                  setIsJsonEditorOpen(false);
-                  if (data) {
-                    handleChange(data);
-                  }
-                }}
-                initialData={typeof value === 'string' ? 
-                  (() => {
-                    try {
-                      return JSON.parse(value);
-                    } catch {
-                      return {};
-                    }
-                  })() : 
-                  value || {}
+                fontWeight="medium"
+              >
+                Open JSON Editor
+              </Button>
+              {value && (
+                <Text
+                  fontSize="xs"
+                  color="green.600"
+                  fontWeight="medium"
+                  bg="green.50"
+                  px={2}
+                  py={1}
+                  borderRadius="sm"
+                >
+                  ✓ Configuration loaded
+                </Text>
+              )}
+            </HStack>
+            <Textarea
+              value={typeof value === 'string' ? value : JSON.stringify(value || {}, null, 2)}
+              onChange={(e) => {
+                try {
+                  const parsed = JSON.parse(e.target.value);
+                  handleChange(parsed);
+                } catch {
+                  handleChange(e.target.value);
                 }
-              />
-            </VStack>
-          );
+              }}
+              placeholder={placeholder || 'Enter JSON configuration or use the editor above'}
+              rows={rows || 6}
+              fontFamily="mono"
+              fontSize="xs"
+              variant="filled"
+              bg="white"
+              borderColor="gray.200"
+              _hover={{ borderColor: 'purple.200', shadow: 'sm' }}
+              _focus={{ borderColor: 'purple.300', shadow: 'md' }}
+              transition="all 0.2s"
+            />
+            <OrchConfigJsonEditor
+              isOpen={isJsonEditorOpen}
+              onClose={(data) => {
+                setIsJsonEditorOpen(false);
+                if (data) {
+                  handleChange(data);
+                }
+              }}
+              initialData={typeof value === 'string' ?
+                (() => {
+                  try {
+                    return JSON.parse(value);
+                  } catch {
+                    return {};
+                  }
+                })() :
+                value || {}
+              }
+            />
+          </VStack>
+        );
 
       case 'textarea':
         return (
@@ -263,15 +318,15 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
       borderRadius="md"
       border="1px solid"
       borderColor="gray.200"
-      _hover={{ 
-        borderColor: 'purple.200', 
+      _hover={{
+        borderColor: 'purple.200',
         shadow: 'sm',
         transform: 'translateY(-1px)'
       }}
       transition="all 0.2s"
       mb={3}
     >
-      <FormLabel 
+      <FormLabel
         mb={type === 'switch' ? 0 : 2}
         fontSize="sm"
         fontWeight="semibold"
@@ -286,8 +341,8 @@ const UniversalFormField: React.FC<UniversalFormFieldProps> = ({
       </FormLabel>
       {renderField()}
       {helperText && (
-        <FormHelperText 
-          fontSize="xs" 
+        <FormHelperText
+          fontSize="xs"
           color="gray.500"
           mt={2}
         >

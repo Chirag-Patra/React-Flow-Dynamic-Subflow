@@ -29,8 +29,8 @@ export default function Board({ type,
   return (
     <Box
       position="relative"
-      border={`2px solid ${borderColor}`}
-      borderRadius="8px"
+      border={`3px solid ${borderColor}`}
+      borderRadius="12px"
       height="100%"
       width="100%"
       bg={isDark ? "rgba(100, 150, 200, 0.15)" : "rgba(173, 216, 230, 0.3)"}

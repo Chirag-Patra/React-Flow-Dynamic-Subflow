@@ -187,9 +187,9 @@ export const RightSidebar = ({
     console.log('Saved Config:', config);
 
     // Determine which config key to use based on node type
-  const configKey = nodeData?.type === 'Job' ? 'jobConfig' : 
-                    nodeData?.type === 'lamda' ? 'etlConfig' : 
-                    nodeData?.type === 'ETLO' || nodeData?.type === 'etlo' ? 'etlConfig' : 
+  const configKey = nodeData?.type === 'Job' ? 'jobConfig' :
+                    nodeData?.type === 'lamda' ? 'etlConfig' :
+                    nodeData?.type === 'ETLO' || nodeData?.type === 'etlo' ? 'etlConfig' :
                     'etlConfig';
 
     // Update node data with configuration
@@ -527,9 +527,9 @@ export const RightSidebar = ({
           onClose={handleCloseWizard}
           onSave={handleSaveConfig}
           initialConfig={
-            nodeData.type === 'Job' ? nodeData.jobConfig : 
-            nodeData.type === "lamda" ? nodeData.etlConfig : 
-            nodeData.type === "ETLO" || nodeData.type === "etlo" ? nodeData.etlConfig : 
+            nodeData.type === 'Job' ? nodeData.jobConfig :
+            nodeData.type === "lamda" ? nodeData.etlConfig :
+            nodeData.type === "ETLO" || nodeData.type === "etlo" ? nodeData.etlConfig :
             {}
           }
           configKey={configKey}

@@ -24,6 +24,7 @@ export default function customEdge({
       <BaseEdge
         style={{
           stroke: "url(#customEdge)",
+          strokeWidth: 3,
         }}
         markerEnd={markerEnd}
         path={d}

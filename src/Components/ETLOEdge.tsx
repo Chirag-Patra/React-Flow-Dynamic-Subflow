@@ -1,5 +1,6 @@
 import { BaseEdge, EdgeProps, getSmoothStepPath } from "@xyflow/react";
 import React from "react";
+import { useDarkMode } from "../store";
 
 export default function ETLOEdge({
   sourceX,
@@ -10,6 +11,8 @@ export default function ETLOEdge({
   targetPosition,
   markerEnd,
 }: EdgeProps) {
+  const { isDark } = useDarkMode();
+
   const [d] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -19,12 +22,17 @@ export default function ETLOEdge({
     targetPosition,
   });
 
-  // ETLO color scheme matching the component
-  const colors = {
-    primary: "#48BB78",
-    secondary: "#68D391",
-    accent: "#9AE6B4",
-    glow: "rgba(72, 187, 120, 0.6)"
+  // Theme-aware color scheme
+  const colors = isDark ? {
+    primary: "#4299e1",      // Light blue for dark mode
+    secondary: "#63b3ed",
+    accent: "#90cdf4",
+    glow: "rgba(66, 153, 225, 0.6)"
+  } : {
+    primary: "#3182ce",      // Dark blue for light mode
+    secondary: "#2c5aa0",
+    accent: "#2b6cb0",
+    glow: "rgba(49, 130, 206, 0.6)"
   };
 
   return (
@@ -33,19 +41,19 @@ export default function ETLOEdge({
       <BaseEdge
         style={{
           stroke: colors.glow,
-          strokeWidth: 3,
+          strokeWidth: 5,
           strokeDasharray: "12,6",
           filter: "blur(3px)",
           opacity: 0.4,
         }}
         path={d}
       />
-      
+
       {/* Main glass edge with gradient */}
       <BaseEdge
         style={{
           stroke: `url(#etloGradient)`,
-          strokeWidth: 1,
+          strokeWidth: 3,
           strokeDasharray: "8,4",
           filter: "drop-shadow(0 0 6px rgba(72, 187, 120, 0.5))",
           strokeLinecap: "round",
@@ -53,7 +61,7 @@ export default function ETLOEdge({
         markerEnd={markerEnd}
         path={d}
       />
-      
+
       {/* Animated moving orb with glass effect */}
       <circle
         r="5"
@@ -64,11 +72,11 @@ export default function ETLOEdge({
       >
         <animateMotion dur="6s" repeatCount={"indefinite"} path={d} />
       </circle>
-      
+
       {/* Pulsing glass ring effect */}
-      <circle 
-        fill="transparent" 
-        stroke={colors.accent} 
+      <circle
+        fill="transparent"
+        stroke={colors.accent}
         strokeWidth={1.5}
         opacity={0.8}
       >
@@ -100,13 +108,13 @@ export default function ETLOEdge({
           <stop offset="50%" stopColor={colors.secondary} stopOpacity="1" />
           <stop offset="100%" stopColor={colors.accent} stopOpacity="0.8" />
         </linearGradient>
-        
+
         <radialGradient id="etloOrbGradient" cx="30%" cy="30%">
           <stop offset="0%" stopColor="rgba(255, 255, 255, 0.8)" />
           <stop offset="40%" stopColor={colors.secondary} stopOpacity="0.9" />
           <stop offset="100%" stopColor={colors.primary} stopOpacity="1" />
         </radialGradient>
-        
+
         {/* Custom glass arrow marker */}
         <marker
           id="etloArrowMarker"
@@ -141,7 +149,7 @@ export default function ETLOEdge({
             stroke="none"
           />
         </marker>
-        
+
         {/* Arrow gradient */}
         <linearGradient id="etloArrowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
           <stop offset="0%" stopColor={colors.accent} stopOpacity="0.8" />

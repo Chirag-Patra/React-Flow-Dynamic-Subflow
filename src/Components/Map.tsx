@@ -37,8 +37,8 @@ export default function Map({
   return (
     <Box
       position="relative"
-      border={`2px solid ${borderColor}`}
-      borderRadius="8px"
+      border={`3px solid ${borderColor}`}
+      borderRadius="12px"
       height="100px"
       width="200px"
       bg={dropAreaBg}

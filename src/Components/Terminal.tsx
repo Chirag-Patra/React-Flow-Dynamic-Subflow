@@ -6,12 +6,12 @@ export default function Terminal(props: HandleProps) {
   return (
     <Handle
       className={css({
-        width: 8,
-        height: 8,
+        width: 12,
+        height: 12,
         background: "white",
-        border: "1px solid black",
+        border: "2px solid black",
         borderRadius: "50%",
-        boxShadow: "0 0 2px rgba(0,0,0,0.3)",
+        boxShadow: "0 0 4px rgba(0,0,0,0.4)",
         zIndex: 10,
         pointerEvents: "auto",
       })}
