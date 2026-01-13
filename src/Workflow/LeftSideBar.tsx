@@ -66,14 +66,14 @@ export const LeftSidebar = ({ onDragStart }: LeftSidebarProps) => {
       <Tabs variant="line" colorScheme="blue" h="100%" display="flex" flexDirection="column">
         {/* Tab Buttons */}
         <TabList borderBottomColor="gray.700">
-          <Tab
+          {/* <Tab
             fontWeight="semibold"
             _selected={{ color: "white", borderColor: "blue.400" }}
             _hover={{ bg: "whiteAlpha.100" }}
             flex="1"
           >
             Framework
-          </Tab>
+          </Tab> */}
           <Tab
             fontWeight="semibold"
             _selected={{ color: "white", borderColor: "blue.400" }}
@@ -86,8 +86,8 @@ export const LeftSidebar = ({ onDragStart }: LeftSidebarProps) => {
 
         {/* Tab Content */}
         <TabPanels flex="1" overflowY="auto">
-          {/* Components Panel */}
-          <TabPanel p={4}>
+
+          {/* <TabPanel p={4}>
             <VStack spacing={2} align="stretch">
               {PARENT.map((component) =>
                 component ? (
@@ -99,7 +99,7 @@ export const LeftSidebar = ({ onDragStart }: LeftSidebarProps) => {
                 ) : null
               )}
             </VStack>
-          </TabPanel>
+          </TabPanel> */}
 
 
           {/* Framework Panel */}

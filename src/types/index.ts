@@ -2,6 +2,7 @@ export enum MajorComponents {
 
   Board = "Job",
   ETLO = "ETLO",
+  BatchETLO = "BatchETLO",
   Map = "Map",
   PlaceholderNode = "PlaceholderNode",
   Js = "Js",

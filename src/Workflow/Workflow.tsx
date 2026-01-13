@@ -35,6 +35,7 @@ import { MajorComponentsState, MajorComponents } from "../types";
 import Board from "../Components/Board";
 import Map from "../Components/Map";
 import ETLO from "../Components/ETLO";
+import BatchETLO from "../Components/BatchETLO";
 import { isPointInBox, zoomSelector } from "../utils";
 import useKeyBindings from "../hooks/useKeyBindings";
 import { useData, useUpdateData } from "../api";
@@ -51,6 +52,7 @@ const nodeTypes = {
   MajorComponent: MajorComponent,
   Job: Board,
   ETLO: ETLO,
+  BatchETLO: BatchETLO,
   Map: Map,
   PlaceholderNode: PlaceholderNode,
 };
@@ -150,9 +152,9 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      // Check if the source node is an ETLO to determine edge type
+      // Check if the source node is an ETLO or BatchETLO to determine edge type
       const sourceNode = nodeMap[connection.source];
-      const isETLOConnection = sourceNode?.type === "ETLO";
+      const isETLOConnection = sourceNode?.type === "ETLO" || sourceNode?.type === "BatchETLO";
 
       const edge = {
         ...connection,
@@ -162,7 +164,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
           type: MarkerType.ArrowClosed,
           width:  20,
           height: 20,
-          color: isETLOConnection ? "#2c5aa0" : "#516fb4ff", // Green glass for ETLO, blue for others
+          color: isETLOConnection ? "#2c5aa0" : "#516fb4ff", // Green glass for ETLO/BatchETLO, blue for others
         },
       };
       addEdge(edge);
@@ -254,7 +256,8 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
     const jobNodes = nodes.filter(n => n.type === "Job");
     const mapNodes = nodes.filter(n => n.type === "Map");
     const etloNodes = nodes.filter(n => n.type === "ETLO");
-    return { jobNodes, mapNodes, etloNodes };
+    const batchETLONodes = nodes.filter(n => n.type === "BatchETLO");
+    return { jobNodes, mapNodes, etloNodes, batchETLONodes };
   }, [nodes]);
 
   const onDrop: React.DragEventHandler<HTMLDivElement> = useCallback((event) => {
