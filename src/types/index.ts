@@ -3,6 +3,7 @@ export enum MajorComponents {
   Board = "Job",
   ETLO = "ETLO",
   Map = "Map",
+  PlaceholderNode = "PlaceholderNode",
   Js = "Js",
   Aws = "Aws",
   Db = "Db",

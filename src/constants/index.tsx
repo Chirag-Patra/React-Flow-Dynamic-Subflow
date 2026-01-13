@@ -8,7 +8,13 @@ import { Box } from "@chakra-ui/react";
 export const initialEdges: Edge[] = [];
 
 export const initialNodes: Node[] = [
-
+  {
+    id: "placeholder-start",
+    type: "PlaceholderNode",
+    position: { x: 200, y: 200 },
+    data: {},
+    style: { height: 150, width: 200 },
+  },
 ];
 
 export const COMPONENTS = [
@@ -52,6 +58,27 @@ export const COMPONENTS = [
 
 
 export const PARENT = [
+  {
+    icon: (
+      <Box
+        height="30px"
+        width="30px"
+        borderRadius="4px"
+        border="2px dashed #4A5568"
+        bg="rgba(99, 179, 237, 0.1)"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        fontSize="16px"
+        fontWeight="bold"
+        color="#63B3ED"
+      >
+        +
+      </Box>
+    ),
+    type: MajorComponents.PlaceholderNode,
+    label: "Placeholder",
+  },
   {
     icon: (
       <Box

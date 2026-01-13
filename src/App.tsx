@@ -6,6 +6,7 @@ import "./index.css";
 import { ReactFlowProvider, Node, Edge } from "@xyflow/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
+import { initialNodes, initialEdges } from "./constants";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,8 +20,8 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
+  const [nodes, setNodes] = useState<Node[]>(initialNodes);
+  const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [showLanding, setShowLanding] = useState(true);
 
   return (
@@ -48,8 +49,8 @@ function App() {
                   setEdges(flow.edges || []);
                 }}
                 onClear={() => {
-                  setNodes([]);
-                  setEdges([]);
+                  setNodes(initialNodes);
+                  setEdges(initialEdges);
                 }}
               />
 

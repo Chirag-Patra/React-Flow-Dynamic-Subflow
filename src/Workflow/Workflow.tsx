@@ -44,6 +44,7 @@ import { RightSidebar } from "./RightSideBar";
 import { useDarkMode } from "../store";
 import { Sun, Moon } from "react-bootstrap-icons";
 import { BottomStatusBar } from "../Workflow/BottomStatusBar";
+import PlaceholderNode from "../Components/PlaceholderNode";
 
 // Memoize node and edge types to prevent re-creation on every render
 const nodeTypes = {
@@ -51,6 +52,7 @@ const nodeTypes = {
   Job: Board,
   ETLO: ETLO,
   Map: Map,
+  PlaceholderNode: PlaceholderNode,
 };
 
 const edgeTypes = {
@@ -284,6 +286,19 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
       position,
       data: {},
       style: { height: 200, width: 200 },
+    };
+    addNode(node);
+    return; // Exit early
+  }
+
+  // PlaceholderNode can be dropped anywhere on the background
+  if (type === MajorComponents.PlaceholderNode) {
+    const node: Node = {
+      id: uuid(),
+      type: "PlaceholderNode",
+      position,
+      data: {},
+      style: { height: 150, width: 200 },
     };
     addNode(node);
     return; // Exit early
