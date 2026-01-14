@@ -1,9 +1,7 @@
-// RightSidebar.tsx - Updated version
+// RightSidebar.tsx - Compact version with color-aligned JSON
 import {
   Box,
   Heading,
-  Input,
-  InputGroup,
   IconButton,
   Flex,
   Popover,
@@ -21,9 +19,17 @@ import {
   Divider,
   Badge,
   Text,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
+  Code,
+  Tooltip,
+  HStack,
 } from "@chakra-ui/react";
-import { DeleteIcon } from "@chakra-ui/icons";
-import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
+import { DeleteIcon, EditIcon, ViewIcon, CopyIcon } from "@chakra-ui/icons";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Node, useReactFlow, Edge, MarkerType } from "@xyflow/react";
 import { useDarkMode } from "../store";
 import UniversalWizard from "../Components/Configuration/Universal/UniversalWizard";
@@ -57,13 +63,13 @@ export const RightSidebar = ({
   } = useReactFlow();
 
   // State management
-  const [value, setValue] = useState("");
   const [selectedTargetIds, setSelectedTargetIds] = useState<string[]>([]);
-  const [width, setWidth] = useState(318);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [currentWizardType, setCurrentWizardType] = useState<string | null>(null);
   const [isMapWizardOpen, setIsMapWizardOpen] = useState(false);
-  const isDragging = useRef(false);
+
+  // Fixed compact width
+  const width = 320;
 
   // Memoized computed values
   const nodeData = useMemo(() => {
@@ -77,7 +83,7 @@ export const RightSidebar = ({
       etlConfig: (selectedNode.data?.etlConfig || {}) as ComponentConfig,
       jobConfig: (selectedNode.data?.jobConfig || {}) as ComponentConfig,
       componentType: selectedNode.data?.componentType || "",
-      config: (selectedNode.data?.config || {}) as ComponentConfig, // Universal config storage
+      config: (selectedNode.data?.config || {}) as ComponentConfig,
     };
   }, [selectedNode]);
 
@@ -86,8 +92,6 @@ export const RightSidebar = ({
     if (!nodeData?.type) return null;
     return getConfigKeyForComponent(nodeData.type as string);
   }, [nodeData?.type]);
-
-
 
   // Determine if wizard button should be shown
   const shouldShowWizardButton = useMemo(() => {
@@ -99,14 +103,84 @@ export const RightSidebar = ({
     return getNodes().filter((n) => n.id !== selectedNode.id);
   }, [selectedNode, nodes, getNodes]);
 
-  // Sync local state with selected node
-  useEffect(() => {
-    if (nodeData) {
-      setValue(typeof nodeData.value === 'number' ? String(nodeData.value) : nodeData.value);
-    } else {
-      setValue("");
+  // Get the current configuration
+  const currentConfig = useMemo(() => {
+    if (!nodeData) return null;
+
+    const isJobNode = nodeData.type === 'Job';
+    const isMapNode = nodeData.type === 'Map';
+
+    if (isJobNode && nodeData.jobConfig && Object.keys(nodeData.jobConfig).length > 0) {
+      return nodeData.jobConfig;
+    } else if (isMapNode && nodeData.config?.mapSteps && nodeData.config.mapSteps.length > 0) {
+      return { mapSteps: nodeData.config.mapSteps };
+    } else if (nodeData.etlConfig && Object.keys(nodeData.etlConfig).length > 0) {
+      return nodeData.etlConfig;
+    } else if (nodeData.config && Object.keys(nodeData.config).length > 0) {
+      return nodeData.config;
     }
+
+    return null;
   }, [nodeData]);
+
+  // Format JSON with syntax highlighting using React nodes
+  const formatJSON = useCallback((obj: any) => {
+    const colorize = (value: any, key?: string): string => {
+      if (value === null || value === undefined) {
+        return 'null';
+      }
+      if (typeof value === 'string') {
+        return `"${value}"`;
+      }
+      if (typeof value === 'number' || typeof value === 'boolean') {
+        return String(value);
+      }
+      return JSON.stringify(value);
+    };
+
+    const lines: string[] = [];
+    const processObject = (obj: any, indent: number = 0) => {
+      const spaces = '  '.repeat(indent);
+
+      if (Array.isArray(obj)) {
+        lines.push(spaces + '[');
+        obj.forEach((item, index) => {
+          if (typeof item === 'object' && item !== null) {
+            processObject(item, indent + 1);
+          } else {
+            lines.push(spaces + '  ' + colorize(item) + (index < obj.length - 1 ? ',' : ''));
+          }
+        });
+        lines.push(spaces + ']' + (indent > 0 ? ',' : ''));
+      } else if (typeof obj === 'object' && obj !== null) {
+        lines.push(spaces + '{');
+        const entries = Object.entries(obj);
+        entries.forEach(([key, value], index) => {
+          if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            lines.push(spaces + '  "' + key + '": {');
+            processObject(value, indent + 2);
+            lines.push(spaces + '  }' + (index < entries.length - 1 ? ',' : ''));
+          } else if (Array.isArray(value)) {
+            lines.push(spaces + '  "' + key + '": [');
+            value.forEach((item, idx) => {
+              if (typeof item === 'object' && item !== null) {
+                processObject(item, indent + 2);
+              } else {
+                lines.push(spaces + '    ' + colorize(item) + (idx < value.length - 1 ? ',' : ''));
+              }
+            });
+            lines.push(spaces + '  ]' + (index < entries.length - 1 ? ',' : ''));
+          } else {
+            lines.push(spaces + '  "' + key + '": ' + colorize(value, key) + (index < entries.length - 1 ? ',' : ''));
+          }
+        });
+        lines.push(spaces + '}');
+      }
+    };
+
+    processObject(obj);
+    return lines.join('\n');
+  }, []);
 
   // Sync connections
   useEffect(() => {
@@ -119,28 +193,6 @@ export const RightSidebar = ({
     const initialTargets = connectedEdges.map((e) => e.target);
     setSelectedTargetIds(initialTargets);
   }, [selectedNode?.id, getEdges]);
-
-  // Mouse event handlers for resizing
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging.current) return;
-      const newWidth = window.innerWidth - e.clientX;
-      if (newWidth > 317 && newWidth < 600) {
-        setWidth(newWidth);
-      }
-    };
-
-    const handleMouseUp = () => {
-      isDragging.current = false;
-    };
-
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, []);
 
   // Event handlers
   const handleOpenWizard = useCallback(() => {
@@ -166,9 +218,6 @@ export const RightSidebar = ({
   const handleSaveMapSteps = useCallback((steps: MapStepConfig[]) => {
     if (!selectedNode) return;
 
-    console.log('Saved Map Steps:', steps);
-
-    // Update node data with map steps
     const updatedData = {
       ...selectedNode.data,
       config: {
@@ -184,26 +233,21 @@ export const RightSidebar = ({
   const handleSaveConfig = useCallback((config: any) => {
     if (!selectedNode) return;
 
-    console.log('Saved Config:', config);
+    const configKey = nodeData?.type === 'Job' ? 'jobConfig' :
+                      nodeData?.type === 'lamda' ? 'etlConfig' :
+                      nodeData?.type === 'ETLO' || nodeData?.type === 'etlo' ? 'etlConfig' :
+                      'etlConfig';
 
-    // Determine which config key to use based on node type
-  const configKey = nodeData?.type === 'Job' ? 'jobConfig' :
-                    nodeData?.type === 'lamda' ? 'etlConfig' :
-                    nodeData?.type === 'ETLO' || nodeData?.type === 'etlo' ? 'etlConfig' :
-                    'etlConfig';
-
-    // Update node data with configuration
     const updatedData = {
       ...selectedNode.data,
       [configKey]: { ...config },
-      config: { ...config }, // Also store in universal config
+      config: { ...config },
       processingType: config.processingType || selectedNode.data?.processingType,
       componentType: config.componentType || selectedNode.data?.componentType,
     };
 
     updateNodeData(selectedNode.id, updatedData);
 
-    // Call the onProcessingTypeChange callback for Job nodes
     if (nodeData?.type === 'Job' && config.processingType && onProcessingTypeChange) {
       onProcessingTypeChange(selectedNode.id, config.processingType);
     }
@@ -254,6 +298,12 @@ export const RightSidebar = ({
     setSelectedTargetIds(newSelectedIds);
   }, [selectedNode?.id, selectedTargetIds, addEdges, getEdges, setEdges]);
 
+  const handleCopyId = useCallback(() => {
+    if (nodeData?.id) {
+      navigator.clipboard.writeText(nodeData.id);
+    }
+  }, [nodeData?.id]);
+
   // Early return if no node is selected
   if (!selectedNode || !nodeData) {
     return null;
@@ -268,46 +318,35 @@ export const RightSidebar = ({
     let buttonText = 'Configure';
     let colorScheme = 'blue';
     let isConfigured = false;
-    let configSummary = '';
 
     if (isJobNode) {
       if (config?.processingType) {
-        buttonText = `Processing Type: ${config.processingType}`;
+        buttonText = 'Configured';
         isConfigured = true;
-        configSummary = config.processingType;
       } else {
         buttonText = 'Configure Job';
       }
       colorScheme = 'blue';
     } else if (isMapNode) {
-      // Map nodes - check for map steps
       const mapSteps = nodeData.config?.mapSteps;
       if (mapSteps && mapSteps.length > 0) {
-        buttonText = `${mapSteps.length} ETL Step${mapSteps.length > 1 ? 's' : ''}`;
+        buttonText = `${mapSteps.length} Step${mapSteps.length > 1 ? 's' : ''}`;
         isConfigured = true;
-        configSummary = `${mapSteps.length} steps`;
       } else {
-        buttonText = 'Configure Map Steps';
+        buttonText = 'Configure Map';
       }
       colorScheme = 'purple';
     } else {
-      // Other ETL nodes
-      if (config?.etl_stp_job_nm) {
-        const componentType = config?.componentType || nodeData.type;
-        buttonText = `${componentType}: ${config.etl_stp_job_nm}`;
+      if (config?.etl_stp_job_nm || config?.componentType) {
+        buttonText = 'Configured';
         isConfigured = true;
-        configSummary = config.etl_stp_job_nm;
-      } else if (config?.componentType) {
-        buttonText = `Configure ${config.componentType}`;
-        isConfigured = true;
-        configSummary = config.componentType;
       } else {
-        buttonText = `Configure ${nodeData.type}`;
+        buttonText = 'Configure';
       }
       colorScheme = 'green';
     }
 
-    return { buttonText, colorScheme, isConfigured, configSummary };
+    return { buttonText, colorScheme, isConfigured };
   };
 
   const wizardButtonConfig = getWizardButtonConfig();
@@ -321,204 +360,310 @@ export const RightSidebar = ({
       width={`${width}px`}
       bg="#2D3748"
       color="whiteAlpha.900"
-      p={4}
       boxShadow="lg"
       zIndex={1000}
-      overflowY="auto"
-      overflowX="hidden"
       borderLeft="1px solid"
       borderColor="gray.600"
-      sx={{
-        "&::-webkit-scrollbar": {
-          width: "8px",
-        },
-        "&::-webkit-scrollbar-track": {
-          background: "transparent",
-        },
-        "&::-webkit-scrollbar-thumb": {
-          background: "gray.600",
-          borderRadius: "4px",
-        },
-        "&::-webkit-scrollbar-thumb:hover": {
-          background: "gray.500",
-        },
-      }}
+      display="flex"
+      flexDirection="column"
     >
-      {/* Resizable Handle */}
+      {/* Header - Fixed */}
       <Box
-        position="absolute"
-        left="-5px"
-        top="0"
-        height="100%"
-        width="8px"
-        cursor="col-resize"
-        onMouseDown={() => {
-          isDragging.current = true;
-        }}
-        zIndex={1001}
-        _after={{
-          content: '""',
-          position: "absolute",
-          left: "0",
-          top: "0",
-          height: "100%",
-          width: "2px",
-          bg: "gray.600",
-        }}
-      />
-
-      <VStack spacing={4} align="stretch">
-        {/* Header */}
-        <Flex justify="space-between" align="center">
-          <Heading fontSize="sm" fontWeight="semibold" color="white">
+        p={3}
+        borderBottom="1px solid"
+        borderColor="gray.600"
+      >
+        <Flex justify="space-between" align="center" mb={2}>
+          <Heading fontSize="md" fontWeight="bold" color="white">
             {nodeData.type?.toUpperCase()}
           </Heading>
-          <IconButton
-            icon={<DeleteIcon />}
-            aria-label="Delete node"
-            size="xs"
-            colorScheme="red"
-            variant="ghost"
-            onClick={handleDelete}
-            color="whiteAlpha.900"
-            _hover={{ bg: "whiteAlpha.200" }}
-          />
+          <Tooltip label="Delete node" placement="left">
+            <IconButton
+              icon={<DeleteIcon />}
+              aria-label="Delete node"
+              size="xs"
+              colorScheme="red"
+              variant="ghost"
+              onClick={handleDelete}
+              _hover={{ bg: "whiteAlpha.200" }}
+            />
+          </Tooltip>
         </Flex>
 
-        {/* Node Value Input */}
-        <InputGroup size="sm">
-          <Input
-            value={value}
-            placeholder={`Enter ${nodeData.type} name/value`}
-            onChange={(e) => {
-              const newValue = e.target.value;
-              setValue(newValue);
-              updateNodeData(selectedNode.id, { value: newValue });
-            }}
-            bg="gray.700"
-            border="1px solid"
-            borderColor="gray.600"
-            color="white"
-            _placeholder={{ color: "whiteAlpha.500" }}
-            _hover={{ borderColor: "gray.500" }}
-            _focus={{ borderColor: "blue.400", boxShadow: "0 0 0 1px #3182ce" }}
-          />
-        </InputGroup>
-
-        {/* Connections */}
-        <Popover placement="bottom-start">
-          <PopoverTrigger>
-            <Button
-              size="sm"
-              variant="outline"
-              width="100%"
-              bg="gray.700"
-              color="white"
-              borderColor="gray.600"
-              _hover={{ bg: "gray.600" }}
-              _active={{ bg: "gray.500" }}
+        {/* Node ID - Properly Aligned */}
+        <Flex
+          align="center"
+          justify="space-between"
+          bg="gray.700"
+          px={2}
+          py={1.5}
+          borderRadius="md"
+          border="1px solid"
+          borderColor="gray.600"
+        >
+          <HStack spacing={2} flex="1" overflow="hidden">
+            <Text fontSize="xx-small" color="whiteAlpha.600" fontWeight="medium" flexShrink={0}>
+              ID:
+            </Text>
+            <Text
+              fontSize="xx-small"
+              color="whiteAlpha.800"
+              fontFamily="monospace"
+              isTruncated
+              title={nodeData.id}
             >
-              {selectedTargetIds.length > 0
-                ? `Connected to ${selectedTargetIds.length} node(s)`
-                : "Connect to node(s)..."}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent zIndex={10} bg="gray.700" borderColor="gray.600">
-            <PopoverArrow bg="gray.700" />
-            <PopoverCloseButton color="whiteAlpha.900" />
-            <PopoverHeader color="white" borderColor="gray.600">
-              Select connections
-            </PopoverHeader>
-            <PopoverBody>
-              <CheckboxGroup
-                value={selectedTargetIds}
-                onChange={(values) => handleCheckboxChange(values as string[])}
+              {nodeData.id}
+            </Text>
+          </HStack>
+          <Tooltip label="Copy ID" placement="left">
+            <IconButton
+              icon={<CopyIcon />}
+              aria-label="Copy ID"
+              size="xs"
+              variant="ghost"
+              onClick={handleCopyId}
+              minW="auto"
+              h="auto"
+              p={1}
+              _hover={{ bg: "whiteAlpha.200" }}
+            />
+          </Tooltip>
+        </Flex>
+      </Box>
+
+      {/* Scrollable Content */}
+      <Box
+        flex="1"
+        overflowY="auto"
+        overflowX="hidden"
+        px={3}
+        py={3}
+        sx={{
+          "&::-webkit-scrollbar": {
+            width: "6px",
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            background: "gray.600",
+            borderRadius: "3px",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            background: "gray.500",
+          },
+        }}
+      >
+        <VStack spacing={3} align="stretch">
+          {/* Connections */}
+          <Box>
+            <Text fontSize="xs" mb={1} color="whiteAlpha.700" fontWeight="medium">
+              Connections
+            </Text>
+            <Popover placement="left-start">
+              <PopoverTrigger>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  width="100%"
+                  bg="gray.700"
+                  color="white"
+                  borderColor="gray.600"
+                  fontSize="xs"
+                  _hover={{ bg: "gray.600" }}
+                  _active={{ bg: "gray.500" }}
+                >
+                  {selectedTargetIds.length > 0
+                    ? `${selectedTargetIds.length} Connected`
+                    : "No Connections"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent zIndex={10} bg="gray.700" borderColor="gray.600" width="250px">
+                <PopoverArrow bg="gray.700" />
+                <PopoverCloseButton color="whiteAlpha.900" />
+                <PopoverHeader color="white" borderColor="gray.600" fontSize="sm">
+                  Select Connections
+                </PopoverHeader>
+                <PopoverBody maxH="300px" overflowY="auto">
+                  <CheckboxGroup
+                    value={selectedTargetIds}
+                    onChange={(values) => handleCheckboxChange(values as string[])}
+                  >
+                    <Stack spacing={2}>
+                      {allNodes.map((n) => (
+                        <Checkbox
+                          key={n.id}
+                          value={n.id}
+                          colorScheme="blue"
+                          size="sm"
+                          sx={{
+                            "& .chakra-checkbox__control": {
+                              bg: "gray.600",
+                              borderColor: "gray.500",
+                            },
+                            "& .chakra-checkbox__label": {
+                              color: "white",
+                              fontSize: "xs",
+                            },
+                          }}
+                        >
+                          {String(n.data?.type || n.type)}
+                        </Checkbox>
+                      ))}
+                    </Stack>
+                  </CheckboxGroup>
+                </PopoverBody>
+              </PopoverContent>
+            </Popover>
+          </Box>
+
+          <Divider borderColor="gray.600" />
+
+          {/* Configuration Section */}
+          <Box>
+            <Text fontSize="xs" mb={2} color="whiteAlpha.700" fontWeight="medium">
+              Configuration
+            </Text>
+
+            {nodeData.type === 'Map' ? (
+              <Button
+                leftIcon={wizardButtonConfig.isConfigured ? <ViewIcon /> : <EditIcon />}
+                colorScheme={wizardButtonConfig.colorScheme}
+                variant={wizardButtonConfig.isConfigured ? "solid" : "outline"}
+                size="sm"
+                width="100%"
+                onClick={handleOpenMapWizard}
+                fontSize="xs"
               >
-                <Stack spacing={2}>
-                  {allNodes.map((n) => (
-                    <Checkbox
-                      key={n.id}
-                      value={n.id}
-                      colorScheme="blue"
-                      sx={{
-                        "& .chakra-checkbox__control": {
-                          bg: "gray.600",
-                          borderColor: "gray.500",
-                        },
-                        "& .chakra-checkbox__label": {
-                          color: "white",
-                        },
-                      }}
+                {wizardButtonConfig.buttonText}
+              </Button>
+            ) : shouldShowWizardButton && configKey ? (
+              <Button
+                leftIcon={wizardButtonConfig.isConfigured ? <ViewIcon /> : <EditIcon />}
+                colorScheme={wizardButtonConfig.colorScheme}
+                variant={wizardButtonConfig.isConfigured ? "solid" : "outline"}
+                size="sm"
+                width="100%"
+                onClick={handleOpenWizard}
+                fontSize="xs"
+              >
+                {wizardButtonConfig.buttonText}
+              </Button>
+            ) : (
+              <Text fontSize="xs" color="whiteAlpha.600" textAlign="center">
+                No configuration available
+              </Text>
+            )}
+          </Box>
+
+          {/* Configuration Preview */}
+          {currentConfig && (
+            <Box>
+              <Divider borderColor="gray.600" mb={2} />
+              <Accordion allowToggle defaultIndex={[0]}>
+                <AccordionItem border="none">
+                  <AccordionButton
+                    bg="gray.700"
+                    _hover={{ bg: "gray.600" }}
+                    borderRadius="md"
+                    px={3}
+                    py={2}
+                  >
+                    <Box flex="1" textAlign="left">
+                      <Flex align="center" gap={2}>
+                        <Badge colorScheme="green" fontSize="xx-small">
+                          Configured
+                        </Badge>
+                        <Text fontSize="xs" color="whiteAlpha.700">
+                          View Details
+                        </Text>
+                      </Flex>
+                    </Box>
+                    <AccordionIcon />
+                  </AccordionButton>
+                  <AccordionPanel
+                    pb={2}
+                    px={0}
+                    pt={2}
+                    maxH="400px"
+                    overflowY="auto"
+                    sx={{
+                      "&::-webkit-scrollbar": {
+                        width: "4px",
+                      },
+                      "&::-webkit-scrollbar-thumb": {
+                        background: "gray.600",
+                        borderRadius: "2px",
+                      },
+                    }}
+                  >
+                    <Box
+                      bg="gray.800"
+                      p={2}
+                      borderRadius="md"
+                      border="1px solid"
+                      borderColor="gray.600"
                     >
-                      {String(n.data?.type || n.type).toUpperCase()} - {n.id}
-                    </Checkbox>
-                  ))}
-                </Stack>
-              </CheckboxGroup>
-            </PopoverBody>
-          </PopoverContent>
-        </Popover>
-
-        {/* Configuration Section */}
-        <Divider borderColor="gray.700" />
-        <Box>
-          {nodeData.type === 'Map' ? (
-            // Map Configuration Button
-            <Button
-              colorScheme={wizardButtonConfig.colorScheme}
-              variant={wizardButtonConfig.isConfigured ? "solid" : "outline"}
-              size="sm"
-              width="100%"
-              onClick={handleOpenMapWizard}
-              bg={wizardButtonConfig.isConfigured ? `${wizardButtonConfig.colorScheme}.500` : "transparent"}
-              color="white"
-              borderColor={`${wizardButtonConfig.colorScheme}.400`}
-              _hover={{
-                bg: wizardButtonConfig.isConfigured
-                  ? `${wizardButtonConfig.colorScheme}.600`
-                  : "whiteAlpha.100"
-              }}
-            >
-              {wizardButtonConfig.buttonText}
-            </Button>
-          ) : shouldShowWizardButton && configKey ? (
-            // Universal Configuration Button for other components
-            <Button
-              colorScheme={wizardButtonConfig.colorScheme}
-              variant={wizardButtonConfig.isConfigured ? "solid" : "outline"}
-              size="sm"
-              width="100%"
-              onClick={handleOpenWizard}
-              bg={wizardButtonConfig.isConfigured ? `${wizardButtonConfig.colorScheme}.500` : "transparent"}
-              color="white"
-              borderColor={`${wizardButtonConfig.colorScheme}.400`}
-              _hover={{
-                bg: wizardButtonConfig.isConfigured
-                  ? `${wizardButtonConfig.colorScheme}.600`
-                  : "whiteAlpha.100"
-              }}
-            >
-              {wizardButtonConfig.buttonText}
-            </Button>
-          ) : null}
-
-          {/* Configuration Status Badge */}
-          {wizardButtonConfig.isConfigured && (
-            <Flex mt={2} align="center" justify="center">
-              <Badge colorScheme="green" fontSize="xs">
-                Configured
-              </Badge>
-            </Flex>
+                      <Code
+                        display="block"
+                        whiteSpace="pre"
+                        fontSize="xs"
+                        bg="transparent"
+                        color="whiteAlpha.800"
+                        p={0}
+                        overflowX="auto"
+                        sx={{
+                          "& .chakra-code": {
+                            bg: "transparent",
+                          }
+                        }}
+                      >
+                        {formatJSON(currentConfig)}
+                      </Code>
+                    </Box>
+                  </AccordionPanel>
+                </AccordionItem>
+              </Accordion>
+            </Box>
           )}
 
           {/* Component Type Info */}
           {nodeData.componentType && (
-            <Text mt={1} fontSize="xs" color="whiteAlpha.600" textAlign="center">
-              Type: {nodeData.componentType}
-            </Text>
+            <Box
+              bg="gray.700"
+              p={2}
+              borderRadius="md"
+              border="1px solid"
+              borderColor="gray.600"
+            >
+              <Text fontSize="xx-small" color="whiteAlpha.600" fontWeight="medium">
+                Component Type
+              </Text>
+              <Text fontSize="xs" color="white" mt={1}>
+                {nodeData.componentType}
+              </Text>
+            </Box>
           )}
-        </Box>
-      </VStack>
+
+          {/* Processing Type Info */}
+          {nodeData.processingType && (
+            <Box
+              bg="purple.900"
+              p={2}
+              borderRadius="md"
+              border="1px solid"
+              borderColor="purple.700"
+            >
+              <Text fontSize="xx-small" color="purple.200" fontWeight="medium">
+                Processing Type
+              </Text>
+              <Text fontSize="xs" color="white" mt={1}>
+                {nodeData.processingType.replace('_', ' ').toUpperCase()}
+              </Text>
+            </Box>
+          )}
+        </VStack>
+      </Box>
 
       {/* Universal Wizard Modal */}
       {configKey && (

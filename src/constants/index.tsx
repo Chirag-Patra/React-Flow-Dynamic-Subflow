@@ -196,10 +196,11 @@ export interface PlaceholderConfig {
 export const PLACEHOLDER_CONFIG: Partial<Record<MajorComponents, PlaceholderConfig>> = {
   // BatchETLO creates 2 placeholders: one right, one below
   [MajorComponents.BatchETLO]: {
-    count: 2,
+    count: 3,
     positions: [
       { x: 250, y: 0 },   // Right
-      { x: 0, y: 250 },   // Below
+      { x: 0, y: -250 },
+      { x: -250, y: 0 },   // Left
     ],
   },
 
@@ -277,6 +278,7 @@ const connectionRulesMap = new Map<MajorComponents, Set<MajorComponents>>([
   [MajorComponents.Board, new Set([
     MajorComponents.ETLO,
     MajorComponents.BatchETLO,
+    MajorComponents.Board,
     MajorComponents.Map,
     MajorComponents.Execute_Py,
     MajorComponents.Email_notification,
@@ -286,8 +288,8 @@ const connectionRulesMap = new Map<MajorComponents, Set<MajorComponents>>([
     MajorComponents.Run_StepFunction,
     MajorComponents.Ingestion,
   ])],
-  [MajorComponents.ETLO, new Set([MajorComponents.Board, MajorComponents.BatchETLO])],
-  [MajorComponents.BatchETLO, new Set([MajorComponents.Board, MajorComponents.ETLO])],
+  [MajorComponents.ETLO, new Set([MajorComponents.Board,MajorComponents.ETLO, MajorComponents.BatchETLO])],
+  [MajorComponents.BatchETLO, new Set([MajorComponents.Board, MajorComponents.ETLO,MajorComponents.BatchETLO])],
   [MajorComponents.Map, new Set()],
   [MajorComponents.Execute_Py, new Set()],
   [MajorComponents.Email_notification, new Set()],
