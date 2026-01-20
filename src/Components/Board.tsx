@@ -1,4 +1,4 @@
-import { Box, Text, Badge, VStack, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, SimpleGrid, Flex, Button, IconButton, Tooltip } from "@chakra-ui/react";
+import { Box, Text, Badge, VStack, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, SimpleGrid, Flex, Button, IconButton, Tooltip, Image } from "@chakra-ui/react";
 import { Node, NodeProps, NodeResizer, useStore, Handle, Position, useReactFlow, useUpdateNodeInternals } from "@xyflow/react";
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { MajorComponentsData, MajorComponents } from "../types";
@@ -10,7 +10,7 @@ import Terminal from "./Terminal";
 import { v4 as uuid } from "uuid";
 import { COMPONENTS } from "../constants";
 import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
-import SvgComponent from "../logo/ETLOIcon"; // Import your SVG icon
+import jobIcon from "../logo/jobicon.png";
 
 type BoardNode = Node<MajorComponentsData, "string">;
 
@@ -256,7 +256,7 @@ export default function Board({ id, type,
 
         {/* Board Logo */}
         <VStack spacing={2}>
-          <Tooltip label="Board" placement="top" hasArrow>
+          <Tooltip label="Job" placement="top" hasArrow>
             <Box
               width="70px"
               height="70px"
@@ -272,14 +272,12 @@ export default function Board({ id, type,
                 bg: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)"
               }}
             >
-              <SvgComponent
-                width="100%"
-                height="100%"
-                style={{
-                  filter: isDark
-                    ? "drop-shadow(0 2px 8px rgba(0,0,0,0.5))"
-                    : "drop-shadow(0 2px 4px rgba(0,0,0,0.2))"
-                }}
+              <Image
+                src={jobIcon}
+                alt="Job Icon"
+                width="70px"
+                height="70px"
+                objectFit="contain"
               />
             </Box>
           </Tooltip>
