@@ -46,7 +46,7 @@ import { useDarkMode } from "../store";
 import { Sun, Moon } from "react-bootstrap-icons";
 import { BottomStatusBar } from "../Workflow/BottomStatusBar";
 import PlaceholderNode from "../Components/PlaceholderNode";
-import ComponentPlaceholder from "../Components/ComponentPlaceholder";
+import ComponentPlaceholder from "../Components/JobPlaceholder";
 
 // Memoize node and edge types to prevent re-creation on every render
 const nodeTypes = {
