@@ -46,6 +46,7 @@ import { useDarkMode } from "../store";
 import { Sun, Moon } from "react-bootstrap-icons";
 import { BottomStatusBar } from "../Workflow/BottomStatusBar";
 import PlaceholderNode from "../Components/PlaceholderNode";
+import ComponentPlaceholder from "../Components/ComponentPlaceholder";
 
 // Memoize node and edge types to prevent re-creation on every render
 const nodeTypes = {
@@ -55,6 +56,7 @@ const nodeTypes = {
   BatchETLO: BatchETLO,
   Map: Map,
   PlaceholderNode: PlaceholderNode,
+  ComponentPlaceholder: ComponentPlaceholder,
 };
 
 const edgeTypes = {
@@ -288,6 +290,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
       type: "Job",
       position,
       data: {},
+      expandParent: true,
       style: { height: 200, width: 200 },
     };
     addNode(node);
@@ -301,6 +304,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
       type: "PlaceholderNode",
       position,
       data: {},
+      expandParent: true,
       style: { height: 150, width: 200 },
     };
     addNode(node);
