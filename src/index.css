@@ -9,3 +9,70 @@
 .react-flow__handle.valid {
   background: #55dd99;
 }
+
+/* Fix clickable area for nodes to match visual boundaries */
+.react-flow__node {
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box;
+}
+
+/* Ensure node content takes full width/height */
+.react-flow__node > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Specifically target MajorComponent nodes to ensure precise bounds */
+.react-flow__node[data-id*="MajorComponent"] {
+  overflow: hidden;
+}
+
+/* Override any default React Flow node styling that might add extra space */
+.react-flow__node .react-flow__node-default {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+/* Ensure all React Flow nodes use their specified width and height exactly */
+.react-flow__node {
+  min-width: unset !important;
+  min-height: unset !important;
+}
+
+/* Force Board nodes to respect their exact dimensions */
+.react-flow__node[data-id*="Job"] {
+  transition: width 0.1s ease-out, height 0.1s ease-out !important;
+}
+
+/* Override any resizing constraints for board collapse */
+.react-flow__node[data-id*="Job"] .react-flow__resize-control {
+  display: none !important;
+}
+
+.react-flow__node[data-id*="Job"][data-resizing="false"] .react-flow__resize-control {
+  display: block !important;
+}
+
+/* Make sure the node wrapper respects the specified dimensions */
+.react-flow__node-MajorComponent {
+  width: 180px !important;
+  height: 55px !important;
+}
+
+/* Board nodes should use dynamic sizing */
+.react-flow__node[data-type="Job"] {
+  width: unset !important;
+  height: unset !important;
+}
+
+/* Ensure Board content respects the node dimensions */
+.react-flow__node[data-type="Job"] > div {
+  width: 100% !important;
+  height: 100% !important;
+}

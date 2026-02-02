@@ -22,8 +22,28 @@ function Board({ id, type,
   const showContent = useStore(zoomSelector);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const updateNodeInternals = useUpdateNodeInternals();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const { getNode } = useReactFlow();
+  
+  // Check if the board should be initially expanded
+  // Use a data property or default to collapsed state
+  const [isExpanded, setIsExpanded] = useState(() => {
+    const node = getNode(id);
+    // Check if there's an explicit expanded state in data, otherwise check size
+    if (node?.data?.isExpanded !== undefined) {
+      return node.data.isExpanded;
+    }
+    // If the node is larger than default creation size, it's likely expanded
+    const nodeHeight = node?.style?.height || node?.height || 200;
+    return typeof nodeHeight === 'number' ? nodeHeight > 250 : false;
+  });
+  
+  
   const nodeRef = useRef<HTMLDivElement>(null);
+  
+  // Get current node dimensions
+  const currentNode = getNode(id);
+  const nodeHeight = currentNode?.style?.height || currentNode?.height || (isExpanded ? 400 : 200);
+  const nodeWidth = currentNode?.style?.width || currentNode?.width || (isExpanded ? 500 : 200);
 
   // Use optimized hooks
   const themeColors = useThemeColors(isDragOver);
@@ -39,6 +59,19 @@ function Board({ id, type,
     return setupResizeObserver();
   }, [setupResizeObserver]);
 
+  // Update isExpanded state when node dimensions change (but not during manual resize)
+  useEffect(() => {
+    const node = getNode(id);
+    if (node?.style?.height && node?.data?.isExpanded !== undefined) {
+      // Only sync state if the node data has an explicit expanded state
+      // This prevents interference during manual resizing
+      const dataExpandedState = node.data.isExpanded;
+      if (dataExpandedState !== isExpanded) {
+        setIsExpanded(dataExpandedState);
+      }
+    }
+  }, [nodeHeight, nodeWidth, id, getNode, isExpanded]);
+
   const handleComponentSelect = useCallback((componentType: MajorComponents) => {
     createComponentWithPlaceholder(id, componentType, () => {
       // Automatically expand when adding a component
@@ -50,7 +83,7 @@ function Board({ id, type,
   }, [id, createComponentWithPlaceholder, isExpanded, onClose]);
 
   const toggleExpanded = useCallback(() => {
-    toggleBoardExpansion(isExpanded, setIsExpanded);
+    toggleBoardExpansion(!!isExpanded, setIsExpanded);
   }, [toggleBoardExpansion, isExpanded]);
 
   // Collapsed view (similar to ETLO)
@@ -61,8 +94,8 @@ function Board({ id, type,
         position="relative"
         border={`3px solid ${themeColors.borderColor}`}
         borderRadius="16px"
-        height={boardSizes.collapsed.height}
-        width={boardSizes.collapsed.width}
+        height="200px"
+        width="200px"
         bg={themeColors.bgColor}
         backdropFilter="blur(10px)"
         {...(selected && {
@@ -173,8 +206,8 @@ function Board({ id, type,
       position="relative"
       border={`3px solid ${themeColors.borderColor}`}
       borderRadius="12px"
-      height="100%"
-      width="100%"
+      height={typeof nodeHeight === 'number' ? `${nodeHeight}px` : nodeHeight}
+      width={typeof nodeWidth === 'number' ? `${nodeWidth}px` : nodeWidth}
       bg={themeColors.bgColor}
       {...(selected && { boxShadow: `${themeColors.borderColor} 0px 0px 4px` })}
       transition="all 0.1s ease-out"

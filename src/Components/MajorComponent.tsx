@@ -67,6 +67,8 @@ function MajorComponent({
   return (
     <Box
       pos="relative"
+      width="180px"
+      height="55px"
       style={{
        // transform: `rotate(${rotation}deg)`,
        // visibility: visible ? "visible" : "hidden",

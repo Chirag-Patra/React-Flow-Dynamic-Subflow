@@ -120,14 +120,16 @@ export function useNodeOperations() {
  * Optimized for performance with batched updates
  */
 export function useBoardOperations(nodeId: string) {
-  const { updateNodesInBatch, updateEdgesInBatch, getChildNodeIds } = useNodeOperations();
-  const reactFlowInstance = useReactFlow();
+  const { setNodes, setEdges, getNode, getNodes, getEdges, updateNode } = useReactFlow();
+  const { getChildNodeIds } = useNodeOperations();
 
-  // Board size configurations
-  const boardSizes = useMemo(() => ({
-    expanded: { height: 400, width: 500, minHeight: 300, minWidth: 300 },
-    collapsed: { height: 150, width: 150 }
-  }), []);
+  // Board size configurations - use fixed default sizes
+  const boardSizes = useMemo(() => {
+    return {
+      expanded: { height: 400, width: 500, minHeight: 300, minWidth: 300 },
+      collapsed: { height: 200, width: 200 } // Always use default size for collapse
+    };
+  }, []);
 
   const toggleBoardExpansion = useCallback((
     isExpanded: boolean,
@@ -139,12 +141,17 @@ export function useBoardOperations(nodeId: string) {
     // Get child node IDs once for efficient processing
     const childIds = getChildNodeIds(nodeId);
 
-    // Batch all node updates
-    updateNodesInBatch(nodes => nodes.map(node => {
+    // Simple approach - just update the size and show/hide children
+    setNodes(nodes => nodes.map(node => {
       if (node.id === nodeId) {
         return {
           ...node,
-          style: { ...node.style, ...targetSize }
+          style: { 
+            ...node.style, 
+            height: targetSize.height, 
+            width: targetSize.width 
+          },
+          data: { ...node.data, isExpanded: newExpandedState }
         };
       }
       
@@ -155,21 +162,14 @@ export function useBoardOperations(nodeId: string) {
       return node;
     }));
 
-    // Batch all edge updates
-    updateEdgesInBatch(edges => edges.map(edge => {
+    // Hide/show internal edges
+    setEdges(edges => edges.map(edge => {
       const isInternalEdge = childIds.includes(edge.source) && childIds.includes(edge.target);
       return isInternalEdge ? { ...edge, hidden: !newExpandedState } : edge;
     }));
 
     setIsExpanded(newExpandedState);
-
-    // Update handles after DOM changes
-    requestAnimationFrame(() => {
-      if ('updateNodeInternals' in reactFlowInstance) {
-        (reactFlowInstance as any).updateNodeInternals(nodeId);
-      }
-    });
-  }, [nodeId, boardSizes, getChildNodeIds, updateNodesInBatch, updateEdgesInBatch, reactFlowInstance]);
+  }, [nodeId, boardSizes, getChildNodeIds, setNodes, setEdges]);
 
   return {
     toggleBoardExpansion,

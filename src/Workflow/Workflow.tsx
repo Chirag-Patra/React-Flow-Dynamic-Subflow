@@ -234,6 +234,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
          extent: "parent", // Lock the component within its parent bounds
         draggable: showContent,
         selectable: showContent,
+        style: { width: 180, height: 55 }, // Explicit dimensions to match visual size
       };
 
       addNode(node);
@@ -544,6 +545,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
       expandParent: true,
       draggable: !isParentMap, // Components in Map are not draggable
       selectable: showContent,
+      style: { width: 180, height: 55 }, // Explicit dimensions to match visual size
     };
     // console.debug("Node to be created:", node, "isParentMap:", isParentMap);
   } else {
