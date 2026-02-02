@@ -13,9 +13,9 @@ export const initialNodes: Node[] = [
   {
     id: "placeholder-start",
     type: "PlaceholderNode",
-    position: { x: 200, y: 200 },
+    position: { x: 300, y: 100 },
     data: {},
-    style: { height: 150, width: 200 },
+    style: { height: 50, width: 50 },
   },
 ];
 
@@ -40,15 +40,15 @@ const ICON_STYLES = {
   placeholder: {
     height: "30px",
     width: "30px",
-    borderRadius: "4px", 
-    border: "2px dashed #4A5568",
-    background: "rgba(99, 179, 237, 0.1)",
+    borderRadius: "4px",
+    border: "2px dashed #7C3AED",
+    background: "rgba(124, 58, 237, 0.1)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: "16px",
     fontWeight: "bold",
-    color: "#63B3ED",
+    color: "#A78BFA",
   },
   job: {
     height: "30px",
@@ -183,35 +183,36 @@ export interface PlaceholderConfig {
   positions: readonly PlaceholderPosition[];
 }
 
-// Optimized placeholder configurations with frozen positions
+// Optimized placeholder configurations with frozen positions - horizontal flow (left to right)
+// n8n style: placeholders aligned horizontally in a straight line
 export const PLACEHOLDER_CONFIG: Readonly<Partial<Record<MajorComponents, PlaceholderConfig>>> = Object.freeze({
   [MajorComponents.BatchETLO]: Object.freeze({
     count: 3,
     positions: Object.freeze([
-      Object.freeze({ x: 250, y: 0 }),   // Right
-      Object.freeze({ x: 0, y: -250 }),  // Top
-      Object.freeze({ x: -250, y: 0 }),  // Left
+      Object.freeze({ x: 250, y: 75 }),   // Right (centered) - main flow
+      Object.freeze({ x: 250, y: 25 }),   // Right (slightly above) - compact vertical spacing
+      Object.freeze({ x: 250, y: 125 }), // Right (slightly below) - compact vertical spacing
     ]),
   }),
   [MajorComponents.ETLO]: Object.freeze({
     count: 1,
     positions: Object.freeze([
-      Object.freeze({ x: 250, y: 0 }),   // Right
+      Object.freeze({ x: 250, y: 75 }),   // Right (centered) - straight horizontal
     ]),
   }),
   [MajorComponents.Board]: Object.freeze({
     count: 1,
     positions: Object.freeze([
-      Object.freeze({ x: 250, y: 0 }),   // Right
+      Object.freeze({ x: 250, y: 75 }),   // Right (centered) - straight horizontal
     ]),
   }),
 });
 
-// Default configuration
+// Default configuration - horizontal flow
 const DEFAULT_PLACEHOLDER_CONFIG: PlaceholderConfig = Object.freeze({
   count: 1,
   positions: Object.freeze([
-    Object.freeze({ x: 250, y: 0 }), // Default: single placeholder to the right
+    Object.freeze({ x: 250, y: 75 }), // Default: single placeholder to the right (centered for 200px tall parent)
   ]),
 });
 

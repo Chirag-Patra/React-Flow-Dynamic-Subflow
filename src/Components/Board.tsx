@@ -32,18 +32,18 @@ function Board({ id, type,
     if (node?.data?.isExpanded !== undefined) {
       return node.data.isExpanded;
     }
-    // If the node is larger than default creation size, it's likely expanded
+    // If the node is larger than default collapsed size (200), it's likely expanded
     const nodeHeight = node?.style?.height || node?.height || 200;
-    return typeof nodeHeight === 'number' ? nodeHeight > 250 : false;
+    return typeof nodeHeight === 'number' ? nodeHeight > 210 : false;
   });
   
   
   const nodeRef = useRef<HTMLDivElement>(null);
   
-  // Get current node dimensions
+  // Get current node dimensions - use n8n-style horizontal layout sizes
   const currentNode = getNode(id);
-  const nodeHeight = currentNode?.style?.height || currentNode?.height || (isExpanded ? 400 : 200);
-  const nodeWidth = currentNode?.style?.width || currentNode?.width || (isExpanded ? 500 : 200);
+  const nodeHeight = currentNode?.style?.height || currentNode?.height || (isExpanded ? 280 : 200);
+  const nodeWidth = currentNode?.style?.width || currentNode?.width || (isExpanded ? 400 : 200);
 
   // Use optimized hooks
   const themeColors = useThemeColors(isDragOver);

@@ -3,13 +3,15 @@ import { useReactFlow } from '@xyflow/react';
 import { v4 as uuid } from 'uuid';
 import { MajorComponents } from '../types';
 
-// Constants for component positioning and sizing
+// Constants for component positioning and sizing - n8n style horizontal layout (left to right)
 const COMPONENT_LAYOUT = {
-  basePosition: { x: 50, y: 80 },
-  offsetStep: 80,
-  componentSize: { height: 60, width: 180 },
-  placeholderSize: { height: 60, width: 100 },
-  placeholderOffset: 200
+  // Center components vertically in the board (board height 280, component height 55)
+  // Y position: (280 - 55) / 2 ≈ 112, accounting for top buttons = ~100
+  basePosition: { x: 30, y: 100 },
+  horizontalStep: 220,  // Horizontal spacing between components (component width 180 + gap 40)
+  componentSize: { height: 55, width: 180 },
+  placeholderSize: { height: 44, width: 44 },  // Square for circular appearance
+  placeholderGap: 20  // Gap between component and placeholder
 } as const;
 
 /**
@@ -20,18 +22,27 @@ export function useNodeOperations() {
   const { setNodes, setEdges, getNodes, getEdges } = useReactFlow();
 
   // Memoized function to create component nodes with placeholders
+  // Uses n8n-style horizontal layout - components chained left to right
   const createComponentWithPlaceholder = useCallback((
     parentId: string,
     componentType: MajorComponents,
     onComplete?: () => void
   ) => {
     const nodes = getNodes();
-    const existingComponentsCount = nodes.filter(node =>
-      node.parentId === parentId && node.type !== "ComponentPlaceholder"
-    ).length;
-    
-    const yOffset = existingComponentsCount * COMPONENT_LAYOUT.offsetStep;
-    const { x: baseX, y: baseY } = COMPONENT_LAYOUT.basePosition;
+
+    // Find the rightmost component/placeholder in the parent to chain after it
+    const childNodes = nodes.filter(node => node.parentId === parentId);
+    let startX = COMPONENT_LAYOUT.basePosition.x;
+
+    if (childNodes.length > 0) {
+      // Find the rightmost position
+      const maxX = Math.max(...childNodes.map(n => n.position.x + (n.style?.width as number || 180)));
+      startX = maxX + COMPONENT_LAYOUT.placeholderGap;
+    }
+
+    const { y: baseY } = COMPONENT_LAYOUT.basePosition;
+    // Center the placeholder vertically relative to component
+    const placeholderY = baseY + (COMPONENT_LAYOUT.componentSize.height - COMPONENT_LAYOUT.placeholderSize.height) / 2;
 
     const componentNodeId = uuid();
     const placeholderNodeId = uuid();
@@ -39,7 +50,7 @@ export function useNodeOperations() {
     const componentNode = {
       id: componentNodeId,
       type: "MajorComponent",
-      position: { x: baseX, y: baseY + yOffset },
+      position: { x: startX, y: baseY },  // Same Y for horizontal line
       data: {
         type: componentType,
         componentType,
@@ -55,9 +66,9 @@ export function useNodeOperations() {
     const placeholderNode = {
       id: placeholderNodeId,
       type: "ComponentPlaceholder",
-      position: { 
-        x: baseX + COMPONENT_LAYOUT.placeholderOffset, 
-        y: baseY + yOffset 
+      position: {
+        x: startX + COMPONENT_LAYOUT.componentSize.width + COMPONENT_LAYOUT.placeholderGap,  // Right of component
+        y: placeholderY  // Centered vertically
       },
       data: {},
       parentId,
@@ -120,13 +131,14 @@ export function useNodeOperations() {
  * Optimized for performance with batched updates
  */
 export function useBoardOperations(nodeId: string) {
-  const { setNodes, setEdges, getNode, getNodes, getEdges, updateNode } = useReactFlow();
+  const { setNodes, setEdges } = useReactFlow();
   const { getChildNodeIds } = useNodeOperations();
 
   // Board size configurations - use fixed default sizes
+  // Optimized for n8n-style horizontal layout (wider for left-to-right flow)
   const boardSizes = useMemo(() => {
     return {
-      expanded: { height: 400, width: 500, minHeight: 300, minWidth: 300 },
+      expanded: { height: 280, width: 400, minHeight: 250, minWidth: 350 },
       collapsed: { height: 200, width: 200 } // Always use default size for collapse
     };
   }, []);
@@ -141,24 +153,43 @@ export function useBoardOperations(nodeId: string) {
     // Get child node IDs once for efficient processing
     const childIds = getChildNodeIds(nodeId);
 
-    // Simple approach - just update the size and show/hide children
+    // Update size and show/hide children
+    // Also toggle expandParent to prevent hidden children from expanding the parent
     setNodes(nodes => nodes.map(node => {
       if (node.id === nodeId) {
-        return {
+        // When collapsing, force the node dimensions by setting width/height directly
+        // and clearing measured to force React Flow to re-measure
+        const updatedNode = {
           ...node,
-          style: { 
-            ...node.style, 
-            height: targetSize.height, 
-            width: targetSize.width 
+          style: {
+            ...node.style,
+            height: targetSize.height,
+            width: targetSize.width
           },
           data: { ...node.data, isExpanded: newExpandedState }
         };
+
+        // For collapse, also set width/height directly and clear measured
+        if (!newExpandedState) {
+          (updatedNode as any).width = targetSize.width;
+          (updatedNode as any).height = targetSize.height;
+          (updatedNode as any).measured = { width: targetSize.width, height: targetSize.height };
+        }
+
+        return updatedNode;
       }
-      
+
       if (node.parentId === nodeId) {
-        return { ...node, hidden: !newExpandedState };
+        return {
+          ...node,
+          hidden: !newExpandedState,
+          // Disable expandParent when collapsed to prevent resizing the parent
+          expandParent: newExpandedState,
+          // Remove extent constraint when collapsed so React Flow doesn't enforce parent bounds
+          extent: newExpandedState ? ("parent" as const) : undefined
+        };
       }
-      
+
       return node;
     }));
 

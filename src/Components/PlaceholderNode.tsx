@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   Box,
   VStack,
@@ -24,13 +24,6 @@ interface PlaceholderNodeProps {
   data: any;
 }
 
-// Pre-define handle styles to avoid recreation
-const handleStyleBase = {
-  border: "none",
-  width: "10px",
-  height: "10px",
-};
-
 // Component card item memoized separately for better performance
 const ComponentCard = memo(({
   component,
@@ -47,17 +40,15 @@ const ComponentCard = memo(({
     as="button"
     bg={colors.cardBg}
     border={`2px solid ${colors.borderColor}`}
-    borderRadius="lg"
-    p={6}
+    borderRadius="xl"
+    p={5}
     cursor="pointer"
-    transition="all 0.2s"
+    transition="all 0.2s ease"
     _hover={{
       borderColor: colors.accentColor,
       bg: colors.cardHoverBg,
-      transform: "translateY(-2px)",
-      boxShadow: isDark
-        ? `0 4px 12px ${colors.accentColor}30`
-        : `0 4px 12px ${colors.accentColor}20`,
+      transform: "translateY(-3px)",
+      boxShadow: `0 8px 20px ${colors.accentColor}25`,
     }}
     _active={{
       transform: "translateY(0)",
@@ -66,18 +57,22 @@ const ComponentCard = memo(({
   >
     <VStack spacing={3}>
       <Flex
-        fontSize="36px"
+        fontSize="32px"
         color={colors.accentColor}
         alignItems="center"
         justifyContent="center"
-        w="full"
+        w="60px"
+        h="60px"
+        borderRadius="lg"
+        bg={isDark ? "rgba(167, 139, 250, 0.1)" : "rgba(124, 58, 237, 0.1)"}
       >
         {component.icon}
       </Flex>
       <Text
         fontWeight="semibold"
-        fontSize="md"
+        fontSize="sm"
         textAlign="center"
+        color={isDark ? "#E2E8F0" : "#2D3748"}
       >
         {component.label}
       </Text>
@@ -87,19 +82,19 @@ const ComponentCard = memo(({
 
 ComponentCard.displayName = "ComponentCard";
 
-const PlaceholderNode = memo(({ id, data }: PlaceholderNodeProps) => {
+const PlaceholderNode = memo(({ id }: PlaceholderNodeProps) => {
   const { isDark } = useDarkMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { setNodes, setEdges, getNode, getEdges } = useReactFlow();
 
-  // Memoize color values with minimal recalculation
+  // Memoize color values - Blue/Purple accent theme
   const colors = useMemo(() => ({
-    bgColor: isDark ? "#2D3748" : "#F7FAFC",
-    borderColor: isDark ? "#4A5568" : "#E2E8F0",
-    accentColor: isDark ? "#63B3ED" : "#3182CE",
+    bgColor: isDark ? "#1A202C" : "#FFFFFF",
+    borderColor: isDark ? "#4A5568" : "#CBD5E0",
+    accentColor: isDark ? "#A78BFA" : "#7C3AED",  // Blue/Purple accent
     textColor: isDark ? "#E2E8F0" : "#2D3748",
-    cardBg: isDark ? "#1A202C" : "#FFFFFF",
-    cardHoverBg: isDark ? "#2D3748" : "#F7FAFC",
+    cardBg: isDark ? "#2D3748" : "#FFFFFF",
+    cardHoverBg: isDark ? "#3D4A5C" : "#F7FAFC",
   }), [isDark]);
 
   // Optimized to only run when edges actually change
@@ -179,7 +174,7 @@ const PlaceholderNode = memo(({ id, data }: PlaceholderNodeProps) => {
             y: sourceNode.position.y + nextPosition.y,
           },
           data: {},
-          style: { height: 80, width: 80 },
+          style: { height: 50, width: 50 },
         };
 
         newPlaceholders.push(parentPlaceholder);
@@ -209,7 +204,7 @@ const PlaceholderNode = memo(({ id, data }: PlaceholderNodeProps) => {
         y: componentNode.position.y + newComponentPosition.y,
       },
       data: {},
-      style: { height: 80, width: 80 },
+      style: { height: 50, width: 50 },
     };
 
     newPlaceholders.push(componentPlaceholder);
@@ -265,108 +260,101 @@ const PlaceholderNode = memo(({ id, data }: PlaceholderNodeProps) => {
     onClose();
   }, [id, getNode, setNodes, setEdges, getEdges, onClose]);
 
-  // Memoize handle styles with colors
-  const sourceHandleStyle = useMemo(() => ({
-    ...handleStyleBase,
-    background: colors.accentColor,
-  }), [colors.accentColor]);
-
-  const targetHandleStyle = useMemo(() => ({
-    ...handleStyleBase,
-    background: colors.accentColor,
-  }), [colors.accentColor]);
-
-  // Memoize hover styles
-  const hoverStyle = useMemo(() => ({
-    borderColor: colors.accentColor,
-    transform: "scale(1.05)",
-    borderStyle: "solid",
-    boxShadow: isDark
-      ? `0 0 20px ${colors.accentColor}40`
-      : `0 0 20px ${colors.accentColor}30`,
+  // Handle styles for vertical flow
+  const handleStyle = useMemo(() => ({
+    border: `2px solid ${colors.accentColor}`,
+    width: "12px",
+    height: "12px",
+    background: isDark ? "#1A202C" : "#FFFFFF",
+    borderRadius: "50%",
   }), [colors.accentColor, isDark]);
 
   return (
     <>
+      {/* Target handle - Left for horizontal flow */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        style={handleStyle}
+      />
+
+      {/* Main placeholder - Clean circular green button */}
       <Box
-        bg={colors.bgColor}
-        border={`2px dashed ${colors.borderColor}`}
-        borderRadius="lg"
-        width="80px"
-        height="80px"
+        bg={colors.accentColor}
+        borderRadius="full"
+        width="100%"
+        height="100%"
         display="flex"
         alignItems="center"
         justifyContent="center"
         cursor="pointer"
-        transition="all 0.3s ease"
-        position="relative"
-        _hover={hoverStyle}
+        transition="all 0.25s ease"
+        boxShadow={`0 2px 8px ${colors.accentColor}40`}
+        _hover={{
+          transform: "scale(1.1)",
+          boxShadow: `0 4px 16px ${colors.accentColor}60`,
+        }}
         onClick={onOpen}
       >
-        <Box
-          fontSize="32px"
-          color={colors.accentColor}
+        <Text
+          color="white"
+          fontSize="24px"
           fontWeight="bold"
           lineHeight="1"
+          userSelect="none"
         >
           +
-        </Box>
-
-        <Handle
-          type="source"
-          position={Position.Right}
-          style={sourceHandleStyle}
-        />
-        <Handle
-          type="target"
-          position={Position.Left}
-          style={targetHandleStyle}
-        />
+        </Text>
       </Box>
+
+      {/* Source handle - Right for horizontal flow */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        style={handleStyle}
+      />
 
       <Modal
         isOpen={isOpen}
         onClose={onClose}
         isCentered
-        size="xl"
+        size="lg"
         motionPreset="slideInBottom"
         blockScrollOnMount={false}
       >
-        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
+        <ModalOverlay backdropFilter="blur(4px)" />
         <ModalContent
-          bg={colors.bgColor}
+          bg={colors.cardBg}
           color={colors.textColor}
-          borderRadius="xl"
-          boxShadow="2xl"
-          maxW="600px"
+          borderRadius="2xl"
+          boxShadow="xl"
+          maxW="500px"
         >
           <ModalHeader
-            fontSize="2xl"
-            fontWeight="bold"
+            fontSize="xl"
+            fontWeight="semibold"
             borderBottom={`1px solid ${colors.borderColor}`}
             pb={4}
           >
             Add Component
           </ModalHeader>
           <ModalCloseButton
-            size="lg"
             _hover={{
               bg: isDark ? "#4A5568" : "#E2E8F0",
             }}
           />
-          <ModalBody py={6}>
+          <ModalBody py={5}>
             <VStack spacing={4} align="stretch">
               <Text
                 fontSize="sm"
                 color={isDark ? "#A0AEC0" : "#718096"}
-                mb={2}
               >
                 {availableParents.length > 0
-                  ? "Select a parent component to add to your workflow"
-                  : "No compatible parent components available for this connection"}
+                  ? "Select a component to add to your workflow"
+                  : "No compatible components available"}
               </Text>
               {availableParents.length > 0 ? (
-                <SimpleGrid columns={2} spacing={4}>
+                <SimpleGrid columns={2} spacing={3}>
                   {availableParents.map((component) => (
                     <ComponentCard
                       key={component.type}
@@ -379,13 +367,15 @@ const PlaceholderNode = memo(({ id, data }: PlaceholderNodeProps) => {
                 </SimpleGrid>
               ) : (
                 <Box
-                  p={8}
+                  p={6}
                   textAlign="center"
                   color={isDark ? "#718096" : "#A0AEC0"}
+                  borderRadius="lg"
+                  bg={isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)"}
                 >
-                  <Text fontSize="lg">No available components</Text>
-                  <Text fontSize="sm" mt={2}>
-                    The source node type doesn't support any parent connections
+                  <Text fontSize="md">No available components</Text>
+                  <Text fontSize="xs" mt={1}>
+                    The source doesn't support any connections
                   </Text>
                 </Box>
               )}

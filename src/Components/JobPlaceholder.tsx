@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   Box,
   VStack,
@@ -11,7 +11,6 @@ import {
   ModalCloseButton,
   ModalBody,
   SimpleGrid,
-  Flex,
 } from "@chakra-ui/react";
 import { Handle, Position, useReactFlow } from "@xyflow/react";
 import { useDarkMode } from "../store";
@@ -79,18 +78,21 @@ const ComponentCard = memo(({
 
 ComponentCard.displayName = "ComponentCard";
 
-const ComponentPlaceholder = memo(({ id, data }: ComponentPlaceholderProps) => {
+const ComponentPlaceholder = memo(({ id }: ComponentPlaceholderProps) => {
   const { isDark } = useDarkMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { setNodes, setEdges, getNode, getEdges } = useReactFlow();
+  const { setNodes, setEdges, getNode } = useReactFlow();
 
   const colors = useMemo(() => ({
-    bgColor: isDark ? "#2D3748" : "#F7FAFC",
-    borderColor: isDark ? "#4A5568" : "#E2E8F0",
-    accentColor: isDark ? "#63B3ED" : "#3182CE",
-    textColor: isDark ? "#E2E8F0" : "#2D3748",
+    bgColor: isDark ? "rgba(45, 55, 72, 0.6)" : "rgba(255, 255, 255, 0.8)",
+    borderColor: isDark ? "#4A5568" : "#CBD5E0",
+    accentColor: isDark ? "#A78BFA" : "#7C3AED",  // Blue/Purple accent
+    hoverBg: isDark ? "rgba(167, 139, 250, 0.15)" : "rgba(124, 58, 237, 0.1)",
+    textColor: isDark ? "#A0AEC0" : "#718096",
     cardBg: isDark ? "#1A202C" : "#FFFFFF",
     cardHoverBg: isDark ? "#2D3748" : "#F7FAFC",
+    cardBorderColor: isDark ? "#4A5568" : "#E2E8F0",
+    cardAccentColor: isDark ? "#A78BFA" : "#7C3AED",
   }), [isDark]);
 
   // Available components for the placeholder
@@ -103,15 +105,22 @@ const ComponentPlaceholder = memo(({ id, data }: ComponentPlaceholderProps) => {
     const componentNodeId = uuid();
     const newPlaceholderNodeId = uuid();
 
-    // Get current edges to find the source
-    const currentEdges = getEdges();
-    const incomingEdge = currentEdges.find(edge => edge.target === id);
+    // Component size constants
+    const componentWidth = 180;
+    const componentHeight = 55;
+    const placeholderWidth = 44;  // Square for circular appearance
+    const placeholderHeight = 44;
+    const gap = 20;
+
+    // Component replaces the placeholder, but needs to be positioned for proper alignment
+    // Adjust Y position so component is centered where placeholder was (horizontal flow)
+    const componentY = currentNode.position.y - (componentHeight - placeholderHeight) / 2;
 
     const componentNode = {
       id: componentNodeId,
       type: "MajorComponent",
-      position: { ...currentNode.position },
-      data: { 
+      position: { x: currentNode.position.x, y: componentY },  // Same X, centered Y
+      data: {
         type: componentType,
         componentType,
         visible: true,
@@ -120,22 +129,22 @@ const ComponentPlaceholder = memo(({ id, data }: ComponentPlaceholderProps) => {
       parentId: currentNode.parentId,
       extent: "parent" as const,
       expandParent: true,
-      style: { height: 55, width: 180 },
+      style: { height: componentHeight, width: componentWidth },
     };
 
-    // Create new placeholder to the right
+    // Create new placeholder to the right on the same Y center (horizontal line)
     const newPlaceholderNode = {
       id: newPlaceholderNodeId,
       type: "ComponentPlaceholder",
-      position: { 
-        x: currentNode.position.x + 140, 
-        y: currentNode.position.y 
+      position: {
+        x: currentNode.position.x + componentWidth + gap,  // Right of the component
+        y: currentNode.position.y  // Same Y position (centered)
       },
       data: {},
       parentId: currentNode.parentId,
       extent: "parent" as const,
       expandParent: true,
-      style: { height: 60, width: 100 },
+      style: { height: placeholderHeight, width: placeholderWidth },
     };
 
     const newEdge = {
@@ -165,66 +174,69 @@ const ComponentPlaceholder = memo(({ id, data }: ComponentPlaceholderProps) => {
     });
 
     onClose();
-  }, [id, getNode, getEdges, setNodes, setEdges, onClose]);
+  }, [id, getNode, setNodes, setEdges, onClose]);
 
   return (
     <>
-      {/* Target handle */}
+      {/* Target handle - Left for horizontal flow */}
       <Handle
         type="target"
         position={Position.Left}
         style={{
-          border: "none",
-          width: "10px",
-          height: "10px",
-          background: colors.accentColor,
+          border: `2px solid ${colors.accentColor}`,
+          width: "12px",
+          height: "12px",
+          background: isDark ? "#1A202C" : "#FFFFFF",
+          borderRadius: "50%",
         }}
       />
 
-      {/* Main placeholder box */}
+      {/* Main placeholder box - Clean circular + button */}
       <Box
-        bg={colors.bgColor}
-        border={`2px dashed ${colors.borderColor}`}
-        borderRadius="md"
+        bg={colors.accentColor}
+        borderRadius="full"
         height="100%"
         width="100%"
         display="flex"
         alignItems="center"
         justifyContent="center"
         cursor="pointer"
-        transition="all 0.2s"
+        transition="all 0.25s ease"
+        boxShadow={`0 2px 8px ${colors.accentColor}40`}
         _hover={{
-          borderColor: colors.accentColor,
-          bg: colors.cardHoverBg,
+          transform: "scale(1.1)",
+          boxShadow: `0 4px 16px ${colors.accentColor}60`,
         }}
         onClick={onOpen}
       >
-        <VStack spacing={1}>
-          <Text fontSize="24px" color={colors.accentColor}>
-            +
-          </Text>
-          <Text fontSize="xs" color={colors.textColor} fontWeight="medium">
-            Add Component
-          </Text>
-        </VStack>
+        <Text
+          color="white"
+          fontSize="22px"
+          fontWeight="bold"
+          lineHeight="1"
+          userSelect="none"
+        >
+          +
+        </Text>
       </Box>
 
-      {/* Source handle */}
+      {/* Source handle - Right for horizontal flow */}
       <Handle
         type="source"
         position={Position.Right}
         style={{
-          border: "none",
-          width: "10px",
-          height: "10px",
-          background: colors.accentColor,
+          border: `2px solid ${colors.accentColor}`,
+          width: "12px",
+          height: "12px",
+          background: isDark ? "#1A202C" : "#FFFFFF",
+          borderRadius: "50%",
         }}
       />
 
       {/* Component selection modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
-        <ModalOverlay />
-        <ModalContent bg={colors.bgColor} color={colors.textColor}>
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent bg={colors.cardBg} color={isDark ? "#E2E8F0" : "#2D3748"}>
           <ModalHeader>Select Component</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
@@ -233,7 +245,11 @@ const ComponentPlaceholder = memo(({ id, data }: ComponentPlaceholderProps) => {
                 <ComponentCard
                   key={component.type}
                   component={component}
-                  colors={colors}
+                  colors={{
+                    ...colors,
+                    borderColor: colors.cardBorderColor,
+                    accentColor: colors.cardAccentColor,
+                  }}
                   isDark={isDark}
                   onClick={() => handleComponentSelect(component.type)}
                 />
