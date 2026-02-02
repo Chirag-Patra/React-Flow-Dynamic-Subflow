@@ -1,6 +1,6 @@
 import { Box, Text, Badge, VStack, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, SimpleGrid, Flex, Button, IconButton, Tooltip, Image } from "@chakra-ui/react";
 import { Node, NodeProps, NodeResizer, useStore, Handle, Position, useReactFlow, useUpdateNodeInternals } from "@xyflow/react";
-import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef, memo } from "react";
 import { MajorComponentsData, MajorComponents } from "../types";
 import { getUnit } from "../utils";
 import Placeholder from "./Placeholder";
@@ -11,193 +11,47 @@ import { v4 as uuid } from "uuid";
 import { COMPONENTS } from "../constants";
 import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 import jobIcon from "../logo/jobicon.png";
+import { useThemeColors, useNodeOperations, useBoardOperations, useOptimizedResizeObserver } from "../hooks";
 
 type BoardNode = Node<MajorComponentsData, "string">;
 
-export default function Board({ id, type,
+function Board({ id, type,
   data: { value, processingType, isDragOver }, selected }: NodeProps<BoardNode>) {
 
   const unit = getUnit(type as MajorComponents);
   const showContent = useStore(zoomSelector);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { setNodes, setEdges, getNodes, getEdges } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const [isExpanded, setIsExpanded] = useState(false);
   const nodeRef = useRef<HTMLDivElement>(null);
 
-  const { isDark } = useDarkMode();
+  // Use optimized hooks
+  const themeColors = useThemeColors(isDragOver);
+  const { createComponentWithPlaceholder } = useNodeOperations();
+  const { toggleBoardExpansion, boardSizes } = useBoardOperations(id);
+  const { setupResizeObserver } = useOptimizedResizeObserver(nodeRef, id, updateNodeInternals);
 
-  let color = "black";
-  if (isDark) color = "white";
-
-  // Change border color when dragging over
-  const borderColor = isDragOver
-    ? (isDark ? "#4299e1" : "#3182ce") // Blue when dragging over
-    : color;
-
-  // Background color based on drag state
-  const bgColor = isDragOver
-    ? (isDark ? "rgba(66, 153, 225, 0.15)" : "rgba(49, 130, 206, 0.15)")
-    : (isDark ? "rgba(100, 150, 200, 0.15)" : "rgba(173, 216, 230, 0.3)");
-
-  // Available components for this board
+  // Memoize components array to prevent unnecessary re-renders
   const availableComponents = useMemo(() => COMPONENTS, []);
 
-  const colors = useMemo(() => ({
-    bgColor: isDark ? "#2D3748" : "#F7FAFC",
-    borderColor: isDark ? "#4A5568" : "#E2E8F0",
-    accentColor: isDark ? "#63B3ED" : "#3182CE",
-    textColor: isDark ? "#E2E8F0" : "#2D3748",
-    cardBg: isDark ? "#1A202C" : "#FFFFFF",
-    cardHoverBg: isDark ? "#2D3748" : "#F7FAFC",
-  }), [isDark]);
-
-  // ResizeObserver to detect size changes and update handles
+  // Optimized ResizeObserver setup
   useEffect(() => {
-    if (!nodeRef.current) return;
-
-    const resizeObserver = new ResizeObserver(() => {
-      // Update handles whenever the node is resized
-      updateNodeInternals(id);
-    });
-
-    resizeObserver.observe(nodeRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [id, updateNodeInternals]);
+    return setupResizeObserver();
+  }, [setupResizeObserver]);
 
   const handleComponentSelect = useCallback((componentType: MajorComponents) => {
-    const currentNode = getNodes().find(node => node.id === id);
-    if (!currentNode) return;
-
-    const componentNodeId = uuid();
-    const placeholderNodeId = uuid();
-
-    // Calculate position inside the board - use relative positioning
-    const baseX = 50;
-    const baseY = 80;
-
-    // Find existing components to avoid overlap
-    const existingComponents = getNodes().filter(node =>
-      node.parentId === id && node.type !== "ComponentPlaceholder"
-    );
-    const yOffset = existingComponents.length * 80;
-
-    const componentNode = {
-      id: componentNodeId,
-      type: "MajorComponent",
-      position: { x: baseX, y: baseY + yOffset },
-      data: {
-        type: componentType,
-        componentType,
-        visible: true,
-        connectable: true
-      },
-      parentId: id,
-      extent: "parent" as const,
-      expandParent: true,
-      style: { height: 60, width: 180 },
-    };
-
-    const placeholderNode = {
-      id: placeholderNodeId,
-      type: "ComponentPlaceholder",
-      position: { x: baseX + 200, y: baseY + yOffset },
-      data: {},
-      parentId: id,
-      expandParent: true,
-      extent: "parent" as const,
-      style: { height: 60, width: 100 },
-    };
-
-    const newEdge = {
-      id: `${componentNodeId}-${placeholderNodeId}`,
-      source: componentNodeId,
-      target: placeholderNodeId,
-      type: "smoothstep",
-    };
-
-    setNodes(nodes => [...nodes, componentNode, placeholderNode]);
-    setEdges(edges => [...edges, newEdge]);
-
-    // Automatically expand when adding a component
-    if (!isExpanded) {
-      setIsExpanded(true);
-    }
-
-    onClose();
-  }, [id, getNodes, setNodes, setEdges, onClose, isExpanded]);
+    createComponentWithPlaceholder(id, componentType, () => {
+      // Automatically expand when adding a component
+      if (!isExpanded) {
+        setIsExpanded(true);
+      }
+      onClose();
+    });
+  }, [id, createComponentWithPlaceholder, isExpanded, onClose]);
 
   const toggleExpanded = useCallback(() => {
-    const newExpandedState = !isExpanded;
-
-    // Get all child node IDs upfront
-    const childIds = getNodes()
-      .filter(node => node.parentId === id)
-      .map(node => node.id);
-
-    // Batch all updates in a single call
-    setNodes(nodes => nodes.map(node => {
-      // Update the board node dimensions
-      if (node.id === id) {
-        if (newExpandedState) {
-          // Expanding
-          return {
-            ...node,
-            style: {
-              ...node.style,
-              height: 400,
-              width: 500,
-            }
-          };
-        } else {
-          // Collapsing
-          return {
-            ...node,
-            style: {
-              ...node.style,
-              height: 150,
-              width: 150,
-            }
-          };
-        }
-      }
-
-      // Update child node visibility
-      if (node.parentId === id) {
-        return {
-          ...node,
-          hidden: !newExpandedState,
-        };
-      }
-
-      return node;
-    }));
-
-    // Batch all edge updates
-    setEdges(edges => edges.map(edge => {
-      // Only hide edges that are completely internal to the board
-      const isInternalEdge = childIds.includes(edge.source) && childIds.includes(edge.target);
-
-      if (isInternalEdge) {
-        return {
-          ...edge,
-          hidden: !newExpandedState,
-        };
-      }
-      return edge;
-    }));
-
-    // Update state immediately
-    setIsExpanded(newExpandedState);
-
-    // Quick handle update - reduced timeout
-    requestAnimationFrame(() => {
-      updateNodeInternals(id);
-    });
-  }, [id, isExpanded, setNodes, setEdges, getNodes, updateNodeInternals]);
+    toggleBoardExpansion(isExpanded, setIsExpanded);
+  }, [toggleBoardExpansion, isExpanded]);
 
   // Collapsed view (similar to ETLO)
   if (!isExpanded) {
@@ -205,14 +59,14 @@ export default function Board({ id, type,
       <Box
         ref={nodeRef}
         position="relative"
-        border={`3px solid ${borderColor}`}
+        border={`3px solid ${themeColors.borderColor}`}
         borderRadius="16px"
-        height="150px"
-        width="150px"
-        bg={bgColor}
+        height={boardSizes.collapsed.height}
+        width={boardSizes.collapsed.width}
+        bg={themeColors.bgColor}
         backdropFilter="blur(10px)"
         {...(selected && {
-          boxShadow: `0 0 0 2px ${borderColor}, 0 4px 12px rgba(0, 0, 0, 0.15)`
+          boxShadow: `0 0 0 2px ${themeColors.borderColor}, 0 4px 12px rgba(0, 0, 0, 0.15)`
         })}
         transition="all 0.1s ease-out"
         display="flex"
@@ -220,7 +74,7 @@ export default function Board({ id, type,
         justifyContent="center"
         _hover={{
           boxShadow: selected
-            ? `0 0 0 2px ${borderColor}, 0 4px 12px rgba(0, 0, 0, 0.15)`
+            ? `0 0 0 2px ${themeColors.borderColor}, 0 4px 12px rgba(0, 0, 0, 0.15)`
             : "0 2px 8px rgba(0, 0, 0, 0.1)"
         }}
       >
@@ -264,12 +118,12 @@ export default function Board({ id, type,
               alignItems="center"
               justifyContent="center"
               borderRadius="12px"
-              bg={isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)"}
+              bg={themeColors.modal.cardBg}
               padding={2}
               transition="all 0.2s ease"
               _hover={{
                 transform: "scale(1.05)",
-                bg: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.05)"
+                bg: themeColors.modal.cardHoverBg
               }}
             >
               <Image
@@ -290,7 +144,7 @@ export default function Board({ id, type,
             position="absolute"
             bottom="-22px"
             left="14px"
-            color={isDark ? "white" : "black"}
+            color={themeColors.baseColor}
             fontWeight="medium"
           >
             {value}
@@ -317,17 +171,22 @@ export default function Board({ id, type,
     <Box
       ref={nodeRef}
       position="relative"
-      border={`3px solid ${borderColor}`}
+      border={`3px solid ${themeColors.borderColor}`}
       borderRadius="12px"
       height="100%"
       width="100%"
-      bg={bgColor}
-      {...(selected && { boxShadow: `${borderColor} 0px 0px 4px` })}
+      bg={themeColors.bgColor}
+      {...(selected && { boxShadow: `${themeColors.borderColor} 0px 0px 4px` })}
       transition="all 0.1s ease-out"
-      minHeight="200px"
-      minWidth="200px"
+      minHeight={boardSizes.expanded.minHeight}
+      minWidth={boardSizes.expanded.minWidth}
     >
-      {selected && <NodeResizer minWidth={300} minHeight={300} />}
+      {selected && (
+        <NodeResizer 
+          minWidth={boardSizes.expanded.minWidth} 
+          minHeight={boardSizes.expanded.minHeight} 
+        />
+      )}
 
       {/* Collapse Button */}
       <Tooltip label="Collapse Board" placement="top" hasArrow>
@@ -366,7 +225,7 @@ export default function Board({ id, type,
           position="absolute"
           bottom="-22px"
           left="14px"
-          color={isDark ? "white" : "black"}
+          color={themeColors.baseColor}
         >
           {value}
         </Text>
@@ -390,7 +249,7 @@ export default function Board({ id, type,
       {/* Component Selection Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
         <ModalOverlay />
-        <ModalContent bg={colors.bgColor} color={colors.textColor}>
+        <ModalContent bg={themeColors.modal.bgColor} color={themeColors.modal.textColor}>
           <ModalHeader>Add Component to Board</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
@@ -399,19 +258,17 @@ export default function Board({ id, type,
                 <Box
                   key={component.type}
                   as="button"
-                  bg={colors.cardBg}
-                  border={`2px solid ${colors.borderColor}`}
+                  bg={themeColors.modal.cardBg}
+                  border={`2px solid ${themeColors.modal.borderColor}`}
                   borderRadius="lg"
                   p={4}
                   cursor="pointer"
                   transition="all 0.2s"
                   _hover={{
-                    borderColor: colors.accentColor,
-                    bg: colors.cardHoverBg,
+                    borderColor: themeColors.modal.accentColor,
+                    bg: themeColors.modal.cardHoverBg,
                     transform: "translateY(-2px)",
-                    boxShadow: isDark
-                      ? `0 4px 12px ${colors.accentColor}30`
-                      : `0 4px 12px ${colors.accentColor}20`,
+                    boxShadow: `0 4px 12px ${themeColors.modal.accentColor}30`,
                   }}
                   _active={{
                     transform: "translateY(0)",
@@ -453,3 +310,6 @@ export default function Board({ id, type,
     </Box>
   );
 }
+
+// Export memoized component for performance
+export default memo(Board);

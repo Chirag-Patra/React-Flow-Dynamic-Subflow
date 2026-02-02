@@ -4,6 +4,9 @@ import { Email, Python, Lamda, GlueJob, Eks, Stepfunction } from "../icons";
 import { Box } from "@chakra-ui/react";
 import { memo } from "react";
 
+// ============================================================================
+// INITIAL STATE
+// ============================================================================
 export const initialEdges: Edge[] = [];
 
 export const initialNodes: Node[] = [
@@ -16,83 +19,85 @@ export const initialNodes: Node[] = [
   },
 ];
 
-// Memoized icon components with inline styles to prevent Chakra re-calculations
+// ============================================================================
+// OPTIMIZED ICON COMPONENTS & STYLES
+// ============================================================================
+
+// Consolidated and optimized styles as const assertions for better performance
+const ICON_STYLES = {
+  map: {
+    height: "25px",
+    width: "25px", 
+    borderRadius: "4px",
+    border: "2px solid red",
+    background: "rgba(255, 100, 100, 0.2)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "9px",
+    fontWeight: "bold",
+  },
+  placeholder: {
+    height: "30px",
+    width: "30px",
+    borderRadius: "4px", 
+    border: "2px dashed #4A5568",
+    background: "rgba(99, 179, 237, 0.1)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "16px",
+    fontWeight: "bold",
+    color: "#63B3ED",
+  },
+  job: {
+    height: "30px",
+    width: "30px",
+    borderRadius: "4px",
+    border: "1px solid black",
+  },
+  etlo: {
+    height: "30px",
+    width: "30px",
+    borderRadius: "4px",
+    border: "2px solid green",
+    background: "rgba(50, 200, 50, 0.2)",
+    display: "flex",
+    alignItems: "center", 
+    justifyContent: "center",
+    fontSize: "8px",
+    fontWeight: "bold",
+  },
+  batchETLO: {
+    height: "30px",
+    width: "30px",
+    borderRadius: "4px",
+    border: "2px solid #48bb78",
+    background: "rgba(72, 187, 120, 0.2)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center", 
+    fontSize: "7px",
+    fontWeight: "bold",
+  },
+} as const;
+
+// Memoized icon components with display names for debugging
 const EmailIcon = memo(() => <Email height={40} />);
 const PythonIcon = memo(() => <Python height={40} />);
 const LamdaIcon = memo(() => <Lamda height={40} />);
 const GlueJobIcon = memo(() => <GlueJob height={40} />);
 const EksIcon = memo(() => <Eks height={40} />);
 const StepfunctionIcon = memo(() => <Stepfunction height={40} />);
+const MapIcon = memo(() => <Box sx={ICON_STYLES.map}>MAP</Box>);
+const PlaceholderIcon = memo(() => <Box sx={ICON_STYLES.placeholder}>+</Box>);
+const JobIcon = memo(() => <Box sx={ICON_STYLES.job} />);
+const ETLOIcon = memo(() => <Box sx={ICON_STYLES.etlo}>ETLO</Box>);
+const BatchETLOIcon = memo(() => <Box sx={ICON_STYLES.batchETLO}>BATCH</Box>);
 
-// Pre-rendered static styles for icons to avoid recalculation
-const mapIconStyle = {
-  height: "25px",
-  width: "25px",
-  borderRadius: "4px",
-  border: "2px solid red",
-  background: "rgba(255, 100, 100, 0.2)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "9px",
-  fontWeight: "bold",
-};
-
-const placeholderIconStyle = {
-  height: "30px",
-  width: "30px",
-  borderRadius: "4px",
-  border: "2px dashed #4A5568",
-  background: "rgba(99, 179, 237, 0.1)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "16px",
-  fontWeight: "bold",
-  color: "#63B3ED",
-};
-
-const jobIconStyle = {
-  height: "30px",
-  width: "30px",
-  borderRadius: "4px",
-  border: "1px solid black",
-};
-
-const etloIconStyle = {
-  height: "30px",
-  width: "30px",
-  borderRadius: "4px",
-  border: "2px solid green",
-  background: "rgba(50, 200, 50, 0.2)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "8px",
-  fontWeight: "bold",
-};
-
-const batchETLOIconStyle = {
-  height: "30px",
-  width: "30px",
-  borderRadius: "4px",
-  border: "2px solid #48bb78",
-  background: "rgba(72, 187, 120, 0.2)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "7px",
-  fontWeight: "bold",
-};
-
-const MapIcon = memo(() => <Box sx={mapIconStyle}>MAP</Box>);
-const PlaceholderIcon = memo(() => <Box sx={placeholderIconStyle}>+</Box>);
-const JobIcon = memo(() => <Box sx={jobIconStyle} />);
-const ETLOIcon = memo(() => <Box sx={etloIconStyle}>ETLO</Box>);
-const BatchETLOIcon = memo(() => <Box sx={batchETLOIconStyle}>BATCH</Box>);
-
+// Set display names for better debugging
 EmailIcon.displayName = "EmailIcon";
-PythonIcon.displayName = "PythonIcon";
+PythonIcon.displayName = "PythonIcon"; 
 LamdaIcon.displayName = "LamdaIcon";
 GlueJobIcon.displayName = "GlueJobIcon";
 EksIcon.displayName = "EksIcon";
@@ -103,83 +108,69 @@ JobIcon.displayName = "JobIcon";
 ETLOIcon.displayName = "ETLOIcon";
 BatchETLOIcon.displayName = "BatchETLOIcon";
 
-// Pre-instantiate icons once to avoid recreation
-const iconInstances = {
-  email: <EmailIcon />,
-  python: <PythonIcon />,
-  lamda: <LamdaIcon />,
-  glueJob: <GlueJobIcon />,
-  eks: <EksIcon />,
-  stepfunction: <StepfunctionIcon />,
-  map: <MapIcon />,
-  placeholder: <PlaceholderIcon />,
-  job: <JobIcon />,
-  etlo: <ETLOIcon />,
-  batchETLO: <BatchETLOIcon />,
-};
+// ============================================================================
+// COMPONENT CONFIGURATIONS
+// ============================================================================
 
-export const COMPONENTS = [
-  {
-    icon: iconInstances.email,
+// Frozen component arrays for optimal performance
+export const COMPONENTS = Object.freeze([
+  Object.freeze({
+    icon: <EmailIcon />,
     type: MajorComponents.Email_notification,
     label: "Email Notification",
-  },
-  {
-    icon: iconInstances.python,
+  }),
+  Object.freeze({
+    icon: <PythonIcon />,
     type: MajorComponents.Execute_Py,
     label: "Execute Py",
-  },
-  {
-    icon: iconInstances.lamda,
+  }),
+  Object.freeze({
+    icon: <LamdaIcon />,
     type: MajorComponents.Run_Lamda,
-    label: "Run Lamda",
-  },
-  {
-    icon: iconInstances.glueJob,
+    label: "Run Lambda",
+  }),
+  Object.freeze({
+    icon: <GlueJobIcon />,
     type: MajorComponents.Run_GlueJob,
-    label: "Run GlueJob",
-  },
-  {
-    icon: iconInstances.eks,
+    label: "Run Glue Job",
+  }),
+  Object.freeze({
+    icon: <EksIcon />,
     type: MajorComponents.Run_Eks,
-    label: "Run Eks",
-  },
-  {
-    icon: iconInstances.stepfunction,
+    label: "Run EKS",
+  }),
+  Object.freeze({
+    icon: <StepfunctionIcon />,
     type: MajorComponents.Run_StepFunction,
-    label: "Run StepFunction",
-  },
-  {
-    icon: iconInstances.map,
+    label: "Run Step Function",
+  }),
+  Object.freeze({
+    icon: <MapIcon />,
     type: MajorComponents.Map,
     label: "Map",
-  },
-];
+  }),
+]);
 
-export const PARENT = [
-  {
-    icon: iconInstances.job,
+export const PARENT = Object.freeze([
+  Object.freeze({
+    icon: <JobIcon />,
     type: MajorComponents.Board,
     label: "Job",
-  },
-  {
-    icon: iconInstances.etlo,
+  }),
+  Object.freeze({
+    icon: <ETLOIcon />,
     type: MajorComponents.ETLO,
     label: "ETLO",
-  },
-  {
-    icon: iconInstances.batchETLO,
+  }),
+  Object.freeze({
+    icon: <BatchETLOIcon />,
     type: MajorComponents.BatchETLO,
     label: "BatchETLO",
-  },
-];
-
-// Freeze arrays to prevent accidental mutations and enable engine optimizations
-Object.freeze(COMPONENTS);
-Object.freeze(PARENT);
+  }),
+]);
 
 // ============================================================================
-// PLACEHOLDER CONFIGURATION - Dynamic placeholder positioning for each node type
+// PLACEHOLDER CONFIGURATION
 // ============================================================================
 
 export interface PlaceholderPosition {
@@ -189,64 +180,48 @@ export interface PlaceholderPosition {
 
 export interface PlaceholderConfig {
   count: number;
-  positions: PlaceholderPosition[];
+  positions: readonly PlaceholderPosition[];
 }
 
-// Configuration for how many placeholders each component type should create
-export const PLACEHOLDER_CONFIG: Partial<Record<MajorComponents, PlaceholderConfig>> = {
-  // BatchETLO creates 2 placeholders: one right, one below
-  [MajorComponents.BatchETLO]: {
+// Optimized placeholder configurations with frozen positions
+export const PLACEHOLDER_CONFIG: Readonly<Partial<Record<MajorComponents, PlaceholderConfig>>> = Object.freeze({
+  [MajorComponents.BatchETLO]: Object.freeze({
     count: 3,
-    positions: [
-      { x: 250, y: 0 },   // Right
-      { x: 0, y: -250 },
-      { x: -250, y: 0 },   // Left
-    ],
-  },
-
-  // ETLO creates 2 placeholders: one right, one below
-  [MajorComponents.ETLO]: {
+    positions: Object.freeze([
+      Object.freeze({ x: 250, y: 0 }),   // Right
+      Object.freeze({ x: 0, y: -250 }),  // Top
+      Object.freeze({ x: -250, y: 0 }),  // Left
+    ]),
+  }),
+  [MajorComponents.ETLO]: Object.freeze({
     count: 1,
-    positions: [
-      { x: 250, y: 0 },   // Right
-      //{ x: 0, y: 250 },   // Below
-    ],
-  },
-
-  // Board/Job creates 1 placeholder to the right
-  [MajorComponents.Board]: {
+    positions: Object.freeze([
+      Object.freeze({ x: 250, y: 0 }),   // Right
+    ]),
+  }),
+  [MajorComponents.Board]: Object.freeze({
     count: 1,
-    positions: [
-      { x: 250, y: 0 },   // Right
-    ],
-  },
+    positions: Object.freeze([
+      Object.freeze({ x: 250, y: 0 }),   // Right
+    ]),
+  }),
+});
 
-  // Example: Map could have 3 placeholders in different directions
-  // [MajorComponents.Map]: {
-  //   count: 3,
-  //   positions: [
-  //     { x: 250, y: 0 },    // Right
-  //     { x: 0, y: 250 },    // Below
-  //     { x: -250, y: 0 },   // Left
-  //   ],
-  // },
-};
-
-// Default configuration for components not specified above
-const DEFAULT_PLACEHOLDER_CONFIG: PlaceholderConfig = {
+// Default configuration
+const DEFAULT_PLACEHOLDER_CONFIG: PlaceholderConfig = Object.freeze({
   count: 1,
-  positions: [
-    { x: 250, y: 0 }, // Default: single placeholder to the right
-  ],
-};
+  positions: Object.freeze([
+    Object.freeze({ x: 250, y: 0 }), // Default: single placeholder to the right
+  ]),
+});
 
 /**
  * Get the placeholder configuration for a specific component type
- * @param componentType - The component type to get configuration for
+ * @param componentType - The component type to get configuration for  
  * @returns The placeholder configuration
  */
 export const getPlaceholderConfig = (componentType: MajorComponents): PlaceholderConfig => {
-  return PLACEHOLDER_CONFIG[componentType] || DEFAULT_PLACEHOLDER_CONFIG;
+  return PLACEHOLDER_CONFIG[componentType] ?? DEFAULT_PLACEHOLDER_CONFIG;
 };
 
 /**
@@ -255,8 +230,7 @@ export const getPlaceholderConfig = (componentType: MajorComponents): Placeholde
  * @returns True if the component creates multiple placeholders
  */
 export const hasMultiplePlaceholders = (componentType: MajorComponents): boolean => {
-  const config = getPlaceholderConfig(componentType);
-  return config.count > 1;
+  return getPlaceholderConfig(componentType).count > 1;
 };
 
 /**
@@ -265,16 +239,15 @@ export const hasMultiplePlaceholders = (componentType: MajorComponents): boolean
  * @returns The number of placeholders
  */
 export const getPlaceholderCount = (componentType: MajorComponents): number => {
-  const config = getPlaceholderConfig(componentType);
-  return config.count;
+  return getPlaceholderConfig(componentType).count;
 };
 
 // ============================================================================
-// CONNECTION RULES
+// CONNECTION RULES - Optimized with Sets and Maps
 // ============================================================================
 
-// Optimized connection rules using Sets for O(1) lookup
-const connectionRulesMap = new Map<MajorComponents, Set<MajorComponents>>([
+// Optimized connection rules using Maps and Sets for O(1) lookup
+const CONNECTION_RULES_MAP = new Map<MajorComponents, Set<MajorComponents>>([
   [MajorComponents.Board, new Set([
     MajorComponents.ETLO,
     MajorComponents.BatchETLO,
@@ -288,8 +261,16 @@ const connectionRulesMap = new Map<MajorComponents, Set<MajorComponents>>([
     MajorComponents.Run_StepFunction,
     MajorComponents.Ingestion,
   ])],
-  [MajorComponents.ETLO, new Set([MajorComponents.Board,MajorComponents.ETLO, MajorComponents.BatchETLO])],
-  [MajorComponents.BatchETLO, new Set([MajorComponents.Board, MajorComponents.ETLO,MajorComponents.BatchETLO])],
+  [MajorComponents.ETLO, new Set([
+    MajorComponents.Board,
+    MajorComponents.ETLO,
+    MajorComponents.BatchETLO
+  ])],
+  [MajorComponents.BatchETLO, new Set([
+    MajorComponents.Board,
+    MajorComponents.ETLO,
+    MajorComponents.BatchETLO
+  ])],
   [MajorComponents.Map, new Set()],
   [MajorComponents.Execute_Py, new Set()],
   [MajorComponents.Email_notification, new Set()],
@@ -309,76 +290,101 @@ const connectionRulesMap = new Map<MajorComponents, Set<MajorComponents>>([
   [MajorComponents.Db, new Set()],
 ]);
 
-// Pre-compute reverse lookup map for better performance (which parents accept which children)
-const reverseConnectionMap = new Map<MajorComponents, Set<MajorComponents>>();
+// Pre-compute reverse lookup map for which parents accept which children
+const REVERSE_CONNECTION_MAP = new Map<MajorComponents, Set<MajorComponents>>();
 
-// Build reverse map once
-connectionRulesMap.forEach((children, parent) => {
+// Build reverse map once on module load
+CONNECTION_RULES_MAP.forEach((children, parent) => {
   children.forEach(child => {
-    if (!reverseConnectionMap.has(child)) {
-      reverseConnectionMap.set(child, new Set());
+    if (!REVERSE_CONNECTION_MAP.has(child)) {
+      REVERSE_CONNECTION_MAP.set(child, new Set());
     }
-    reverseConnectionMap.get(child)!.add(parent);
+    REVERSE_CONNECTION_MAP.get(child)!.add(parent);
   });
 });
 
-// Export as regular object for backwards compatibility (frozen for performance)
-export const CONNECTION_RULES: Readonly<Record<MajorComponents, MajorComponents[]>> =
+// Legacy export for backwards compatibility
+export const CONNECTION_RULES: Readonly<Record<MajorComponents, readonly MajorComponents[]>> =
   Object.freeze(
     Object.fromEntries(
-      Array.from(connectionRulesMap.entries()).map(([key, value]) => [key, Object.freeze(Array.from(value))])
-    ) as Record<MajorComponents, MajorComponents[]>
+      Array.from(CONNECTION_RULES_MAP.entries()).map(([key, value]) => 
+        [key, Object.freeze(Array.from(value))]
+      )
+    ) as Record<MajorComponents, readonly MajorComponents[]>
   );
 
-// Optimized validation using Set for O(1) lookup
+/**
+ * Optimized connection validation using Set for O(1) lookup
+ * @param sourceType - The source component type
+ * @param targetType - The target component type
+ * @returns True if connection is valid
+ */
 export const isValidConnection = (
   sourceType: MajorComponents,
   targetType: MajorComponents
 ): boolean => {
-  const allowedTargets = connectionRulesMap.get(sourceType);
-  return allowedTargets ? allowedTargets.has(targetType) : false;
+  const allowedTargets = CONNECTION_RULES_MAP.get(sourceType);
+  return allowedTargets?.has(targetType) ?? false;
 };
 
-// Helper function to get allowed child components for a parent
+/**
+ * Get allowed child components for a parent type
+ * @param parentType - The parent component type
+ * @returns Array of allowed child component types
+ */
 export const getAllowedChildren = (parentType: MajorComponents): readonly MajorComponents[] => {
-  const children = connectionRulesMap.get(parentType);
-  return children ? Array.from(children) : [];
+  const children = CONNECTION_RULES_MAP.get(parentType);
+  return children ? Object.freeze(Array.from(children)) : Object.freeze([]);
 };
 
-// Optimized cache with WeakMap for automatic garbage collection
-const filteredParentsCache = new Map<MajorComponents | "undefined", readonly typeof PARENT[number][]>();
+// ============================================================================
+// FILTERED PARENTS CACHE - Ultra-fast lookups
+// ============================================================================
 
-// Pre-compute all possible filtered parent results on initialization
-const precomputeFilteredParents = () => {
+// Pre-computed cache for filtered parents
+const FILTERED_PARENTS_CACHE = new Map<MajorComponents | "undefined", readonly (typeof PARENT)[number][]>();
+
+// Pre-compute all possible filtered parent results
+const precomputeFilteredParents = (): void => {
   // Cache for undefined/null case
-  filteredParentsCache.set("undefined", PARENT);
+  FILTERED_PARENTS_CACHE.set("undefined", PARENT);
 
   // Pre-compute for all possible component types
   Object.values(MajorComponents).forEach(componentType => {
-    const parents = reverseConnectionMap.get(componentType as MajorComponents);
+    const parents = REVERSE_CONNECTION_MAP.get(componentType as MajorComponents);
     const filtered = parents
-      ? PARENT.filter(parent => parents.has(parent.type))
-      : [];
-    filteredParentsCache.set(componentType as MajorComponents, Object.freeze(filtered));
+      ? Object.freeze(PARENT.filter(parent => parents.has(parent.type)))
+      : Object.freeze([]);
+    FILTERED_PARENTS_CACHE.set(componentType as MajorComponents, filtered);
   });
 };
 
-// Run pre-computation immediately
+// Run pre-computation on module load
 precomputeFilteredParents();
 
-// Ultra-fast filtered parents lookup (now just a Map.get)
-export const getFilteredParents = (sourceNodeType?: MajorComponents): readonly typeof PARENT[number][] => {
+/**
+ * Ultra-fast filtered parents lookup using pre-computed cache
+ * @param sourceNodeType - The source node type to filter by
+ * @returns Array of parent components that can accept this source type
+ */
+export const getFilteredParents = (sourceNodeType?: MajorComponents): readonly (typeof PARENT)[number][] => {
   const key = sourceNodeType ?? "undefined";
-  return filteredParentsCache.get(key) ?? PARENT;
+  return FILTERED_PARENTS_CACHE.get(key) ?? PARENT;
 };
 
-// Optional: Clear cache function (only needed if rules change at runtime)
-export const clearFilteredParentsCache = () => {
-  filteredParentsCache.clear();
+/**
+ * Clear and rebuild the filtered parents cache (only needed if rules change at runtime)
+ */
+export const clearFilteredParentsCache = (): void => {
+  FILTERED_PARENTS_CACHE.clear();
   precomputeFilteredParents();
 };
 
-// Type guard for better performance
+/**
+ * Type guard for better performance and type safety
+ * @param type - The type to check
+ * @returns True if the type is a valid MajorComponent
+ */
 export const isMajorComponent = (type: string): type is MajorComponents => {
-  return connectionRulesMap.has(type as MajorComponents);
+  return CONNECTION_RULES_MAP.has(type as MajorComponents);
 };

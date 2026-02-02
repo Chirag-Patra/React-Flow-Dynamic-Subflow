@@ -1,5 +1,5 @@
 import { Handle, Node, NodeProps, Position, useReactFlow } from "@xyflow/react";
-import React from "react";
+import React, { memo, useMemo, useCallback } from "react";
 import {
   MajorComponentsData,
   MajorComponentsState,
@@ -13,10 +13,11 @@ import Terminal from "./Terminal";
 import Rotation from "./Rotation";
 import { Lock, Plus, Unlock, X } from "react-bootstrap-icons";
 import { useDarkMode } from "../store";
+import { useComponentTypeInfo, useComponentLabel, useComponentStyling } from "../hooks";
 
 type MajorComponentNode = Node<MajorComponentsData, "string">;
 
-export default function MajorComponent({
+function MajorComponent({
   data: {
     reusableComponenttype,
     value,
@@ -31,57 +32,18 @@ export default function MajorComponent({
   id,
   parentId,
 }: NodeProps<MajorComponentNode>) {
-  const unit = type ? getUnit(type as MajorComponents) : undefined;
-
-  const isAdditionValid = state === MajorComponentsState.Add;
-  const isAdditionInvalid = state === MajorComponentsState.NotAdd;
-
   const { updateNode } = useReactFlow();
   const { isDark } = useDarkMode();
 
-  let color = "black";
-  if (isDark) color = "white";
+  // Use optimized hooks for component information and styling
+  const componentTypeInfo = useComponentTypeInfo(type);
+  const componentLabel = useComponentLabel(type, reusableComponenttype);
+  const componentStyling = useComponentStyling(selected, state === MajorComponentsState.Add, state === MajorComponentsState.NotAdd);
 
-  // Check if this is an ingestion component
-  const isIngestionComponent = type === MajorComponents.Ingestion;
-
-  // Check if this is an ETL processing component
-  const isETLProcessingComponent = type ? [
-    MajorComponents.Run_Lamda,
-    MajorComponents.Run_GlueJob,
-    MajorComponents.Run_Eks,
-    MajorComponents.Run_StepFunction
-  ].includes(type) : false;
-
-  // Map component types to their labels
-  const getComponentLabel = (type?: MajorComponents) => {
-    if (!type) return 'Component';
-    // For ETL processing types, show reusable component type if available
-    if (isETLProcessingComponent && reusableComponenttype && reusableComponenttype !== 'Custom') {
-      return reusableComponenttype;
-    }
-
-    const labelMap: Partial<Record<MajorComponents, string>> = {
-      [MajorComponents.Js]: 'JavaScript',
-      [MajorComponents.Aws]: 'AWS',
-      [MajorComponents.Execute_Py]: 'Execute Py',
-      [MajorComponents.Db]: 'Database',
-      [MajorComponents.Email_notification]: 'Email Notification',
-      [MajorComponents.Run_Lamda]: 'Run Lambda',
-      [MajorComponents.Run_GlueJob]: 'Run Glue Job',
-      [MajorComponents.Run_Eks]: 'Run EKS',
-      [MajorComponents.Run_StepFunction]: 'Run Step Function',
-      [MajorComponents.Ingestion]: 'Ingestion',
-      [MajorComponents.Board]: 'Job',
-      [MajorComponents.Map]: 'Map',
-    };
-    return labelMap[type] || 'Component';
-  };
-
-  // Function to render the icon based on type
-  const renderIcon = () => {
-    const iconProps = { height: 30 }; // Remove color prop to let icons use their designed colors
-
+  // Memoize icon rendering
+  const iconComponent = useMemo(() => {
+    const iconProps = { height: 30 };
+    
     switch(type) {
       case MajorComponents.Execute_Py:
         return <Python {...iconProps} />;
@@ -100,7 +62,7 @@ export default function MajorComponent({
       default:
         return null;
     }
-  };
+  }, [type]);
 
   return (
     <Box
@@ -132,41 +94,29 @@ export default function MajorComponent({
       )} */}
 
       {/* Addition state indicators */}
-      {isAdditionValid && (
+      {state === MajorComponentsState.Add && (
         <Plus
           style={{ position: "absolute", top: -17, right: 2, zIndex: 10 }}
-          color={color}
+          color={isDark ? "white" : "black"}
         />
       )}
-      {isAdditionInvalid && (
-        <X style={{ position: "absolute", top: -17, right: 2, zIndex: 10 }} color={color} />
+      {state === MajorComponentsState.NotAdd && (
+        <X style={{ position: "absolute", top: -17, right: 2, zIndex: 10 }} color={isDark ? "white" : "black"} />
       )}
 
       {/* Main component container */}
       <HStack
         spacing={2}
         p={2}
-        bg={
-          isAdditionValid ? "#58ed58" :
-          isAdditionInvalid ? "#ff0505" :
-          selected ? (isDark ? "gray.700" : "gray.200") :
-          (isDark ? "gray.800" : "gray.100")
-        }
+        bg={componentStyling.backgroundColor}
         borderRadius="sm"
-        border={selected ? "2px solid" : "1px solid"}
-        borderColor={
-          selected ? "blue.500" :
-          isDark ? "gray.600" : "gray.300"
-        }
-        //minW="140px"
+        border={`${componentStyling.borderWidth} solid`}
+        borderColor={componentStyling.borderColor}
         h='55px'
         w="180px"
         align="center"
         transition="all 0.2s"
-        _hover={{
-          boxShadow: 'md',
-          bg: isDark ? "gray.700" : "gray.200"
-        }}
+        _hover={componentStyling.hoverStyles}
       >
         {/* Icon container */}
         <Box
@@ -180,7 +130,7 @@ export default function MajorComponent({
           boxShadow="sm"
           flexShrink={0}
         >
-          {renderIcon()}
+          {iconComponent}
         </Box>
 
         {/* Label only - value moved outside */}
@@ -191,13 +141,13 @@ export default function MajorComponent({
             color={isDark ? "gray.200" : "gray.700"}
             textAlign="center"
           >
-            {getComponentLabel(type)}
+            {componentLabel}
           </Text>
         </Box>
       </HStack>
 
       {/* Value display outside the main box - positioned at bottom */}
-      {(value || (isETLProcessingComponent && reusableComponenttype)) && (
+      {(value || (componentTypeInfo.isETLProcessing && reusableComponenttype)) && (
         <Box
           position="absolute"
           bottom="-20px"
@@ -215,10 +165,10 @@ export default function MajorComponent({
           boxShadow="sm"
           zIndex={5}
         >
-          {isETLProcessingComponent && reusableComponenttype && reusableComponenttype !== 'Custom' ? (
+          {componentTypeInfo.isETLProcessing && reusableComponenttype && reusableComponenttype !== 'Custom' ? (
             <Text>{reusableComponenttype}</Text>
           ) : value ? (
-            <Text>{value} {unit}</Text>
+            <Text>{value} {type ? getUnit(type as MajorComponents) : undefined}</Text>
           ) : null}
         </Box>
       )}
@@ -274,3 +224,6 @@ export default function MajorComponent({
     </Box>
   );
 }
+
+// Export memoized component for performance
+export default memo(MajorComponent);

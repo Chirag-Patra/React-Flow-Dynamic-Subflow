@@ -5,9 +5,10 @@ import LandingPage from "./Workflow/LandingPage";
 import "./index.css";
 import { ReactFlowProvider, Node, Edge } from "@xyflow/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import { initialNodes, initialEdges } from "./constants";
 
+// Optimized QueryClient configuration with better defaults
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -15,6 +16,11 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       retry: 0,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30,   // 30 minutes (was cacheTime)
+    },
+    mutations: {
+      retry: 1,
     },
   },
 });
@@ -23,6 +29,21 @@ function App() {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [showLanding, setShowLanding] = useState(true);
+
+  // Memoized event handlers to prevent unnecessary re-renders
+  const handleImport = useCallback((flow: { nodes?: Node[]; edges?: Edge[] }) => {
+    setNodes(flow.nodes || []);
+    setEdges(flow.edges || []);
+  }, []);
+
+  const handleClear = useCallback(() => {
+    setNodes(initialNodes);
+    setEdges(initialEdges);
+  }, []);
+
+  const handleLandingFinish = useCallback(() => {
+    setShowLanding(false);
+  }, []);
 
   return (
     <ChakraProvider>
@@ -44,14 +65,8 @@ function App() {
               <TopBar
                 nodes={nodes}
                 edges={edges}
-                onImport={(flow) => {
-                  setNodes(flow.nodes || []);
-                  setEdges(flow.edges || []);
-                }}
-                onClear={() => {
-                  setNodes(initialNodes);
-                  setEdges(initialEdges);
-                }}
+                onImport={handleImport}
+                onClear={handleClear}
               />
 
               {/* Workflow Canvas */}
@@ -68,11 +83,7 @@ function App() {
             {/* LANDING PAGE OVERLAY */}
             {/* Rendered conditionally; zIndex ensures it stays on top of TopBar */}
             {showLanding && (
-              <LandingPage
-                onFinish={() => {
-                  setShowLanding(false);
-                }}
-              />
+              <LandingPage onFinish={handleLandingFinish} />
             )}
 
           </Box>
@@ -82,4 +93,5 @@ function App() {
   );
 }
 
-export default App;
+// Export memoized component for better performance
+export default memo(App);

@@ -616,7 +616,7 @@ export const Workflow = ({ nodes: propsNodes, edges: propsEdges, setNodes: setPr
     }
 
     if (
-      ALLOWED_COMPONENT_TYPES.includes(overlappingNode?.data?.type as MajorComponents) &&
+      ALLOWED_COMPONENT_TYPES.includes(overlappingNode?.data?.type as MajorComponents) && 
       dragNode?.data?.type === overlappingNode?.data?.type
     ) {
       setNodes((prevNodes) =>
