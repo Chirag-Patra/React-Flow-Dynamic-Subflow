@@ -11,7 +11,7 @@ import { v4 as uuid } from "uuid";
 import { COMPONENTS } from "../constants";
 import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 import jobIcon from "../logo/jobicon.png";
-import { useThemeColors, useNodeOperations, useBoardOperations, useOptimizedResizeObserver } from "../hooks";
+import { useThemeColors, useNodeOperations, useBoardOperations, useOptimizedResizeObserver, storeBoardSize, getStoredBoardSize } from "../hooks";
 
 type BoardNode = Node<MajorComponentsData, "string">;
 
@@ -22,7 +22,7 @@ function Board({ id, type,
   const showContent = useStore(zoomSelector);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const updateNodeInternals = useUpdateNodeInternals();
-  const { getNode } = useReactFlow();
+  const { getNode, setNodes } = useReactFlow();
   
   // Check if the board should be initially expanded
   // Use a data property or default to collapsed state
@@ -40,10 +40,24 @@ function Board({ id, type,
   
   const nodeRef = useRef<HTMLDivElement>(null);
   
-  // Get current node dimensions - use n8n-style horizontal layout sizes
-  const currentNode = getNode(id);
-  const nodeHeight = currentNode?.style?.height || currentNode?.height || (isExpanded ? 280 : 150);
-  const nodeWidth = currentNode?.style?.width || currentNode?.width || (isExpanded ? 400 : 150);
+  // Track expanded size in state - initialize from localStorage, node data, or default
+  const [expandedSize, setExpandedSize] = useState(() => {
+    // First try localStorage
+    const stored = getStoredBoardSize(id);
+    if (stored) return stored;
+    // Then try node data
+    const node = getNode(id);
+    if (node?.data?.expandedWidth && node?.data?.expandedHeight) {
+      return { width: node.data.expandedWidth, height: node.data.expandedHeight };
+    }
+    // Default size
+    return { width: 400, height: 280 };
+  });
+
+  // Get current node dimensions based on expanded state
+  // Use expandedSize state which is updated during resize
+  const nodeHeight = isExpanded ? expandedSize.height : 150;
+  const nodeWidth = isExpanded ? expandedSize.width : 150;
 
   // Use optimized hooks
   const themeColors = useThemeColors(isDragOver);
@@ -58,6 +72,17 @@ function Board({ id, type,
   useEffect(() => {
     return setupResizeObserver();
   }, [setupResizeObserver]);
+
+  // Sync expandedSize from localStorage when expanding
+  useEffect(() => {
+    if (isExpanded) {
+      const stored = getStoredBoardSize(id);
+      if (stored) {
+        setExpandedSize(stored);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isExpanded, id]);
 
   // Update isExpanded state when node dimensions change (but not during manual resize)
   useEffect(() => {
@@ -83,8 +108,32 @@ function Board({ id, type,
   }, [id, createComponentWithPlaceholder, isExpanded, onClose]);
 
   const toggleExpanded = useCallback(() => {
+    // If collapsing, save current dimensions from the DOM element
+    if (isExpanded && nodeRef.current) {
+      const rect = nodeRef.current.getBoundingClientRect();
+      storeBoardSize(id, rect.width, rect.height);
+      setExpandedSize({ width: rect.width, height: rect.height });
+    }
     toggleBoardExpansion(!!isExpanded, setIsExpanded);
-  }, [toggleBoardExpansion, isExpanded]);
+  }, [toggleBoardExpansion, isExpanded, id]);
+
+  // Handle resize - update local state for live preview
+  const handleResize = useCallback((_event: unknown, params: { x: number; y: number; width: number; height: number }) => {
+    setExpandedSize({ width: params.width, height: params.height });
+  }, []);
+
+  // Handle resize end - save final dimensions to localStorage and node data
+  const handleResizeEnd = useCallback((_event: unknown, params: { x: number; y: number; width: number; height: number }) => {
+    const { width, height } = params;
+    // Save to localStorage
+    storeBoardSize(id, width, height);
+    // Also save in node data for persistence
+    setNodes(nodes => nodes.map(node =>
+      node.id === id
+        ? { ...node, data: { ...node.data, expandedWidth: width, expandedHeight: height } }
+        : node
+    ));
+  }, [id, setNodes]);
 
   // Collapsed view (similar to ETLO)
   if (!isExpanded) {
@@ -206,8 +255,8 @@ function Board({ id, type,
       position="relative"
       border={`3px solid ${themeColors.borderColor}`}
       borderRadius="12px"
-      height={typeof nodeHeight === 'number' ? `${nodeHeight}px` : nodeHeight}
-      width={typeof nodeWidth === 'number' ? `${nodeWidth}px` : nodeWidth}
+      height="100%"
+      width="100%"
       bg={themeColors.bgColor}
       {...(selected && { boxShadow: `${themeColors.borderColor} 0px 0px 4px` })}
       transition="all 0.1s ease-out"
@@ -215,9 +264,11 @@ function Board({ id, type,
       minWidth={boardSizes.expanded.minWidth}
     >
       {selected && (
-        <NodeResizer 
-          minWidth={boardSizes.expanded.minWidth} 
-          minHeight={boardSizes.expanded.minHeight} 
+        <NodeResizer
+          minWidth={boardSizes.expanded.minWidth}
+          minHeight={boardSizes.expanded.minHeight}
+          onResize={handleResize}
+          onResizeEnd={handleResizeEnd}
         />
       )}
 

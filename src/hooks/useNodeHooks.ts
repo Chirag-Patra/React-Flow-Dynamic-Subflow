@@ -3,15 +3,36 @@ import { useReactFlow } from '@xyflow/react';
 import { v4 as uuid } from 'uuid';
 import { MajorComponents } from '../types';
 
-// Constants for component positioning and sizing - n8n style horizontal layout (left to right)
+// Storage key prefix for board sizes
+const BOARD_SIZE_STORAGE_KEY = 'board-expanded-size-';
+
+export function getStoredBoardSize(nodeId: string): { width: number; height: number } | null {
+  try {
+    const stored = localStorage.getItem(BOARD_SIZE_STORAGE_KEY + nodeId);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch {
+    // Ignore localStorage errors
+  }
+  return null;
+}
+
+export function storeBoardSize(nodeId: string, width: number, height: number): void {
+  try {
+    localStorage.setItem(BOARD_SIZE_STORAGE_KEY + nodeId, JSON.stringify({ width, height }));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+// Constants for component positioning and sizing - vertical layout (top to bottom)
 const COMPONENT_LAYOUT = {
-  // Center components vertically in the board (board height 280, component height 55)
-  // Y position: (280 - 55) / 2 ≈ 112, accounting for top buttons = ~100
-  basePosition: { x: 30, y: 100 },
-  horizontalStep: 220,  // Horizontal spacing between components (component width 180 + gap 40)
+  // Start position inside the board, accounting for top buttons
+  basePosition: { x: 30, y: 50 },
   componentSize: { height: 55, width: 180 },
   placeholderSize: { height: 44, width: 44 },  // Square for circular appearance
-  placeholderGap: 20  // Gap between component and placeholder
+  placeholderGap: 10  // Reduced gap between component and placeholder for tighter spacing
 } as const;
 
 /**
@@ -22,7 +43,7 @@ export function useNodeOperations() {
   const { setNodes, setEdges, getNodes, getEdges } = useReactFlow();
 
   // Memoized function to create component nodes with placeholders
-  // Uses n8n-style horizontal layout - components chained left to right
+  // Uses vertical layout - components chained top to bottom
   const createComponentWithPlaceholder = useCallback((
     parentId: string,
     componentType: MajorComponents,
@@ -30,19 +51,19 @@ export function useNodeOperations() {
   ) => {
     const nodes = getNodes();
 
-    // Find the rightmost component/placeholder in the parent to chain after it
+    // Find the bottommost component/placeholder in the parent to chain after it
     const childNodes = nodes.filter(node => node.parentId === parentId);
-    let startX = COMPONENT_LAYOUT.basePosition.x;
+    let startY = COMPONENT_LAYOUT.basePosition.y;
 
     if (childNodes.length > 0) {
-      // Find the rightmost position
-      const maxX = Math.max(...childNodes.map(n => n.position.x + (n.style?.width as number || 180)));
-      startX = maxX + COMPONENT_LAYOUT.placeholderGap;
+      // Find the bottommost position
+      const maxY = Math.max(...childNodes.map(n => n.position.y + (n.style?.height as number || 55)));
+      startY = maxY + COMPONENT_LAYOUT.placeholderGap;
     }
 
-    const { y: baseY } = COMPONENT_LAYOUT.basePosition;
-    // Center the placeholder vertically relative to component
-    const placeholderY = baseY + (COMPONENT_LAYOUT.componentSize.height - COMPONENT_LAYOUT.placeholderSize.height) / 2;
+    const { x: baseX } = COMPONENT_LAYOUT.basePosition;
+    // Center the placeholder horizontally relative to component
+    const placeholderX = baseX + (COMPONENT_LAYOUT.componentSize.width - COMPONENT_LAYOUT.placeholderSize.width) / 2;
 
     const componentNodeId = uuid();
     const placeholderNodeId = uuid();
@@ -50,7 +71,7 @@ export function useNodeOperations() {
     const componentNode = {
       id: componentNodeId,
       type: "MajorComponent",
-      position: { x: startX, y: baseY },  // Same Y for horizontal line
+      position: { x: baseX, y: startY },  // Same X for vertical line
       data: {
         type: componentType,
         componentType,
@@ -67,8 +88,8 @@ export function useNodeOperations() {
       id: placeholderNodeId,
       type: "ComponentPlaceholder",
       position: {
-        x: startX + COMPONENT_LAYOUT.componentSize.width + COMPONENT_LAYOUT.placeholderGap,  // Right of component
-        y: placeholderY  // Centered vertically
+        x: placeholderX,  // Centered horizontally
+        y: startY + COMPONENT_LAYOUT.componentSize.height + COMPONENT_LAYOUT.placeholderGap  // Below component
       },
       data: {},
       parentId,
@@ -148,19 +169,30 @@ export function useBoardOperations(nodeId: string) {
     setIsExpanded: (expanded: boolean) => void
   ) => {
     const newExpandedState = !isExpanded;
-    const targetSize = newExpandedState ? boardSizes.expanded : boardSizes.collapsed;
 
     // Get child node IDs once for efficient processing
     const childIds = getChildNodeIds(nodeId);
+
+    // Determine target size - use stored size when expanding, default collapsed size when collapsing
+    let targetSize: { width: number; height: number };
+    if (newExpandedState) {
+      const storedSize = getStoredBoardSize(nodeId);
+      targetSize = storedSize || { width: boardSizes.expanded.width, height: boardSizes.expanded.height };
+    } else {
+      targetSize = boardSizes.collapsed;
+    }
 
     // Update size and show/hide children
     // Also toggle expandParent to prevent hidden children from expanding the parent
     setNodes(nodes => nodes.map(node => {
       if (node.id === nodeId) {
-        // When collapsing, force the node dimensions by setting width/height directly
-        // and clearing measured to force React Flow to re-measure
+        // Force the node dimensions by setting width/height directly
+        // and measured to force React Flow to use these dimensions
         const updatedNode = {
           ...node,
+          width: targetSize.width,
+          height: targetSize.height,
+          measured: { width: targetSize.width, height: targetSize.height },
           style: {
             ...node.style,
             height: targetSize.height,
@@ -168,13 +200,6 @@ export function useBoardOperations(nodeId: string) {
           },
           data: { ...node.data, isExpanded: newExpandedState }
         };
-
-        // For collapse, also set width/height directly and clear measured
-        if (!newExpandedState) {
-          (updatedNode as any).width = targetSize.width;
-          (updatedNode as any).height = targetSize.height;
-          (updatedNode as any).measured = { width: targetSize.width, height: targetSize.height };
-        }
 
         return updatedNode;
       }

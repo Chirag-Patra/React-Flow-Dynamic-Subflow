@@ -105,21 +105,20 @@ const ComponentPlaceholder = memo(({ id }: ComponentPlaceholderProps) => {
     const componentNodeId = uuid();
     const newPlaceholderNodeId = uuid();
 
-    // Component size constants
+    // Component size constants - vertical layout (top to bottom)
     const componentWidth = 180;
     const componentHeight = 55;
     const placeholderWidth = 44;  // Square for circular appearance
     const placeholderHeight = 44;
-    const gap = 20;
+    const gap = 10;  // Reduced gap for tighter vertical spacing
 
-    // Component replaces the placeholder, but needs to be positioned for proper alignment
-    // Adjust Y position so component is centered where placeholder was (horizontal flow)
-    const componentY = currentNode.position.y - (componentHeight - placeholderHeight) / 2;
+    // Component replaces the placeholder - center horizontally where placeholder was
+    const componentX = currentNode.position.x - (componentWidth - placeholderWidth) / 2;
 
     const componentNode = {
       id: componentNodeId,
       type: "MajorComponent",
-      position: { x: currentNode.position.x, y: componentY },  // Same X, centered Y
+      position: { x: componentX, y: currentNode.position.y },  // Centered X, same Y
       data: {
         type: componentType,
         componentType,
@@ -132,13 +131,13 @@ const ComponentPlaceholder = memo(({ id }: ComponentPlaceholderProps) => {
       style: { height: componentHeight, width: componentWidth },
     };
 
-    // Create new placeholder to the right on the same Y center (horizontal line)
+    // Create new placeholder below the component (vertical flow - top to bottom)
     const newPlaceholderNode = {
       id: newPlaceholderNodeId,
       type: "ComponentPlaceholder",
       position: {
-        x: currentNode.position.x + componentWidth + gap,  // Right of the component
-        y: currentNode.position.y  // Same Y position (centered)
+        x: currentNode.position.x,  // Same X position (centered)
+        y: currentNode.position.y + componentHeight + gap  // Below the component
       },
       data: {},
       parentId: currentNode.parentId,
@@ -178,14 +177,14 @@ const ComponentPlaceholder = memo(({ id }: ComponentPlaceholderProps) => {
 
   return (
     <>
-      {/* Target handle - Left for horizontal flow */}
+      {/* Target handle - Top for vertical flow (top to bottom) */}
       <Handle
         type="target"
-        position={Position.Left}
+        position={Position.Top}
         style={{
           border: `2px solid ${colors.accentColor}`,
-          width: "12px",
-          height: "12px",
+          width: "10px",
+          height: "10px",
           background: isDark ? "#1A202C" : "#FFFFFF",
           borderRadius: "50%",
         }}
@@ -211,7 +210,7 @@ const ComponentPlaceholder = memo(({ id }: ComponentPlaceholderProps) => {
       >
         <Text
           color="white"
-          fontSize="22px"
+          fontSize="20px"
           fontWeight="bold"
           lineHeight="1"
           userSelect="none"
@@ -220,14 +219,14 @@ const ComponentPlaceholder = memo(({ id }: ComponentPlaceholderProps) => {
         </Text>
       </Box>
 
-      {/* Source handle - Right for horizontal flow */}
+      {/* Source handle - Bottom for vertical flow (top to bottom) */}
       <Handle
         type="source"
-        position={Position.Right}
+        position={Position.Bottom}
         style={{
           border: `2px solid ${colors.accentColor}`,
-          width: "12px",
-          height: "12px",
+          width: "10px",
+          height: "10px",
           background: isDark ? "#1A202C" : "#FFFFFF",
           borderRadius: "50%",
         }}
