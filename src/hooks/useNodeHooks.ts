@@ -139,7 +139,7 @@ export function useBoardOperations(nodeId: string) {
   const boardSizes = useMemo(() => {
     return {
       expanded: { height: 280, width: 400, minHeight: 250, minWidth: 350 },
-      collapsed: { height: 200, width: 200 } // Always use default size for collapse
+      collapsed: { height: 150, width: 150 } // Always use default size for collapse
     };
   }, []);
 

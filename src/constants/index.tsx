@@ -13,7 +13,7 @@ export const initialNodes: Node[] = [
   {
     id: "placeholder-start",
     type: "PlaceholderNode",
-    position: { x: 300, y: 100 },
+    position: { x: 500, y: 300 },
     data: {},
     style: { height: 50, width: 50 },
   },
@@ -27,7 +27,7 @@ export const initialNodes: Node[] = [
 const ICON_STYLES = {
   map: {
     height: "25px",
-    width: "25px", 
+    width: "25px",
     borderRadius: "4px",
     border: "2px solid red",
     background: "rgba(255, 100, 100, 0.2)",
@@ -63,7 +63,7 @@ const ICON_STYLES = {
     border: "2px solid green",
     background: "rgba(50, 200, 50, 0.2)",
     display: "flex",
-    alignItems: "center", 
+    alignItems: "center",
     justifyContent: "center",
     fontSize: "8px",
     fontWeight: "bold",
@@ -76,7 +76,7 @@ const ICON_STYLES = {
     background: "rgba(72, 187, 120, 0.2)",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center", 
+    justifyContent: "center",
     fontSize: "7px",
     fontWeight: "bold",
   },
@@ -97,7 +97,7 @@ const BatchETLOIcon = memo(() => <Box sx={ICON_STYLES.batchETLO}>BATCH</Box>);
 
 // Set display names for better debugging
 EmailIcon.displayName = "EmailIcon";
-PythonIcon.displayName = "PythonIcon"; 
+PythonIcon.displayName = "PythonIcon";
 LamdaIcon.displayName = "LamdaIcon";
 GlueJobIcon.displayName = "GlueJobIcon";
 EksIcon.displayName = "EksIcon";
@@ -184,41 +184,54 @@ export interface PlaceholderConfig {
 }
 
 // Optimized placeholder configurations with frozen positions - horizontal flow (left to right)
-// n8n style: placeholders aligned horizontally in a straight line
+// n8n style: placeholders aligned horizontally with tree branching for BatchETLO
+// Component sizes: Board=150x150, ETLO=150x150, BatchETLO=150x150, Placeholder=50x50
 export const PLACEHOLDER_CONFIG: Readonly<Partial<Record<MajorComponents, PlaceholderConfig>>> = Object.freeze({
   [MajorComponents.BatchETLO]: Object.freeze({
-    count: 3,
+    count: 15,
     positions: Object.freeze([
-      Object.freeze({ x: 250, y: 75 }),   // Right (centered) - main flow
-      Object.freeze({ x: 250, y: 25 }),   // Right (slightly above) - compact vertical spacing
-      Object.freeze({ x: 250, y: 125 }), // Right (slightly below) - compact vertical spacing
+      Object.freeze({ x: 300, y: 50 }),      // Position 0: main flow line (initial only)
+      Object.freeze({ x: 300, y: -130 }),    // Position 1: branch up (level 1) - 180px spacing
+      Object.freeze({ x: 300, y: 230 }),     // Position 2: branch down (level 1)
+      Object.freeze({ x: 300, y: -310 }),    // Position 3: branch up (level 2)
+      Object.freeze({ x: 300, y: 410 }),     // Position 4: branch down (level 2)
+      Object.freeze({ x: 300, y: -490 }),    // Position 5: branch up (level 3)
+      Object.freeze({ x: 300, y: 590 }),     // Position 6: branch down (level 3)
+      Object.freeze({ x: 300, y: -670 }),    // Position 7: branch up (level 4)
+      Object.freeze({ x: 300, y: 770 }),     // Position 8: branch down (level 4)
+      Object.freeze({ x: 300, y: -850 }),    // Position 9: branch up (level 5)
+      Object.freeze({ x: 300, y: 950 }),     // Position 10: branch down (level 5)
+      Object.freeze({ x: 300, y: -1030 }),   // Position 11: branch up (level 6)
+      Object.freeze({ x: 300, y: 1130 }),    // Position 12: branch down (level 6)
+      Object.freeze({ x: 300, y: -1210 }),   // Position 13: branch up (level 7)
+      Object.freeze({ x: 300, y: 1310 }),    // Position 14: branch down (level 7)
     ]),
   }),
   [MajorComponents.ETLO]: Object.freeze({
     count: 1,
     positions: Object.freeze([
-      Object.freeze({ x: 250, y: 75 }),   // Right (centered) - straight horizontal
+      Object.freeze({ x: 300, y: 50 }),   // Right (centered) - 150px width + 200px gap
     ]),
   }),
   [MajorComponents.Board]: Object.freeze({
     count: 1,
     positions: Object.freeze([
-      Object.freeze({ x: 250, y: 75 }),   // Right (centered) - straight horizontal
+      Object.freeze({ x: 300, y: 50 }),   // Right (centered) - 150px width + 200px gap
     ]),
   }),
 });
 
-// Default configuration - horizontal flow
+// Default configuration - horizontal flow with generous spacing
 const DEFAULT_PLACEHOLDER_CONFIG: PlaceholderConfig = Object.freeze({
   count: 1,
   positions: Object.freeze([
-    Object.freeze({ x: 250, y: 75 }), // Default: single placeholder to the right (centered for 200px tall parent)
+    Object.freeze({ x: 300, y: 50 }), // Default: 150px width + 200px gap, centered for 150px height
   ]),
 });
 
 /**
  * Get the placeholder configuration for a specific component type
- * @param componentType - The component type to get configuration for  
+ * @param componentType - The component type to get configuration for
  * @returns The placeholder configuration
  */
 export const getPlaceholderConfig = (componentType: MajorComponents): PlaceholderConfig => {
@@ -308,7 +321,7 @@ CONNECTION_RULES_MAP.forEach((children, parent) => {
 export const CONNECTION_RULES: Readonly<Record<MajorComponents, readonly MajorComponents[]>> =
   Object.freeze(
     Object.fromEntries(
-      Array.from(CONNECTION_RULES_MAP.entries()).map(([key, value]) => 
+      Array.from(CONNECTION_RULES_MAP.entries()).map(([key, value]) =>
         [key, Object.freeze(Array.from(value))]
       )
     ) as Record<MajorComponents, readonly MajorComponents[]>

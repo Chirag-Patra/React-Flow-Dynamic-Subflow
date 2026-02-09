@@ -134,12 +134,33 @@ const PlaceholderNode = memo(({ id }: PlaceholderNodeProps) => {
       }
     }
 
+    // Component sizes for alignment calculation
+    const PLACEHOLDER_SIZE = 50;
+    const COMPONENT_SIZES: Record<string, { width: number; height: number }> = {
+      [MajorComponents.Board]: { width: 150, height: 150 },
+      [MajorComponents.ETLO]: { width: 150, height: 150 },
+      [MajorComponents.BatchETLO]: { width: 150, height: 150 },
+      default: { width: 150, height: 150 },
+    };
+
+    const componentSize = COMPONENT_SIZES[componentType] || COMPONENT_SIZES.default;
+    const GAP = 400; // Gap between components - increased for better spacing
+
+    // Calculate center line Y position (placeholder center)
+    const centerLineY = currentNode.position.y + (PLACEHOLDER_SIZE / 2);
+
+    // Position component so its center aligns with the center line
+    const componentY = centerLineY - (componentSize.height / 2);
+
     const componentNode = {
       id: componentNodeId,
       type: componentType === MajorComponents.Board ? "Job" : componentType,
-      position: { ...currentNode.position },
+      position: {
+        x: currentNode.position.x,
+        y: componentY,  // Adjusted Y to align center with placeholder center
+      },
       data: {},
-      style: { height: 200, width: 200 },
+      style: { height: componentSize.height, width: componentSize.width },
     };
 
     // Create placeholders array
@@ -161,8 +182,10 @@ const PlaceholderNode = memo(({ id }: PlaceholderNodeProps) => {
           edge => edge.source === sourceNode.id && edge.target !== id
         ).length;
 
-        // Determine next position index (cycling through available positions)
-        const nextPositionIndex = existingPlaceholders % sourceConfig.count;
+        // For tree branching: skip position 0 (main line) for subsequent placeholders
+        // Position 0 is only used for the initial placeholder, then branch up/down
+        const branchPositions = sourceConfig.count - 1; // Number of branch positions (excluding main line)
+        const nextPositionIndex = 1 + (existingPlaceholders % branchPositions); // Start from position 1
         const nextPosition = sourceConfig.positions[nextPositionIndex];
 
         const parentPlaceholderId = uuid();
@@ -192,19 +215,20 @@ const PlaceholderNode = memo(({ id }: PlaceholderNodeProps) => {
     }
 
     // 2. ALWAYS create a placeholder for the NEW component being added
-    const newComponentConfig = getPlaceholderConfig(componentType);
-    const newComponentPosition = newComponentConfig.positions[0]; // Always start at first position
+    // Position new placeholder on the same center line (straight horizontal alignment)
+    const newPlaceholderX = componentNode.position.x + componentSize.width + GAP;
+    const newPlaceholderY = centerLineY - (PLACEHOLDER_SIZE / 2); // Same center line
 
     const componentPlaceholderId = uuid();
     const componentPlaceholder = {
       id: componentPlaceholderId,
       type: "PlaceholderNode",
       position: {
-        x: componentNode.position.x + newComponentPosition.x,
-        y: componentNode.position.y + newComponentPosition.y,
+        x: newPlaceholderX,
+        y: newPlaceholderY,
       },
       data: {},
-      style: { height: 50, width: 50 },
+      style: { height: PLACEHOLDER_SIZE, width: PLACEHOLDER_SIZE },
     };
 
     newPlaceholders.push(componentPlaceholder);
@@ -260,13 +284,14 @@ const PlaceholderNode = memo(({ id }: PlaceholderNodeProps) => {
     onClose();
   }, [id, getNode, setNodes, setEdges, getEdges, onClose]);
 
-  // Handle styles for vertical flow
+  // Handle styles for horizontal flow - blueish theme
   const handleStyle = useMemo(() => ({
     border: `2px solid ${colors.accentColor}`,
     width: "12px",
     height: "12px",
-    background: isDark ? "#1A202C" : "#FFFFFF",
+    background: isDark ? "#1A202C" : "#EEF2FF",
     borderRadius: "50%",
+    boxShadow: `0 0 4px ${colors.accentColor}40`,
   }), [colors.accentColor, isDark]);
 
   return (
@@ -278,10 +303,10 @@ const PlaceholderNode = memo(({ id }: PlaceholderNodeProps) => {
         style={handleStyle}
       />
 
-      {/* Main placeholder - Clean circular green button */}
+      {/* Main placeholder - Matte grey cube */}
       <Box
-        bg={colors.accentColor}
-        borderRadius="full"
+        bg={isDark ? "#6B7280" : "#9CA3AF"}
+        borderRadius="md"
         width="100%"
         height="100%"
         display="flex"
@@ -289,10 +314,10 @@ const PlaceholderNode = memo(({ id }: PlaceholderNodeProps) => {
         justifyContent="center"
         cursor="pointer"
         transition="all 0.25s ease"
-        boxShadow={`0 2px 8px ${colors.accentColor}40`}
+        boxShadow={isDark ? "0 2px 8px rgba(107, 114, 128, 0.4)" : "0 2px 8px rgba(156, 163, 175, 0.4)"}
         _hover={{
           transform: "scale(1.1)",
-          boxShadow: `0 4px 16px ${colors.accentColor}60`,
+          boxShadow: isDark ? "0 4px 16px rgba(107, 114, 128, 0.6)" : "0 4px 16px rgba(156, 163, 175, 0.6)",
         }}
         onClick={onOpen}
       >
