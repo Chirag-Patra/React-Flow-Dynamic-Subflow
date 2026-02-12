@@ -190,10 +190,10 @@ const ComponentPlaceholder = memo(({ id }: ComponentPlaceholderProps) => {
         }}
       />
 
-      {/* Main placeholder box - Clean circular + button */}
+      {/* Main placeholder box - Matte grey cube style matching PlaceholderNode */}
       <Box
-        bg={colors.accentColor}
-        borderRadius="full"
+        bg={isDark ? "#6B7280" : "#9CA3AF"}
+        borderRadius="md"
         height="100%"
         width="100%"
         display="flex"
@@ -201,10 +201,10 @@ const ComponentPlaceholder = memo(({ id }: ComponentPlaceholderProps) => {
         justifyContent="center"
         cursor="pointer"
         transition="all 0.25s ease"
-        boxShadow={`0 2px 8px ${colors.accentColor}40`}
+        boxShadow={isDark ? "0 2px 8px rgba(107, 114, 128, 0.4)" : "0 2px 8px rgba(156, 163, 175, 0.4)"}
         _hover={{
           transform: "scale(1.1)",
-          boxShadow: `0 4px 16px ${colors.accentColor}60`,
+          boxShadow: isDark ? "0 4px 16px rgba(107, 114, 128, 0.6)" : "0 4px 16px rgba(156, 163, 175, 0.6)",
         }}
         onClick={onOpen}
       >

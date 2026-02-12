@@ -1,8 +1,11 @@
 import { Edge, Node } from "@xyflow/react";
 import { MajorComponents } from "../types";
 import { Email, Python, Lamda, GlueJob, Eks, Stepfunction } from "../icons";
-import { Box } from "@chakra-ui/react";
+import { Box, Image } from "@chakra-ui/react";
 import { memo } from "react";
+import jobIcon from "../logo/jobicon.png";
+import batchETLOImage from "../logo/batch-processing (1).png";
+import SvgComponent from "../logo/ETLOIcon";
 
 // ============================================================================
 // INITIAL STATE
@@ -54,31 +57,28 @@ const ICON_STYLES = {
     height: "30px",
     width: "30px",
     borderRadius: "4px",
-    border: "1px solid black",
+    background: "#9CA3AF",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   etlo: {
     height: "30px",
     width: "30px",
     borderRadius: "4px",
-    border: "2px solid green",
-    background: "rgba(50, 200, 50, 0.2)",
+    background: "#9CA3AF",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "8px",
-    fontWeight: "bold",
   },
   batchETLO: {
     height: "30px",
     width: "30px",
     borderRadius: "4px",
-    border: "2px solid #48bb78",
-    background: "rgba(72, 187, 120, 0.2)",
+    background: "#9CA3AF",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "7px",
-    fontWeight: "bold",
   },
 } as const;
 
@@ -91,9 +91,21 @@ const EksIcon = memo(() => <Eks height={40} />);
 const StepfunctionIcon = memo(() => <Stepfunction height={40} />);
 const MapIcon = memo(() => <Box sx={ICON_STYLES.map}>MAP</Box>);
 const PlaceholderIcon = memo(() => <Box sx={ICON_STYLES.placeholder}>+</Box>);
-const JobIcon = memo(() => <Box sx={ICON_STYLES.job} />);
-const ETLOIcon = memo(() => <Box sx={ICON_STYLES.etlo}>ETLO</Box>);
-const BatchETLOIcon = memo(() => <Box sx={ICON_STYLES.batchETLO}>BATCH</Box>);
+const JobIcon = memo(() => (
+  <Box sx={ICON_STYLES.job}>
+    <Image src={jobIcon} alt="Job" height="20px" width="20px" objectFit="contain" />
+  </Box>
+));
+const ETLOIcon = memo(() => (
+  <Box sx={ICON_STYLES.etlo}>
+    <SvgComponent height={20} width={20} />
+  </Box>
+));
+const BatchETLOIcon = memo(() => (
+  <Box sx={ICON_STYLES.batchETLO}>
+    <Image src={batchETLOImage} alt="BatchETLO" height="20px" width="20px" objectFit="contain" />
+  </Box>
+));
 
 // Set display names for better debugging
 EmailIcon.displayName = "EmailIcon";
