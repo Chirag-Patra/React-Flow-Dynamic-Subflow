@@ -1,17 +1,13 @@
-import { Box, Text, Badge, VStack, useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader, ModalCloseButton, ModalBody, SimpleGrid, Flex, Button, IconButton, Tooltip, Image } from "@chakra-ui/react";
-import { Node, NodeProps, NodeResizer, useStore, Handle, Position, useReactFlow, useUpdateNodeInternals } from "@xyflow/react";
-import React, { useState, useCallback, useMemo, useEffect, useRef, memo } from "react";
+import { Box, Text, Badge, VStack, IconButton, Tooltip, Image } from "@chakra-ui/react";
+import { Node, NodeProps, NodeResizer, useStore, Position, useReactFlow, useUpdateNodeInternals } from "@xyflow/react";
+import { useState, useCallback, useEffect, useRef, memo } from "react";
 import { MajorComponentsData, MajorComponents } from "../types";
 import { getUnit } from "../utils";
-import Placeholder from "./Placeholder";
 import { zoomSelector } from "../utils";
-import { useDarkMode } from "../store";
 import Terminal from "./Terminal";
-import { v4 as uuid } from "uuid";
-import { COMPONENTS } from "../constants";
 import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 import jobIcon from "../logo/jobicon.png";
-import { useThemeColors, useNodeOperations, useBoardOperations, useOptimizedResizeObserver, storeBoardSize, getStoredBoardSize } from "../hooks";
+import { useThemeColors, useBoardOperations, useOptimizedResizeObserver, storeBoardSize, getStoredBoardSize } from "../hooks";
 
 type BoardNode = Node<MajorComponentsData, "string">;
 
@@ -20,7 +16,6 @@ function Board({ id, type,
 
   const unit = getUnit(type as MajorComponents);
   const showContent = useStore(zoomSelector);
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const updateNodeInternals = useUpdateNodeInternals();
   const { getNode, setNodes } = useReactFlow();
   
@@ -61,12 +56,8 @@ function Board({ id, type,
 
   // Use optimized hooks
   const themeColors = useThemeColors(isDragOver);
-  const { createComponentWithPlaceholder } = useNodeOperations();
   const { toggleBoardExpansion, boardSizes } = useBoardOperations(id);
   const { setupResizeObserver } = useOptimizedResizeObserver(nodeRef, id, updateNodeInternals);
-
-  // Memoize components array to prevent unnecessary re-renders
-  const availableComponents = useMemo(() => COMPONENTS, []);
 
   // Optimized ResizeObserver setup
   useEffect(() => {
@@ -96,16 +87,6 @@ function Board({ id, type,
       }
     }
   }, [nodeHeight, nodeWidth, id, getNode, isExpanded]);
-
-  const handleComponentSelect = useCallback((componentType: MajorComponents) => {
-    createComponentWithPlaceholder(id, componentType, () => {
-      // Automatically expand when adding a component
-      if (!isExpanded) {
-        setIsExpanded(true);
-      }
-      onClose();
-    });
-  }, [id, createComponentWithPlaceholder, isExpanded, onClose]);
 
   const toggleExpanded = useCallback(() => {
     // If collapsing, save current dimensions from the DOM element
@@ -314,71 +295,6 @@ function Board({ id, type,
           {value}
         </Text>
       )}
-
-      {/* Add Component Button */}
-      <Button
-        size="xs"
-        position="absolute"
-        top="5px"
-        left="50px"
-        colorScheme="blue"
-        onClick={onOpen}
-        fontSize="xs"
-        px={2}
-        zIndex={10}
-      >
-        + Add Component
-      </Button>
-
-      {/* Component Selection Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="xl">
-        <ModalOverlay />
-        <ModalContent bg={themeColors.modal.bgColor} color={themeColors.modal.textColor}>
-          <ModalHeader>Add Component to Board</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody pb={6}>
-            <SimpleGrid columns={3} spacing={4}>
-              {availableComponents.map((component) => (
-                <Box
-                  key={component.type}
-                  as="button"
-                  bg={themeColors.modal.cardBg}
-                  border={`2px solid ${themeColors.modal.borderColor}`}
-                  borderRadius="lg"
-                  p={4}
-                  cursor="pointer"
-                  transition="all 0.2s"
-                  _hover={{
-                    borderColor: themeColors.modal.accentColor,
-                    bg: themeColors.modal.cardHoverBg,
-                    transform: "translateY(-2px)",
-                    boxShadow: `0 4px 12px ${themeColors.modal.accentColor}30`,
-                  }}
-                  _active={{
-                    transform: "translateY(0)",
-                  }}
-                  onClick={() => handleComponentSelect(component.type)}
-                >
-                  <VStack spacing={2}>
-                    <Box
-                      w="40px"
-                      h="40px"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
-                      {component.icon}
-                    </Box>
-                    <Text fontWeight="semibold" fontSize="sm" textAlign="center">
-                      {component.label}
-                    </Text>
-                  </VStack>
-                </Box>
-              ))}
-            </SimpleGrid>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
 
       {/* Terminals */}
       <Terminal

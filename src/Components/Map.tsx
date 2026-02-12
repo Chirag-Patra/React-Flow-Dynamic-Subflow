@@ -1,144 +1,123 @@
-import { Box, Text, Badge } from "@chakra-ui/react";
-import { Node, NodeProps, useStore, Handle, Position } from "@xyflow/react";
-import React from "react";
-import { MajorComponentsData, MajorComponents } from "../types";
-import { getUnit } from "../utils";
-import { zoomSelector } from "../utils";
+import { Box, Text } from "@chakra-ui/react";
+import { Node, NodeProps, Position } from "@xyflow/react";
+import { memo } from "react";
+import { MajorComponentsData } from "../types";
 import { useDarkMode } from "../store";
 import Terminal from "./Terminal";
 
 type MapNode = Node<MajorComponentsData, "string">;
 
-export default function Map({
-  type,
-  data: { value, processingType, isDragOver },
-  selected,
-  id
+function Map({
+  data: { value, isDragOver },
+  selected
 }: NodeProps<MapNode>) {
 
-  const unit = getUnit(type as MajorComponents);
-  const showContent = useStore(zoomSelector);
   const { isDark } = useDarkMode();
 
   let color = "black";
   if (isDark) color = "white";
 
-  // Change border color when dragging over
   const borderColor = isDragOver
-    ? (isDark ? "#4299e1" : "#3182ce") // Blue when dragging over
+    ? (isDark ? "#4299e1" : "#3182ce")
     : color;
 
-  // Header background color - darker red/salmon
   const headerBg = isDark ? "rgba(200, 80, 80, 0.8)" : "rgba(255, 100, 100, 0.85)";
-
-  // Droppable area background - lighter red/pink
-  const dropAreaBg = isDark ? "rgba(200, 100, 100, 0.3)" : "rgba(255, 150, 150, 0.4)";
+  const bodyBg = isDark ? "rgba(200, 100, 100, 0.3)" : "rgba(255, 150, 150, 0.4)";
+  const dashedBorder = isDragOver
+    ? (isDark ? "#4299e1" : "#3182ce")
+    : (isDark ? "gray" : "#aaa");
 
   return (
     <Box
       position="relative"
-      border={`3px solid ${borderColor}`}
-      borderRadius="12px"
       height="100px"
       width="200px"
-      bg={dropAreaBg}
-      {...(selected && { boxShadow: `${borderColor} 0px 0px 4px` })}
-      transition="border-color 0.2s ease"
-      display="flex"
-      flexDirection="column"
     >
-
-      {/* Header Section - Not droppable */}
+      {/* Header */}
       <Box
+        position="absolute"
+        top={0}
+        left={0}
+        right={0}
+        height="26px"
         bg={headerBg}
-        borderTopRadius="6px"
-        p={2}
-        borderBottom={`2px solid ${borderColor}`}
-        height="30px"
+        borderTopLeftRadius="10px"
+        borderTopRightRadius="10px"
+        border={`2px solid ${borderColor}`}
         display="flex"
         alignItems="center"
         justifyContent="center"
-        position="relative"
+        zIndex={1}
       >
         <Text
-          fontSize="sm"
+          fontSize="11px"
           fontWeight="bold"
-          color={isDark ? "white" : "white"}
+          color="white"
+          letterSpacing="0.5px"
         >
           Map
         </Text>
-
-        {/* Processing Type Badge */}
-        {/* {processingType && typeof processingType === 'string' && (
-          <Badge
-            position="absolute"
-            top="5px"
-            right="5px"
-            colorScheme="red"
-            fontSize="xx-small"
-          >
-            {processingType.replace('_', ' ').toUpperCase()}
-          </Badge>
-        )} */}
       </Box>
 
-      {/* Droppable Area - Rectangular drop zone for components */}
+      {/* Body */}
       <Box
-        flex="1"
+        position="absolute"
+        top="24px"
+        left={0}
+        right={0}
+        bottom={0}
+        bg={bodyBg}
+        borderBottomLeftRadius="10px"
+        borderBottomRightRadius="10px"
+        borderBottom={`2px solid ${borderColor}`}
+        borderLeft={`2px solid ${borderColor}`}
+        borderRight={`2px solid ${borderColor}`}
         display="flex"
         alignItems="center"
         justifyContent="center"
-        border="2px dashed"
-        borderColor={isDragOver ? (isDark ? "#4299e1" : "#3182ce") : (isDark ? "gray.500" : "gray.400")}
-        borderRadius="6px"
-        backgroundColor={
-          isDragOver 
-            ? (isDark ? "rgba(66, 153, 225, 0.1)" : "rgba(49, 130, 206, 0.1)")
-            : (isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.3)")
-        }
-        m={1.5}
-        position="relative"
-        className="map-drop-zone"
-        data-droppable="true"
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log("Drag over Map drop zone:", id);
-        }}
-        onDragEnter={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log("Drag enter Map drop zone:", id);
-        }}
-        onDrop={(e) => {
-          e.preventDefault();
-          console.log("Dropped in Map drop zone:", id);
-        }}
-        transition="all 0.2s ease"
-        _hover={{
-          borderColor: isDark ? "blue.300" : "blue.400",
-          backgroundColor: isDark ? "rgba(66, 153, 225, 0.05)" : "rgba(49, 130, 206, 0.05)"
-        }}
+        p="6px"
+        {...(selected && {
+          boxShadow: `${borderColor} 0px 0px 4px`
+        })}
       >
-        {!value && (
-          <Box textAlign="center">
-            <Text 
-              fontSize="sm" 
+        <Box
+          width="100%"
+          height="100%"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          borderRadius="4px"
+          border={`1.5px dashed ${dashedBorder}`}
+          backgroundColor={
+            isDragOver
+              ? (isDark ? "rgba(66, 153, 225, 0.1)" : "rgba(49, 130, 206, 0.1)")
+              : (isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.3)")
+          }
+          className="map-drop-zone"
+          data-droppable="true"
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onDragEnter={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+          }}
+          transition="all 0.2s ease"
+        >
+          {!value && (
+            <Text
+              fontSize="10px"
               color={isDark ? "gray.300" : "gray.600"}
               fontWeight="medium"
-              mb={1}
             >
               Drop State Here
             </Text>
-            <Text 
-              fontSize="xs" 
-              color={isDark ? "gray.500" : "gray.500"}
-              fontStyle="italic"
-            >
-              Components will auto-center
-            </Text>
-          </Box>
-        )}
+          )}
+        </Box>
       </Box>
 
       {/* Value Text */}
@@ -146,8 +125,8 @@ export default function Map({
         <Text
           fontSize="xx-small"
           position="absolute"
-          bottom="-22px"
-          left="14px"
+          bottom="-18px"
+          left="8px"
           color={isDark ? "white" : "black"}
         >
           {value}
@@ -155,16 +134,10 @@ export default function Map({
       )}
 
       {/* Terminals */}
-      <Terminal
-        type="source"
-        position={Position.Bottom}
-        id="bottom"
-      />
-      <Terminal
-        type="target"
-        position={Position.Top}
-        id="top"
-      />
+      <Terminal type="source" position={Position.Bottom} id="bottom" />
+      <Terminal type="target" position={Position.Top} id="top" />
     </Box>
   );
 }
+
+export default memo(Map);

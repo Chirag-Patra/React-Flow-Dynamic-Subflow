@@ -115,10 +115,19 @@ const ComponentPlaceholder = memo(({ id }: ComponentPlaceholderProps) => {
     // Component replaces the placeholder - center horizontally where placeholder was
     const componentX = currentNode.position.x - (componentWidth - placeholderWidth) / 2;
 
+    // Use the actual node type for Map, otherwise use MajorComponent
+    const nodeType = componentType === MajorComponents.Map ? "Map" : "MajorComponent";
+    const nodeStyle = componentType === MajorComponents.Map
+      ? { height: 100, width: 200 }
+      : { height: componentHeight, width: componentWidth };
+    const nodeX = componentType === MajorComponents.Map
+      ? currentNode.position.x - (200 - placeholderWidth) / 2
+      : componentX;
+
     const componentNode = {
       id: componentNodeId,
-      type: "MajorComponent",
-      position: { x: componentX, y: currentNode.position.y },  // Centered X, same Y
+      type: nodeType,
+      position: { x: nodeX, y: currentNode.position.y },  // Centered X, same Y
       data: {
         type: componentType,
         componentType,
@@ -128,7 +137,7 @@ const ComponentPlaceholder = memo(({ id }: ComponentPlaceholderProps) => {
       parentId: currentNode.parentId,
       extent: "parent" as const,
       expandParent: true,
-      style: { height: componentHeight, width: componentWidth },
+      style: nodeStyle,
     };
 
     // Create new placeholder below the component (vertical flow - top to bottom)
@@ -137,7 +146,7 @@ const ComponentPlaceholder = memo(({ id }: ComponentPlaceholderProps) => {
       type: "ComponentPlaceholder",
       position: {
         x: currentNode.position.x,  // Same X position (centered)
-        y: currentNode.position.y + componentHeight + gap  // Below the component
+        y: currentNode.position.y + (nodeStyle.height) + gap  // Below the component
       },
       data: {},
       parentId: currentNode.parentId,

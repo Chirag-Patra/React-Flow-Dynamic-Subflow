@@ -182,41 +182,62 @@ export function useBoardOperations(nodeId: string) {
       targetSize = boardSizes.collapsed;
     }
 
+    // If expanding and no children exist, create an initial placeholder
+    const needsInitialPlaceholder = newExpandedState && childIds.length === 0;
+    const placeholderNodeId = needsInitialPlaceholder ? uuid() : null;
+
     // Update size and show/hide children
     // Also toggle expandParent to prevent hidden children from expanding the parent
-    setNodes(nodes => nodes.map(node => {
-      if (node.id === nodeId) {
-        // Force the node dimensions by setting width/height directly
-        // and measured to force React Flow to use these dimensions
-        const updatedNode = {
-          ...node,
-          width: targetSize.width,
-          height: targetSize.height,
-          measured: { width: targetSize.width, height: targetSize.height },
-          style: {
-            ...node.style,
+    setNodes(nodes => {
+      const updatedNodes = nodes.map(node => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            width: targetSize.width,
             height: targetSize.height,
-            width: targetSize.width
+            measured: { width: targetSize.width, height: targetSize.height },
+            style: {
+              ...node.style,
+              height: targetSize.height,
+              width: targetSize.width
+            },
+            data: { ...node.data, isExpanded: newExpandedState }
+          };
+        }
+
+        if (node.parentId === nodeId) {
+          return {
+            ...node,
+            hidden: !newExpandedState,
+            expandParent: newExpandedState,
+            extent: newExpandedState ? ("parent" as const) : undefined
+          };
+        }
+
+        return node;
+      });
+
+      // Add initial placeholder if expanding with no children
+      if (needsInitialPlaceholder && placeholderNodeId) {
+        const placeholderX = COMPONENT_LAYOUT.basePosition.x +
+          (COMPONENT_LAYOUT.componentSize.width - COMPONENT_LAYOUT.placeholderSize.width) / 2;
+        updatedNodes.push({
+          id: placeholderNodeId,
+          type: "ComponentPlaceholder",
+          position: {
+            x: placeholderX,
+            y: COMPONENT_LAYOUT.basePosition.y
           },
-          data: { ...node.data, isExpanded: newExpandedState }
-        };
-
-        return updatedNode;
+          data: {},
+          parentId: nodeId,
+          extent: "parent" as const,
+          expandParent: true,
+          style: COMPONENT_LAYOUT.placeholderSize,
+        } as any);
       }
 
-      if (node.parentId === nodeId) {
-        return {
-          ...node,
-          hidden: !newExpandedState,
-          // Disable expandParent when collapsed to prevent resizing the parent
-          expandParent: newExpandedState,
-          // Remove extent constraint when collapsed so React Flow doesn't enforce parent bounds
-          extent: newExpandedState ? ("parent" as const) : undefined
-        };
-      }
-
-      return node;
-    }));
+      return updatedNodes;
+    });
 
     // Hide/show internal edges
     setEdges(edges => edges.map(edge => {
