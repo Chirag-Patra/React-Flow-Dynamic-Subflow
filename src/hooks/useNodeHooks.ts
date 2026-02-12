@@ -102,7 +102,8 @@ export function useNodeOperations() {
       id: `${componentNodeId}-${placeholderNodeId}`,
       source: componentNodeId,
       target: placeholderNodeId,
-      type: "smoothstep",
+      type: "customEdge",
+      animated: true,
     };
 
     setNodes(nodes => [...nodes, componentNode, placeholderNode]);
@@ -170,10 +171,10 @@ export function useBoardOperations(nodeId: string) {
   ) => {
     const newExpandedState = !isExpanded;
 
-    // Get child node IDs once for efficient processing
+    // Get direct child IDs
     const childIds = getChildNodeIds(nodeId);
 
-    // Determine target size - use stored size when expanding, default collapsed size when collapsing
+    // Determine target size
     let targetSize: { width: number; height: number };
     if (newExpandedState) {
       const storedSize = getStoredBoardSize(nodeId);
@@ -186,10 +187,20 @@ export function useBoardOperations(nodeId: string) {
     const needsInitialPlaceholder = newExpandedState && childIds.length === 0;
     const placeholderNodeId = needsInitialPlaceholder ? uuid() : null;
 
-    // Update size and show/hide children
-    // Also toggle expandParent to prevent hidden children from expanding the parent
-    setNodes(nodes => {
-      const updatedNodes = nodes.map(node => {
+    // Compute all descendant IDs (children, grandchildren, etc.) up front
+    // so both setNodes and setEdges can use the same set
+    let descendantSet: Set<string> = new Set();
+
+    setNodes(allNodes => {
+      const getAllDescendantIds = (parentId: string): string[] => {
+        const children = allNodes.filter(n => n.parentId === parentId);
+        const ids = children.map(n => n.id);
+        const grandchildIds = children.flatMap(c => getAllDescendantIds(c.id));
+        return [...ids, ...grandchildIds];
+      };
+      descendantSet = new Set(getAllDescendantIds(nodeId));
+
+      const updatedNodes = allNodes.map(node => {
         if (node.id === nodeId) {
           return {
             ...node,
@@ -205,7 +216,7 @@ export function useBoardOperations(nodeId: string) {
           };
         }
 
-        if (node.parentId === nodeId) {
+        if (descendantSet.has(node.id)) {
           return {
             ...node,
             hidden: !newExpandedState,
@@ -239,9 +250,9 @@ export function useBoardOperations(nodeId: string) {
       return updatedNodes;
     });
 
-    // Hide/show internal edges
+    // Hide/show edges involving any descendant nodes
     setEdges(edges => edges.map(edge => {
-      const isInternalEdge = childIds.includes(edge.source) && childIds.includes(edge.target);
+      const isInternalEdge = descendantSet.has(edge.source) || descendantSet.has(edge.target);
       return isInternalEdge ? { ...edge, hidden: !newExpandedState } : edge;
     }));
 

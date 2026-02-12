@@ -159,7 +159,8 @@ const ComponentPlaceholder = memo(({ id }: ComponentPlaceholderProps) => {
       id: `${componentNodeId}-${newPlaceholderNodeId}`,
       source: componentNodeId,
       target: newPlaceholderNodeId,
-      type: "smoothstep",
+      type: "customEdge",
+      animated: true,
     };
 
     // Update current placeholder node to be the new component
